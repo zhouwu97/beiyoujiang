@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { resolveImage } from '@/lib/utils';
 
 const BANNERS = [
-  { id: 1, img: '/images/appbackground.webp', postId: 2321, label: '社区精选' },
-  { id: 2, img: '/images/xiun.webp', postId: 448, label: '体验分享' },
+  // 首页主视觉使用随应用发布的静态资源，避免外部图片服务异常时 Banner 留白。
+  { id: 1, img: '/images/banners/community-featured.webp', postId: 2321, label: '社区精选' },
+  { id: 2, img: '/images/banners/experience-sharing.webp', postId: 448, label: '体验分享' },
 ];
 
 function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
@@ -72,10 +73,13 @@ export default function Banner() {
             className="banner-slide text-left"
             onClick={() => router.push(`/messageDetail/${banner.postId}`)}
           >
-            <img
-              src={resolveImage(banner.img)}
+            <Image
+              src={banner.img}
               alt={banner.label}
-              className="h-full w-full object-cover"
+              fill
+              priority={banner.id === 1}
+              sizes="(min-width: 1536px) 900px, (min-width: 1280px) 760px, (min-width: 768px) 680px, 100vw"
+              className="object-cover"
               draggable={false}
             />
           </button>

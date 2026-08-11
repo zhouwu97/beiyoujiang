@@ -6,6 +6,27 @@ import { addTourist } from '@/lib/api';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import AdultVerifyModal from '@/components/common/AdultVerifyModal';
 
+const TOURIST_INITIALIZATION_TIMEOUT = 3500;
+
+/**
+ * 游客接口异常时允许页面继续展示；迟到的接口响应仍会照常更新游客态。
+ */
+function registerTouristWithoutBlockingPage(): Promise<void> {
+  return new Promise((resolve) => {
+    const timeoutId = window.setTimeout(resolve, TOURIST_INITIALIZATION_TIMEOUT);
+
+    addTourist()
+      .then((tourist) => setTourist(tourist))
+      .catch(() => {
+        // 游客注册失败不影响浏览模式。
+      })
+      .finally(() => {
+        window.clearTimeout(timeoutId);
+        resolve();
+      });
+  });
+}
+
 /**
  * 客户端初始化：
  * 1. 无用户态时自动注册游客账号（与官方行为一致）
@@ -21,12 +42,7 @@ export default function ClientInit() {
       try {
         const { currentUser, currentTourist } = useAuthStore.getState();
         if (!currentUser && !currentTourist) {
-          try {
-            const tourist = await addTourist();
-            setTourist(tourist);
-          } catch {
-            // 游客注册失败静默，仅展示模式无游客态也能浏览
-          }
+          await registerTouristWithoutBlockingPage();
         }
       } finally {
         setInitialized(true);
