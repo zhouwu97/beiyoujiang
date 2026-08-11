@@ -181,6 +181,42 @@ export interface Toy {
 }
 
 /**
+ * 玩具详情（详情页）
+ */
+export interface ToyDetail extends Toy {
+  images: string[];
+  detail: string;
+  score: number;
+  scoreCount: number;
+  scoreDistribution: Record<string, number>;
+  isWant: boolean;
+  isBuy: boolean;
+}
+
+/**
+ * 玩具评价
+ */
+export interface ToyReview {
+  id: number;
+  content: string;
+  score: number;
+  likeCount: number;
+  isLiked: boolean;
+  createdAt: string;
+  timeString: string;
+  author: AuthorFull;
+  images: string[];
+}
+
+/**
+ * 玩具详情响应
+ */
+export interface ToyDetailData {
+  toy: ToyDetail;
+  reviews: ToyReview[];
+}
+
+/**
  * 热词（搜索页）
  * POST /api/toy/getAllKeyword 返回 data 数组项
  */

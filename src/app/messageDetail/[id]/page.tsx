@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import type { Comment, PostDetailData } from '@/lib/types';
+import type { Comment, PostDetailData, Post } from '@/lib/types';
 import { PLATES } from '@/lib/types';
 import {
   getPost,
@@ -17,10 +17,11 @@ import {
   deleteComment,
 } from '@/lib/api';
 import { resolveAvatar, resolveImage, resolvePostImage, sanitizeHtml } from '@/lib/utils';
-import { getUserId, useAuthStore } from '@/stores/auth';
+import { getUserId } from '@/stores/auth';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
+import { useForumStore, getCachedPosts } from '@/stores/forum';
 
 /** 帖子图片完整路径 */
 function postImageUrl(img: string): string {
@@ -208,262 +209,304 @@ export default function MessageDetailPage() {
   const images = detail?.imageUrlsArray?.length ? detail.imageUrlsArray : (post.imageUrls ?? []);
   const plateName = PLATES.find((p) => p.id === post.plate)?.name ?? '';
 
+  // 右侧推荐：从缓存取同板块帖子（排除当前帖子）
+  const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id).slice(0, 5);
+
   return (
-    <div className="min-h-screen bg-[#F7F7F9]">
+    <div className="page-shell min-h-screen">
       {/* 顶栏 */}
-      <header className="sticky top-0 z-40 border-b border-[#e8e8ec] bg-white">
-        <div className="mx-auto flex h-14 w-full max-w-[920px] items-center px-4 sm:px-6 lg:h-[72px] lg:px-0">
-          <button onClick={() => router.back()} className="p-2" aria-label="返回">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2C2C2C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <header className="site-header">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1440px] items-center px-4 sm:px-6 lg:min-h-[68px] lg:px-8">
+          <button onClick={() => router.back()} className="icon-button" aria-label="返回">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
           </button>
-          <h1 className="flex-1 text-center text-[16px] font-semibold text-[#2C2C2C]">
-            帖子详情
-          </h1>
+          <h1 className="flex-1 text-center text-[15px] font-semibold text-[var(--ink)]">帖子详情</h1>
           <div className="w-9" />
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[920px] bg-white lg:my-6 lg:rounded-[18px] lg:border lg:border-[#e7e7eb] lg:shadow-[0_10px_30px_rgba(27,27,38,0.035)]">
-      <article className="px-4 pt-4 lg:px-8 lg:pt-8">
-        {/* 作者行 */}
-        <div className="flex items-center gap-2 mb-3">
-          <img
-            src={resolveAvatar(post.author?.photo)}
-            alt=""
-            className="w-10 h-10 rounded-full object-cover bg-[#F7F7F9]"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[14px] font-semibold text-[#2C2C2C]">
-                {post.author?.username ?? '杯友'}
-              </span>
-              {post.author?.level ? (
+      <main className="mx-auto w-full max-w-[1440px] lg:my-6">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,680px)_300px] lg:gap-6 xl:grid-cols-[minmax(0,720px)_320px] xl:gap-8">
+          {/* 主内容 */}
+          <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[22px]">
+            <article className="px-5 pt-5 sm:px-6 sm:pt-6">
+              {/* 作者行 */}
+              <div className="mb-3 flex items-center gap-2.5">
                 <img
-                  src={resolveImage(`/images/level/leve${post.author.level}.png`)}
+                  src={resolveAvatar(post.author?.photo)}
                   alt=""
-                  className="w-4 h-4"
+                  className="author-avatar h-9 w-9 rounded-[10px] object-cover"
+                  loading="lazy"
                 />
-              ) : null}
-              {post.author?.isAdmin && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFE8EC] text-[#FB7299]">
-                  管理员
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#929292]">
-              {plateName && <span>{plateName}</span>}
-              <span>{post.timeAgo ?? ''}</span>
-              <span>阅读 {post.readingQuantity ?? 0}</span>
-            </div>
-          </div>
-          {me === post.author?.id && (
-            <button
-              onClick={handleDeletePost}
-              className="text-[12px] text-[#DC2626] px-2 py-1 rounded-full bg-red-50"
-            >
-              删除
-            </button>
-          )}
-        </div>
-
-        {/* 标题 + 正文 */}
-        <h2 className="text-[18px] font-bold text-[#2C2C2C] leading-snug mb-3">{post.title}</h2>
-        <div
-          className="text-[15px] text-[#2C2C2C] leading-[1.8] break-words [&_img]:inline-block [&_img]:align-middle [&_img]:max-w-full [&_img]:h-auto [&_a]:text-[#007BFF] [&_a]:underline"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
-        />
-
-        {/* 图片画廊 */}
-        {images.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {images.map((img, i) => (
-              <img
-                key={i}
-                src={postImageUrl(img)}
-                alt=""
-                loading="lazy"
-                className="rounded-[12px] w-full h-36 object-cover bg-[#F7F7F9]"
-                onClick={() => setPreviewImage(postImageUrl(img))}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* 点赞/收藏 */}
-        <div className="flex items-center gap-3 mt-5">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
-              liked ? 'bg-[#FFE8EC] text-[#FB7299]' : 'bg-[#F7F7F9] text-[#666]'
-            }`}
-          >
-            <img
-              src={
-                liked
-                  ? resolveImage('/images/new3_a.png')
-                  : resolveImage('/images/new3.png')
-              }
-              alt=""
-              className="w-4 h-4"
-            />
-            {likeCount}
-          </button>
-          <button
-            onClick={handleCollect}
-            className={`flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-medium transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
-              collected ? 'bg-[#FFF3E0] text-[#FF9800]' : 'bg-[#F7F7F9] text-[#666]'
-            }`}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={collected ? '#FF9800' : 'none'} stroke={collected ? '#FF9800' : '#666'} strokeWidth="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </svg>
-            {collected ? '已收藏' : '收藏'}
-          </button>
-        </div>
-      </article>
-
-      {/* 评论区 */}
-      <section className="mt-6 px-4 pb-4 lg:px-8 lg:pb-8">
-        <h3 className="text-[15px] font-semibold text-[#2C2C2C] mb-3">
-          评论 {post.commentCount ?? comments.length}
-        </h3>
-
-        {comments.length === 0 && (
-          <p className="text-center text-[13px] text-[#929292] py-8">还没有评论，抢个沙发~</p>
-        )}
-
-        {comments.map((c) => (
-          <div key={c.id} className="py-3 border-b border-gray-50">
-            <div className="flex items-center gap-2 mb-2">
-              <img
-                src={resolveAvatar(c.author?.photo)}
-                alt=""
-                className="w-7 h-7 rounded-full object-cover bg-[#F7F7F9]"
-              />
-              <span className="text-[13px] font-medium text-[#2C2C2C]">
-                {c.author?.username ?? '杯友'}
-              </span>
-              {c.isPostAuthor && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#E8F0FF] text-[#007BFF]">
-                  楼主
-                </span>
-              )}
-              <span className="text-[11px] text-[#929292]">{c.timeString ?? ''}</span>
-              <span className="text-[11px] text-[#929292]">{c.floor}楼</span>
-              <span className="ml-auto flex items-center gap-2">
-                {me === c.author?.id && (
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="max-w-[150px] truncate text-[13px] font-semibold text-[var(--ink)]">
+                      {post.author?.username ?? '杯友'}
+                    </span>
+                    {post.author?.level ? (
+                      <img
+                        src={resolveImage(`/images/level/leve${post.author.level}.png`)}
+                        alt=""
+                        className="h-3.5 w-3.5 object-contain"
+                        loading="lazy"
+                      />
+                    ) : null}
+                    {post.author?.isAdmin && (
+                      <span className="rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--accent-ink)]">
+                        管理
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[var(--muted)]">
+                    {plateName && <span className="topic-tag !text-[9px]">{plateName}</span>}
+                    <span>{post.timeAgo ?? ''}</span>
+                    <span>阅读 {post.readingQuantity ?? 0}</span>
+                  </div>
+                </div>
+                {me === post.author?.id && (
                   <button
-                    onClick={() => handleDeleteComment(c.id)}
-                    className="text-[11px] text-[#DC2626]"
+                    onClick={handleDeletePost}
+                    className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-medium text-red-400 transition-colors hover:bg-red-100"
                   >
                     删除
                   </button>
                 )}
-                <button
-                  onClick={() => focusReply(c)}
-                  className="text-[11px] text-[#929292]"
-                >
-                  回复
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!me) {
-                      setShowLoginTip(true);
-                      return;
-                    }
-                    // 评论点赞走乐观更新（接口契约：likeComment {commentId}）
-                    try {
-                      const { likeComment } = await import('@/lib/api');
-                      if (c.isLiked) {
-                        const { unlikeComment } = await import('@/lib/api');
-                        await unlikeComment(c.id);
-                      } else {
-                        await likeComment(c.id);
-                      }
-                      setComments((prev) =>
-                        prev.map((x) =>
-                          x.id === c.id
-                            ? { ...x, isLiked: !x.isLiked, likeCount: x.likeCount + (x.isLiked ? -1 : 1) }
-                            : x
-                        )
-                      );
-                    } catch {
-                      showAlert('操作失败');
-                    }
-                  }}
-                  className={`flex items-center gap-1 text-[12px] ${c.isLiked ? 'text-[#FB7299]' : 'text-[#929292]'}`}
-                >
-                  <img
-                    src={
-                      c.isLiked
-                        ? resolveImage('/images/new3_a.png')
-                        : resolveImage('/images/new3.png')
-                    }
-                    alt=""
-                    className="w-3.5 h-3.5"
-                  />
-                  {c.likeCount > 0 ? c.likeCount : ''}
-                </button>
-              </span>
-            </div>
-
-            <p className="text-[14px] text-[#2C2C2C] leading-relaxed ml-9">{c.content}</p>
-            {c.imageUrlsArray?.length > 0 && (
-              <div className="flex gap-2 ml-9 mt-2">
-                {c.imageUrlsArray.map((img, i) => (
-                  <img
-                    key={i}
-                    src={postImageUrl(img)}
-                    alt=""
-                    className="w-20 h-20 rounded-[8px] object-cover"
-                    onClick={() => setPreviewImage(postImageUrl(img))}
-                  />
-                ))}
               </div>
-            )}
 
-            {/* 楼中楼 */}
-            {c.replies && c.replies.length > 0 && (
-              <div className="ml-9 mt-2 bg-[#F7F7F9] rounded-[12px] p-3 space-y-2">
-                {c.replies.map((r) => (
-                  <div key={r.id} className="text-[13px]">
-                    <span className="font-medium text-[#2C2C2C]">
-                      {r.author?.username ?? '杯友'}
-                    </span>
-                    <span className="text-[#929292]"> 回复：</span>
-                    <span className="text-[#2C2C2C] leading-relaxed">{r.content}</span>
+              {/* 标题 */}
+              <h2 className="mb-3 text-[17px] font-bold leading-snug tracking-[-0.01em] text-[var(--ink)]">
+                {post.title}
+              </h2>
+
+              {/* 正文 */}
+              <div
+                className="prose-content text-[14px] leading-[1.75] tracking-[-0.005em] text-[var(--ink-soft)]"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+              />
+
+              {/* 图片 */}
+              {images.length > 0 && (
+                <div className={`mt-4 grid gap-1.5 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {images.map((img, i) => (
+                    <div key={i} className={`overflow-hidden rounded-[12px] ${images.length === 1 ? 'w-fit max-w-full' : 'h-48'}`}>
+                      <img
+                        src={postImageUrl(img)}
+                        alt=""
+                        loading="lazy"
+                        className={`cursor-zoom-in ${images.length === 1 ? 'max-h-[480px] w-auto max-w-full rounded-[12px] object-contain' : 'h-full w-full rounded-[12px] object-cover'}`}
+                        onClick={() => setPreviewImage(postImageUrl(img))}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 点赞/收藏 */}
+              <div className="mt-5 flex items-center gap-2.5 pb-5">
+                <button
+                  onClick={handleLike}
+                  className={`interactive-press flex items-center gap-1 rounded-full px-4 py-1.5 text-[12px] font-medium transition-colors ${
+                    liked ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'bg-[var(--surface-subtle)] text-[var(--muted)]'
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
+                  </svg>
+                  {likeCount}
+                </button>
+                <button
+                  onClick={handleCollect}
+                  className={`interactive-press flex items-center gap-1 rounded-full px-4 py-1.5 text-[12px] font-medium transition-colors ${
+                    collected ? 'bg-orange-50 text-orange-500' : 'bg-[var(--surface-subtle)] text-[var(--muted)]'
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill={collected ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {collected ? '已收藏' : '收藏'}
+                </button>
+                <span className="ml-auto text-[11px] text-[var(--muted-light)]">
+                  {post.commentCount ?? comments.length} 条评论
+                </span>
+              </div>
+            </article>
+
+            {/* 评论区 */}
+            <section className="border-t border-[var(--line)] px-5 pb-5 pt-4 sm:px-6">
+              <h3 className="mb-3 text-[14px] font-bold text-[var(--ink)]">
+                全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
+              </h3>
+
+              {comments.length === 0 && (
+                <p className="py-6 text-center text-[13px] text-[var(--muted)]">还没有评论，抢个沙发~</p>
+              )}
+
+              <div className="space-y-0">
+                {comments.map((c) => (
+                  <div key={c.id} className="border-b border-[var(--line)] py-3.5 last:border-0">
+                    {/* 评论头 */}
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <img
+                        src={resolveAvatar(c.author?.photo)}
+                        alt=""
+                        className="h-7 w-7 rounded-[9px] object-cover ring-1 ring-[var(--line)]"
+                        loading="lazy"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-semibold text-[var(--ink)]">
+                            {c.author?.username ?? '杯友'}
+                          </span>
+                          {c.isPostAuthor && (
+                            <span className="rounded bg-blue-50 px-1 text-[9px] font-medium text-blue-500">
+                              楼主
+                            </span>
+                          )}
+                          <span className="text-[10px] text-[var(--muted-light)]">{c.floor}楼</span>
+                        </div>
+                        <span className="text-[10px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        {me === c.author?.id && (
+                          <button
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="text-[10px] text-red-400 transition-colors hover:text-red-500"
+                          >
+                            删除
+                          </button>
+                        )}
+                        <button
+                          onClick={() => focusReply(c)}
+                          className="text-[10px] text-[var(--muted)] transition-colors hover:text-[var(--ink-soft)]"
+                        >
+                          回复
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!me) {
+                              setShowLoginTip(true);
+                              return;
+                            }
+                            try {
+                              const { likeComment } = await import('@/lib/api');
+                              if (c.isLiked) {
+                                const { unlikeComment } = await import('@/lib/api');
+                                await unlikeComment(c.id);
+                              } else {
+                                await likeComment(c.id);
+                              }
+                              setComments((prev) =>
+                                prev.map((x) =>
+                                  x.id === c.id
+                                    ? { ...x, isLiked: !x.isLiked, likeCount: x.likeCount + (x.isLiked ? -1 : 1) }
+                                    : x
+                                )
+                              );
+                            } catch {
+                              showAlert('操作失败');
+                            }
+                          }}
+                          className={`flex items-center gap-0.5 text-[11px] transition-colors ${c.isLiked ? 'text-[var(--accent)]' : 'text-[var(--muted-light)]'}`}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill={c.isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                            <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
+                          </svg>
+                          {c.likeCount > 0 ? c.likeCount : ''}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 评论内容 */}
+                    <p className="text-[13px] leading-[1.7] text-[var(--ink-soft)]">{c.content}</p>
+
+                    {/* 评论图片 */}
+                    {c.imageUrlsArray?.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {c.imageUrlsArray.map((img, i) => (
+                          <img
+                            key={i}
+                            src={postImageUrl(img)}
+                            alt=""
+                            className="h-16 w-16 cursor-zoom-in rounded-[8px] object-cover"
+                            onClick={() => setPreviewImage(postImageUrl(img))}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 楼中楼 */}
+                    {c.replies && c.replies.length > 0 && (
+                      <div className="mt-2 space-y-1.5 rounded-[10px] bg-[var(--surface-subtle)] p-2.5">
+                        {c.replies.map((r) => (
+                          <div key={r.id} className="text-[12px]">
+                            <span className="font-semibold text-[var(--ink)]">
+                              {r.author?.username ?? '杯友'}
+                            </span>
+                            <span className="text-[var(--muted-light)]">：</span>
+                            <span className="leading-relaxed text-[var(--ink-soft)]">{r.content}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
+            </section>
           </div>
-        ))}
-      </section>
+
+          {/* 右侧推荐 */}
+          <aside className="sticky top-[92px] hidden space-y-3 xl:block">
+            <section className="rail-panel p-4">
+              <div className="rail-kicker">更多推荐</div>
+              <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">同类热门</h2>
+              <div className="mt-3 space-y-2.5">
+                {cachedPosts.length > 0 ? cachedPosts.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/messageDetail/${p.id}`)}
+                    className="right-feed-item group flex w-full items-start gap-2 text-left"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
+                        {p.title}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-[var(--muted)]">
+                        {p.commentCount ?? 0} 条回复 · {p.timeAgo ?? '刚刚'}
+                      </span>
+                    </span>
+                  </button>
+                )) : (
+                  <p className="text-[11px] text-[var(--muted)]">暂无更多推荐</p>
+                )}
+              </div>
+            </section>
+          </aside>
+        </div>
       </main>
 
       {/* 图片预览 */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center"
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-sm"
           onClick={() => setPreviewImage(null)}
         >
-          <img src={previewImage} alt="" className="max-w-full max-h-full object-contain" />
-          <button className="absolute top-6 right-6 text-white text-[24px]" aria-label="关闭">
+          <img src={previewImage} alt="" className="max-h-[90vh] max-w-[90vw] rounded-[12px] object-contain shadow-2xl" />
+          <button className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[22px] text-white backdrop-blur transition-colors hover:bg-white/20" aria-label="关闭">
             ×
           </button>
         </div>
       )}
 
       {/* 底部评论输入栏 */}
-      <div className="fixed bottom-0 left-1/2 z-40 flex w-full max-w-[920px] -translate-x-1/2 items-end gap-2 border-t border-gray-100 bg-white px-3 py-2.5 lg:bottom-5 lg:rounded-[16px] lg:border lg:border-[#e7e7eb] lg:px-4 lg:py-3 lg:shadow-[0_10px_30px_rgba(27,27,38,0.1)]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-end gap-2 border-t border-[var(--line)] bg-white px-3 py-2 sm:left-[calc(50%-340px+16px)] sm:right-auto sm:w-[calc(680px-32px)] lg:left-[calc(50%-360px+16px)] lg:w-[calc(720px-32px)] xl:left-[calc((1440px-320px-8px)/2-720px/2+16px)] xl:w-[calc(720px-32px)]">
         <div className="flex-1">
           {replyingTo && (
-            <div className="text-[11px] text-[#929292] mb-1 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between text-[10px] text-[var(--muted)]">
               <span>回复 @{replyingTo.username}</span>
-              <button onClick={() => setReplyingTo(null)} className="text-[#FB7299]">
+              <button onClick={() => setReplyingTo(null)} className="text-[var(--accent)]">
                 取消
               </button>
             </div>
@@ -474,18 +517,18 @@ export default function MessageDetailPage() {
             onChange={(e) => setCommentText(e.target.value)}
             placeholder={replyingTo ? '写下你的回复...' : '说点什么吧~'}
             rows={1}
-            className="w-full text-[14px] bg-[#F7F7F9] rounded-[16px] px-4 py-2.5 outline-none resize-none max-h-28"
+            className="w-full max-h-28 resize-none rounded-[14px] border border-[var(--line)] bg-[var(--surface-subtle)] px-3.5 py-2 text-[13px] outline-none transition-colors focus:border-[var(--accent)] focus:bg-white"
           />
         </div>
         <button
           onClick={submitComment}
           disabled={sending}
-          className="interactive-press rounded-full bg-[#FB7299] px-5 py-2.5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[#ee628b] disabled:cursor-not-allowed disabled:opacity-50"
+          className="interactive-press shrink-0 rounded-full bg-[var(--accent)] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending ? '发送中' : '发送'}
         </button>
       </div>
-      <div className="h-16" />
+      <div className="h-14" />
 
       <LoginTipModal open={showLoginTip} onClose={() => setShowLoginTip(false)} />
     </div>

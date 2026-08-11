@@ -25,7 +25,7 @@ export default function DesktopRightRail() {
   };
 
   return (
-    <aside className="sticky top-[92px] hidden space-y-3.5 xl:block">
+    <aside className="sticky top-[92px] hidden space-y-4 xl:block">
       <section className="rail-panel p-4">
         <div className="flex items-end justify-between">
           <div>
@@ -34,7 +34,7 @@ export default function DesktopRightRail() {
           </div>
           <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[var(--muted)]"><span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />实时</span>
         </div>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-3">
           {recentPosts.length > 0 ? recentPosts.map((post, index) => (
               <button key={post.id} onClick={() => router.push(`/messageDetail/${post.id}`)} className="right-feed-item group flex w-full items-start gap-2.5 text-left">
               <span className="mt-0.5 min-w-[19px] text-[10px] font-bold tracking-[0.1em] text-[var(--muted-light)] group-hover:text-[var(--accent)]">{String(index + 1).padStart(2, '0')}</span>
@@ -52,7 +52,7 @@ export default function DesktopRightRail() {
       <section className="rail-panel p-4">
         <div className="rail-kicker">社区导航</div>
         <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">浏览板块</h2>
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-0.5">
           {PLATES.map((item) => {
             const isActive = item.id === plate;
             return (

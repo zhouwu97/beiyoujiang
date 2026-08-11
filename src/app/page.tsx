@@ -31,8 +31,8 @@ export default function HomePage() {
     <div className="page-shell">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1480px] px-3 py-5 sm:px-6 lg:px-7 lg:py-6">
-        <div className="main-grid grid min-w-0 gap-5 xl:grid-cols-[200px_minmax(0,1fr)_268px] xl:gap-5 2xl:grid-cols-[216px_minmax(0,1fr)_284px] 2xl:gap-6">
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <div className="main-grid grid min-w-0 gap-6 xl:grid-cols-[200px_minmax(0,1fr)_280px] xl:gap-6 2xl:grid-cols-[220px_minmax(0,1fr)_300px] 2xl:gap-8">
           <DesktopSidebar />
 
           <section className="feed-column">

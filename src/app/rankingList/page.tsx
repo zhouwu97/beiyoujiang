@@ -74,9 +74,8 @@ export default function RankingListPage() {
   // Tab 变化 → 重置列表
   useEffect(() => {
     pageRef.current = 1;
-    // 由 effect 启动请求，fetchToys 内部统一管理 loading 状态。
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchToys(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, classify, fetchToys]);
 
   // 无限滚动
@@ -100,132 +99,140 @@ export default function RankingListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F9]">
+    <div className="page-shell min-h-screen">
       {/* 顶栏 */}
-      <header className="sticky top-0 z-40 border-b border-[#e8e8ec] bg-white">
-        <div className="mx-auto flex h-14 w-full max-w-[1120px] items-center px-4 sm:px-6 lg:h-[72px] lg:px-0">
-          <button onClick={() => router.back()} className="p-2" aria-label="返回">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2C2C2C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <header className="rank-header">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1120px] items-center px-4 sm:px-6 lg:min-h-[68px] lg:px-8">
+          <button onClick={() => router.back()} className="icon-button" aria-label="返回">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
           </button>
-          <h1 className="flex-1 text-center text-[16px] font-semibold text-[#2C2C2C]">玩具榜单</h1>
+          <h1 className="flex-1 text-center text-[15px] font-semibold text-[var(--ink)]">玩具榜单</h1>
           <div className="w-9" />
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1120px] pb-12 lg:my-6 lg:rounded-[18px] lg:border lg:border-[#e7e7eb] lg:bg-white lg:shadow-[0_10px_30px_rgba(27,27,38,0.035)]">
-      {/* 刺激等级 Tab（横向滚动） */}
-      <div className="relative border-b border-gray-50 lg:rounded-t-[18px]">
-        <div
-          id="type-tabs"
-          className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-hide"
-        >
-          {TYPE_TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setType(t.id)}
-              className={`px-4 py-1.5 rounded-full text-[13px] whitespace-nowrap transition-colors ${
-                type === t.id ? 'bg-[#FFAFBD] text-white' : 'bg-[#F7F7F9] text-[#666]'
-              }`}
+      <main className="mx-auto w-full max-w-[1120px] pb-12 lg:my-6">
+        <div className="rank-panel overflow-hidden lg:rounded-[22px]">
+          {/* 刺激等级 Tab（横向滚动） */}
+          <div className="relative border-b border-[var(--line)]">
+            <div
+              id="type-tabs"
+              className="flex items-center gap-2.5 px-4 py-3.5 scrollbar-hide"
             >
-              {t.label}
+              {TYPE_TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setType(t.id)}
+                  className="rank-tab"
+                  data-active={type === t.id}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => scrollTabs(-1)}
+              className="absolute left-0 top-1/2 flex h-full -translate-y-1/2 items-center justify-center bg-gradient-to-r from-white via-white/90 to-transparent px-2 text-[var(--muted)] lg:hidden"
+              aria-label="左滑"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m15 18-6-6 6-6" /></svg>
             </button>
-          ))}
-        </div>
-        <button
-          onClick={() => scrollTabs(-1)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-8 bg-gradient-to-r from-white flex items-center justify-center text-[#929292]"
-          aria-label="左滑"
-        >
-          ‹
-        </button>
-        <button
-          onClick={() => scrollTabs(1)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-8 bg-gradient-to-l from-white flex items-center justify-center text-[#929292]"
-          aria-label="右滑"
-        >
-          ›
-        </button>
-      </div>
+            <button
+              onClick={() => scrollTabs(1)}
+              className="absolute right-0 top-1/2 flex h-full -translate-y-1/2 items-center justify-center bg-gradient-to-l from-white via-white/90 to-transparent px-2 text-[var(--muted)] lg:hidden"
+              aria-label="右滑"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </div>
 
-      {/* 分类 Tab */}
-      <div className="flex items-center gap-2 px-4 py-3">
-        {CLASSIFY_TABS.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setClassify(c.id)}
-            className={`px-3 py-1 rounded-[10px] text-[12px] transition-colors ${
-              classify === c.id ? 'bg-[#FFE8EC] text-[#FB7299] font-medium' : 'text-[#929292]'
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+          {/* 分类 Tab */}
+          <div className="flex items-center gap-2 px-4 py-3">
+            {CLASSIFY_TABS.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setClassify(c.id)}
+                className="rank-subtab"
+                data-active={classify === c.id}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
 
-      {/* 周榜冠军 */}
-      {weeklyTop && (
-        <div className="px-4 mb-3">
-          <div className="relative rounded-[20px] overflow-hidden">
-            <img
-              src={toyImage(weeklyTop.coverUrl?.[0])}
-              alt={weeklyTop.name}
-              className="w-full h-36 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
-              <div>
-                <p className="text-[11px] text-yellow-300 mb-1">⭐ 本周冠军</p>
-                <p className="text-[16px] font-bold text-white">{weeklyTop.name}</p>
-                <p className="text-[11px] text-white/70 mt-0.5">
-                  评分 {weeklyTop.rating ?? '-'} · {weeklyTop.reviewCount ?? 0} 篇测评
-                </p>
+          {/* 周榜冠军 */}
+          {weeklyTop && (
+            <div className="px-4 pb-3 cursor-pointer" onClick={() => router.push(`/bang/${weeklyTop.id}`)}>
+              <div className="rank-champion">
+                <img
+                  src={toyImage(weeklyTop.coverUrl?.[0])}
+                  alt={weeklyTop.name}
+                />
+                <div className="rank-champion-overlay">
+                  <div>
+                    <span className="rank-champion-badge">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      本周冠军
+                    </span>
+                    <p className="mt-1.5 text-[17px] font-bold text-white">{weeklyTop.name}</p>
+                    <p className="mt-0.5 text-[11px] text-white/70">
+                      评分 {weeklyTop.rating ?? '-'} · {weeklyTop.reviewCount ?? 0} 篇测评
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
+
+          {/* 榜单列表 */}
+          <div className="px-4 pb-6">
+            {toys.map((t, i) => (
+              <div
+                key={t.id}
+                className="rank-item"
+                onClick={() => router.push(`/bang/${t.id}`)}
+              >
+                {/* 排名 */}
+                <span
+                  className={`rank-num ${
+                    i === 0 ? 'rank-num--gold' : i === 1 ? 'rank-num--silver' : i === 2 ? 'rank-num--bronze' : 'rank-num--normal'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <img
+                  src={toyImage(t.coverUrl?.[0])}
+                  alt={t.name}
+                  loading="lazy"
+                  className="rank-thumb"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="rank-name truncate">{t.name}</p>
+                  <p className="rank-meta">{t.merchant ?? ''}</p>
+                  <p className="rank-tags truncate">{t.tags ?? ''}</p>
+                </div>
+                <div className="rank-score">
+                  <p className="rank-score-value">{t.rating ?? '-'}</p>
+                  <p className="rank-score-label">评分</p>
+                  <p className="rank-score-label">{t.reviewCount ?? 0} 测评</p>
+                </div>
+              </div>
+            ))}
+
+            <div ref={sentinelRef} className="py-6 text-center">
+              {loading ? (
+                <span className="end-marker">正在加载更多</span>
+              ) : hasMore ? (
+                <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
+              ) : (
+                <span className="end-marker">已经到底啦</span>
+              )}
+            </div>
           </div>
         </div>
-      )}
-
-      {/* 榜单列表 */}
-      <div className="px-4 pb-6">
-        {toys.map((t, i) => (
-          <div
-            key={t.id}
-            className="flex items-center gap-3 py-3 border-b border-gray-50 cursor-pointer active:bg-[#FDF5F6]"
-            onClick={() => t.shopLink && window.open(t.shopLink, '_blank')}
-          >
-            {/* 排名 */}
-            <span
-              className={`w-7 text-center text-[16px] font-bold ${
-                i === 0 ? 'text-[#FF9800]' : i === 1 ? 'text-[#929292]' : i === 2 ? 'text-[#C98A5A]' : 'text-[#C4C4C4]'
-              }`}
-            >
-              {i + 1}
-            </span>
-            <img
-              src={toyImage(t.coverUrl?.[0])}
-              alt={t.name}
-              loading="lazy"
-              className="w-14 h-14 rounded-[12px] object-cover bg-[#F7F7F9]"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-[#2C2C2C] truncate">{t.name}</p>
-              <p className="text-[11px] text-[#929292] mt-0.5">{t.merchant ?? ''}</p>
-              <p className="text-[11px] text-[#FB7299] mt-0.5 truncate">{t.tags ?? ''}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[15px] font-bold text-[#FF9800]">{t.rating ?? '-'}</p>
-              <p className="text-[10px] text-[#929292]">评分</p>
-              <p className="text-[10px] text-[#929292] mt-0.5">{t.reviewCount ?? 0} 测评</p>
-            </div>
-          </div>
-        ))}
-
-        <div ref={sentinelRef} className="py-4 text-center text-[12px] text-[#929292]">
-          {loading ? '加载中...' : hasMore ? '' : '已经到底啦~'}
-        </div>
-      </div>
       </main>
 
       <style>{`

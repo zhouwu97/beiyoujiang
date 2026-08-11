@@ -139,7 +139,7 @@ function PostCard({ post }: PostCardProps) {
                 src={resolvePostImage(image)}
                 alt=""
                 loading="lazy"
-                className="max-h-full max-w-full object-contain"
+                className={images.length === 1 ? 'post-img-single' : 'post-img-grid'}
               />
             </div>
           ))}

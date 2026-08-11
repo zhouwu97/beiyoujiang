@@ -18,6 +18,8 @@ import type {
   GetAllPostResponse,
   MessageItem,
   Toy,
+  ToyDetail,
+  ToyReview,
 } from './types';
 import { normalizeImageList } from './utils';
 import { getToken, getUserId } from '@/stores/auth';
@@ -327,6 +329,48 @@ async function getAllToy(
   };
 }
 
+/**
+ * 获取玩具详情
+ * POST /api/toy/getToy { toyId }
+ */
+async function getToy(toyId: number): Promise<ToyDetail> {
+  const res = await request<ApiResponse<ToyDetail>>('toy/getToy', 'POST', { toyId });
+  return res.data;
+}
+
+/**
+ * 获取玩具全部评价
+ * POST /api/toy/getToyAllReview { toyId }
+ */
+async function getToyAllReview(toyId: number): Promise<ToyReview[]> {
+  const res = await request<ApiResponse<ToyReview[]>>('toy/getToyAllReview', 'POST', { toyId });
+  return res.data ?? [];
+}
+
+/**
+ * 想冲/取消想冲玩具
+ * POST /api/toy/likeToy { toyId }
+ */
+async function wantToy(toyId: number): Promise<void> {
+  await request('toy/likeToy', 'POST', { toyId });
+}
+
+/**
+ * 买过/取消买过玩具
+ * POST /api/toy/buyToy { toyId }
+ */
+async function buyToy(toyId: number): Promise<void> {
+  await request('toy/buyToy', 'POST', { toyId });
+}
+
+/**
+ * 给玩具评价点赞
+ * POST /api/toy/likeToyReview { reviewId }
+ */
+async function likeToyReview(reviewId: number): Promise<void> {
+  await request('toy/likeToyReview', 'POST', { reviewId });
+}
+
 /* ==================== 认证 ==================== */
 
 /**
@@ -436,6 +480,11 @@ export {
   getAllKeywords,
   searchToyPost,
   getAllToy,
+  getToy,
+  getToyAllReview,
+  wantToy,
+  buyToy,
+  likeToyReview,
   addTourist,
   login,
   register,
