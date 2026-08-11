@@ -53,8 +53,6 @@ export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLik
           <ToyReviewItem key={review.id} review={review} onLike={onLike} />
         ))
       )}
-
-      {reviews.length > 0 && <div className={styles.more}>查看全部 {total} 条测评</div>}
     </section>
   );
 }

@@ -579,17 +579,6 @@
   font-size: 12px;
 }
 
-.more {
-  min-height: 50px;
-  display: grid;
-  place-items: center;
-  color: var(--accent-ink);
-  font-size: 11px;
-  font-weight: 700;
-  background: #fcfbfa;
-  border-top: 1px solid var(--line);
-}
-
 /* ---- 右侧（相似条目 + 条目信息），与左侧同属一个容器 ---- */
 .side {
   min-width: 0;
@@ -860,9 +849,21 @@
     border-radius: 22px;
   }
 
+  /* 平板：Reviews 在上，Side 转为两列（相似条目 | 条目信息），与参考 HTML 一致 */
   .side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
     border-left: 0;
     border-top: 1px solid var(--line);
+  }
+
+  .sideCard {
+    border-bottom: 0;
+  }
+
+  .sideCardFirst {
+    border-right: 1px solid var(--line);
   }
 }
 
@@ -919,9 +920,9 @@
     grid-template-columns: 78px 1fr;
   }
 
+  /* 参考 HTML：移动端两个主操作按钮仍并排，不堆叠 */
   .actions {
     margin-top: 10px;
-    grid-template-columns: 1fr;
   }
 
   .lower {
@@ -942,6 +943,16 @@
   .reviewFoot,
   .reviewImgs {
     margin-left: 0;
+  }
+
+  /* 回到单列：相似条目在上、条目信息在下 */
+  .side {
+    grid-template-columns: 1fr;
+  }
+
+  .sideCardFirst {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 
   .relatedItem {

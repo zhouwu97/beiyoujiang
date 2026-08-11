@@ -24,7 +24,9 @@ export default function ToyGallery({ images, name }: ToyGalleryProps) {
       <div className={styles.galleryTop}>
         <span>PRODUCT GALLERY</span>
         <span className="tabular-nums">
-          {String(total > 0 ? index + 1 : 0).padStart(2, '0')} / {String(Math.max(total, 1)).padStart(2, '0')}
+          {total > 0
+            ? `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`
+            : '—'}
         </span>
       </div>
 
