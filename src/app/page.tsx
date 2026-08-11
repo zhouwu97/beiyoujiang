@@ -1,69 +1,99 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Header from '@/components/layout/Header';
+import BottomNav from '@/components/layout/BottomNav';
+import Banner from '@/components/home/Banner';
+import PostList from '@/components/post/PostList';
+import DesktopSidebar from '@/components/layout/DesktopSidebar';
+import DesktopRightRail from '@/components/layout/DesktopRightRail';
+import { useForumStore, setSort, reset } from '@/stores/forum';
+import { SortOrder } from '@/lib/types';
+
+/**
+ * 首页：宽屏展开三栏，中等桌面保留内容与信息栏，较窄桌面优先保证主内容完整展示。
+ */
+export default function HomePage() {
+  const sort = useForumStore((s) => s.sort);
+
+  const handleSortChange = (s: SortOrder) => {
+    if (s === sort) return;
+    setSort(s);
+    reset();
+    window.scrollTo({ top: 0 });
+  };
+
+  const handleRefresh = () => {
+    reset();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    <div className="page-shell">
+      <Header />
+
+      <main className="mx-auto w-full max-w-[1480px] px-3 py-5 sm:px-6 lg:px-7 lg:py-6">
+        <div className="main-grid grid min-w-0 gap-5 xl:grid-cols-[200px_minmax(0,1fr)_268px] xl:gap-5 2xl:grid-cols-[216px_minmax(0,1fr)_284px] 2xl:gap-6">
+          <DesktopSidebar />
+
+          <section className="feed-column">
+            <Banner />
+
+            <div className="feed-toolbar">
+              <div className="feed-tabs" role="tablist" aria-label="帖子排序">
+                <button
+                  onClick={() => handleSortChange(SortOrder.ByTime)}
+                  className="feed-tab"
+                  data-active={sort === SortOrder.ByTime}
+                  role="tab"
+                  aria-selected={sort === SortOrder.ByTime}
+                >
+                  发布
+                </button>
+                <button
+                  onClick={() => handleSortChange(SortOrder.ByReply)}
+                  className="feed-tab"
+                  data-active={sort === SortOrder.ByReply}
+                  role="tab"
+                  aria-selected={sort === SortOrder.ByReply}
+                >
+                  回复
+                </button>
+              </div>
+
+              <button
+                onClick={handleRefresh}
+                className="quiet-action hidden lg:inline-flex"
+                aria-label="刷新帖子"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M23 4v6h-6" />
+                  <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
+                </svg>
+                刷新
+              </button>
+            </div>
+
+            <PostList />
+          </section>
+
+          <DesktopRightRail />
         </div>
       </main>
+
+      <div className="fixed bottom-[88px] right-4 z-30 flex lg:hidden">
+        <button
+          onClick={handleRefresh}
+          aria-label="刷新"
+          className="interactive-press flex h-10 w-10 items-center justify-center rounded-[13px] border border-[var(--line)] bg-white/90 text-[var(--ink-soft)] shadow-[0_10px_24px_rgba(37,27,31,0.1)] backdrop-blur"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6" />
+            <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
+          </svg>
+        </button>
+      </div>
+
+      <BottomNav />
     </div>
   );
 }

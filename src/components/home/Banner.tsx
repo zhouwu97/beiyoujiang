@@ -1,0 +1,123 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { resolveImage } from '@/lib/utils';
+
+const BANNERS = [
+  { id: 1, img: '/images/appbackground.webp', postId: 2321, label: '社区精选' },
+  { id: 2, img: '/images/xiun.webp', postId: 448, label: '体验分享' },
+];
+
+function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={direction === 'left' ? 'm15 18-6-6 6-6' : 'm9 18 6-6-6-6'} />
+    </svg>
+  );
+}
+
+/**
+ * 顶部 Banner 轮播：触摸滑动 + 自动轮播 + 可见的前后切换控制。
+ * 轮播移动使用 transform，避免内容切换触发布局重排。
+ */
+export default function Banner() {
+  const router = useRouter();
+  const [current, setCurrent] = useState(0);
+  const touchStartX = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const goTo = useCallback((index: number) => {
+    setCurrent((index + BANNERS.length) % BANNERS.length);
+  }, []);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setCurrent((value) => (value + 1) % BANNERS.length);
+    }, 15000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const handleTouchStart = (event: React.TouchEvent) => {
+    touchStartX.current = event.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    const delta = event.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 50) goTo(delta < 0 ? current + 1 : current - 1);
+  };
+
+  return (
+    <div
+      className="hero-banner"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      aria-roledescription="轮播"
+      aria-label="社区精选内容"
+    >
+      <div className="banner-meta" aria-hidden="true">
+        <span className="banner-meta__dot" />
+        社区精选
+      </div>
+
+      <div className="banner-track" style={{ transform: `translateX(-${current * 100}%)` }}>
+        {BANNERS.map((banner) => (
+          <button
+            key={banner.id}
+            type="button"
+            aria-label={`查看${banner.label}`}
+            className="banner-slide text-left"
+            onClick={() => router.push(`/messageDetail/${banner.postId}`)}
+          >
+            <img
+              src={resolveImage(banner.img)}
+              alt={banner.label}
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="banner-control banner-control--prev"
+        onClick={() => goTo(current - 1)}
+        aria-label="上一张"
+      >
+        <ChevronIcon direction="left" />
+      </button>
+      <button
+        type="button"
+        className="banner-control banner-control--next"
+        onClick={() => goTo(current + 1)}
+        aria-label="下一张"
+      >
+        <ChevronIcon direction="right" />
+      </button>
+
+      <div className="banner-dots" aria-label="轮播位置">
+        {BANNERS.map((banner, index) => (
+          <button
+            key={banner.id}
+            type="button"
+            className="banner-dot"
+            data-active={index === current}
+            onClick={() => goTo(index)}
+            aria-label={`第${index + 1}张`}
+            aria-current={index === current ? 'true' : undefined}
+          />
+        ))}
+      </div>
+
+      <div className="banner-index" aria-hidden="true">
+        <span>{String(current + 1).padStart(2, '0')}</span>
+        <i />
+        <span>{String(BANNERS.length).padStart(2, '0')}</span>
+      </div>
+    </div>
+  );
+}
