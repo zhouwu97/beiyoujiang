@@ -1,82 +1,134 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { Toy } from '@/lib/types';
 import { getAllToy } from '@/lib/api';
-import { resolveImage } from '@/lib/utils';
+import Header from '@/components/layout/Header';
+import BottomNav from '@/components/layout/BottomNav';
+import DesktopSidebar from '@/components/layout/DesktopSidebar';
+import DesktopPageShell from '@/components/layout/DesktopPageShell';
+import RankingFilters from '@/components/ranking/RankingFilters';
+import RankingTopThree from '@/components/ranking/RankingTopThree';
+import RankingList from '@/components/ranking/RankingList';
+import RankingRightRail from '@/components/ranking/RankingRightRail';
+import RankingSkeleton from '@/components/ranking/RankingSkeleton';
+import styles from '@/components/ranking/ranking.module.css';
 
-/** 玩具封面完整 URL */
-function toyImage(url: string | null | undefined): string {
-  if (!url) return resolveImage('/images/homepage.webp');
-  if (url.startsWith('http')) return resolveImage(url);
-  if (url.startsWith('/')) return resolveImage(url);
-  return resolveImage(`/ToyImg/${url}`);
+const PAGE_SIZE = 10;
+
+function StateCard({
+  title,
+  hint,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  hint: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-[18px] border border-[var(--line)] bg-white/90 px-6 py-12 text-center">
+      <div>
+        <p className="text-[14px] font-bold text-[var(--ink)]">{title}</p>
+        <p className="mt-1.5 text-[12px] text-[var(--muted)]">{hint}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onAction}
+        className="interactive-press btn-gradient px-5 py-2.5 text-[12px]"
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
 }
 
-/** 榜单 Tab（type 参数与官方一致） */
-const TYPE_TABS = [
-  { id: '', label: '综合热榜' },
-  { id: 'ENTRY', label: '慢玩入门' },
-  { id: 'ADVANCED', label: '进阶训练' },
-  { id: 'HIGH', label: '超高刺激' },
-  { id: 'EXTREME', label: '榨汁玩具' },
-];
-
-/** 分类（classify 参数） */
-const CLASSIFY_TABS = [
-  { id: '', label: '全部' },
-  { id: 'CUP', label: '杯子' },
-  { id: 'LARGE_MOLD', label: '大型倒模' },
-  { id: 'HALF_BODY', label: '半身' },
-];
-
 /**
- * 榜单页：玩具热度排行（刺激等级 Tab + 分类 Tab + 无限滚动）
+ * 榜单页：共享 Header + DesktopPageShell，组件拆分，请求状态收敛到页面。
+ * 排名严格采用 API 返回顺序，前端绝不按 rating 重排。
  */
 export default function RankingListPage() {
-  const router = useRouter();
   const [type, setType] = useState('');
   const [classify, setClassify] = useState('');
   const [toys, setToys] = useState<Toy[]>([]);
   const [weeklyTop, setWeeklyTop] = useState<Toy | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState(false);
   const pageRef = useRef(1);
-  const loadingRef = useRef(false);
+  const requestVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const fetchToys = useCallback(async (page: number, resetList: boolean) => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    setLoading(true);
-    try {
-      const res = await getAllToy(type, classify, 0, page, 10);
-      if (resetList) {
+  // 拉取第一页：重置列表 + 请求（requestVersion 丢弃过期响应）。
+  // 仅由事件处理器调用，避免在 effect 内同步 setState。
+  const fetchFirstPage = (nextType: string, nextClassify: string) => {
+    requestVersionRef.current += 1;
+    const version = requestVersionRef.current;
+    setFilterLoading(true);
+    setLoadingMore(false);
+    setError(false);
+    setToys([]);
+    setWeeklyTop(null);
+    setHasMore(false);
+    pageRef.current = 1;
+
+    getAllToy(nextType, nextClassify, 0, 1, PAGE_SIZE)
+      .then((res) => {
+        if (version !== requestVersionRef.current) return;
         setWeeklyTop(res.weeklyTop);
         setToys(res.list);
-      } else {
-        setToys((prev) => {
-          const seen = new Set(prev.map((t) => t.id));
-          return [...prev, ...res.list.filter((t) => !seen.has(t.id))];
-        });
-      }
-      setHasMore(res.pagination.hasMore);
-      pageRef.current = page;
-    } catch {
-      // ignore
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
-    }
-  }, [type, classify]);
+        setHasMore(res.pagination.hasMore);
+      })
+      .catch(() => {
+        if (version !== requestVersionRef.current) return;
+        setError(true);
+      })
+      .finally(() => {
+        if (version === requestVersionRef.current) setFilterLoading(false);
+      });
+  };
 
-  // Tab 变化 → 重置列表
+  // 首次进入：拉取综合热榜第一页（仅挂载一次，setState 均在异步回调内）
   useEffect(() => {
-    pageRef.current = 1;
-    fetchToys(1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, classify, fetchToys]);
+    const version = requestVersionRef.current;
+    getAllToy('', '', 0, 1, PAGE_SIZE)
+      .then((res) => {
+        if (version !== requestVersionRef.current) return;
+        setWeeklyTop(res.weeklyTop);
+        setToys(res.list);
+        setHasMore(res.pagination.hasMore);
+      })
+      .catch(() => {
+        if (version !== requestVersionRef.current) return;
+        setError(true);
+      })
+      .finally(() => {
+        if (version === requestVersionRef.current) setFilterLoading(false);
+      });
+  }, []);
+
+  // 加载更多（与首屏/筛选请求独立加锁）
+  const loadMore = useCallback(async () => {
+    if (filterLoading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const version = requestVersionRef.current;
+    try {
+      const res = await getAllToy(type, classify, 0, pageRef.current + 1, PAGE_SIZE);
+      if (version !== requestVersionRef.current) return;
+      setToys((prev) => {
+        const seen = new Set(prev.map((t) => t.id));
+        return [...prev, ...res.list.filter((t) => !seen.has(t.id))];
+      });
+      setHasMore(res.pagination.hasMore);
+      pageRef.current += 1;
+    } catch {
+      // 保留 hasMore，允许下次滚动重试
+    } finally {
+      if (version === requestVersionRef.current) setLoadingMore(false);
+    }
+  }, [type, classify, filterLoading, loadingMore, hasMore]);
 
   // 无限滚动
   useEffect(() => {
@@ -84,161 +136,113 @@ export default function RankingListPage() {
     if (!sentinel) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingRef.current && hasMore) {
-          fetchToys(pageRef.current + 1, false);
-        }
+        if (entries[0].isIntersecting) loadMore();
       },
       { rootMargin: '300px 0px' }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, fetchToys]);
+  }, [loadMore]);
 
-  const scrollTabs = (dir: number) => {
-    document.getElementById('type-tabs')?.scrollBy({ left: dir * 120, behavior: 'smooth' });
+  const handleTypeChange = (value: string) => {
+    if (value === type) return;
+    setType(value);
+    fetchFirstPage(value, classify);
   };
+
+  const handleClassifyChange = (value: string) => {
+    if (value === classify) return;
+    setClassify(value);
+    fetchFirstPage(type, value);
+  };
+
+  const resetFilter = () => {
+    setType('');
+    setClassify('');
+    fetchFirstPage('', '');
+  };
+
+  const handleRetry = () => {
+    fetchFirstPage(type, classify);
+  };
+
+  const showList = !filterLoading && !error && toys.length > 0;
 
   return (
     <div className="page-shell min-h-screen">
-      {/* 顶栏 */}
-      <header className="rank-header">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1120px] items-center px-4 sm:px-6 lg:min-h-[68px] lg:px-8">
-          <button onClick={() => router.back()} className="icon-button" aria-label="返回">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
-          <h1 className="flex-1 text-center text-[15px] font-semibold text-[var(--ink)]">玩具榜单</h1>
-          <div className="w-9" />
-        </div>
-      </header>
+      <Header />
 
-      <main className="mx-auto w-full max-w-[1120px] pb-12 lg:my-6">
-        <div className="rank-panel overflow-hidden lg:rounded-[22px]">
-          {/* 刺激等级 Tab（横向滚动） */}
-          <div className="relative border-b border-[var(--line)]">
-            <div
-              id="type-tabs"
-              className="flex items-center gap-2.5 px-4 py-3.5 scrollbar-hide"
-            >
-              {TYPE_TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setType(t.id)}
-                  className="rank-tab"
-                  data-active={type === t.id}
-                >
-                  {t.label}
-                </button>
-              ))}
+      <DesktopPageShell
+        left={<DesktopSidebar />}
+        main={
+          <div className="min-w-0">
+            <div className={`${styles.pageTitle} mb-4`}>
+              <h1>玩具榜单</h1>
+              <p>排名按站点榜单接口返回顺序</p>
             </div>
-            <button
-              onClick={() => scrollTabs(-1)}
-              className="absolute left-0 top-1/2 flex h-full -translate-y-1/2 items-center justify-center bg-gradient-to-r from-white via-white/90 to-transparent px-2 text-[var(--muted)] lg:hidden"
-              aria-label="左滑"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <button
-              onClick={() => scrollTabs(1)}
-              className="absolute right-0 top-1/2 flex h-full -translate-y-1/2 items-center justify-center bg-gradient-to-l from-white via-white/90 to-transparent px-2 text-[var(--muted)] lg:hidden"
-              aria-label="右滑"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6" /></svg>
-            </button>
-          </div>
 
-          {/* 分类 Tab */}
-          <div className="flex items-center gap-2 px-4 py-3">
-            {CLASSIFY_TABS.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setClassify(c.id)}
-                className="rank-subtab"
-                data-active={classify === c.id}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
+            {/* 筛选条为高列的直属子元素，sticky 才能整列跟随 */}
+            <RankingFilters
+              type={type}
+              classify={classify}
+              onTypeChange={handleTypeChange}
+              onClassifyChange={handleClassifyChange}
+            />
 
-          {/* 周榜冠军 */}
-          {weeklyTop && (
-            <div className="px-4 pb-3 cursor-pointer" onClick={() => router.push(`/bang/${weeklyTop.id}`)}>
-              <div className="rank-champion">
-                <img
-                  src={toyImage(weeklyTop.coverUrl?.[0])}
-                  alt={weeklyTop.name}
+            <div className="mt-5">
+              {filterLoading ? (
+                <RankingSkeleton />
+              ) : error ? (
+                <StateCard
+                  title="榜单加载失败"
+                  hint="可能是网络波动，筛选与页面导航仍可正常使用。"
+                  actionLabel="重新加载"
+                  onAction={handleRetry}
                 />
-                <div className="rank-champion-overlay">
-                  <div>
-                    <span className="rank-champion-badge">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                      本周冠军
-                    </span>
-                    <p className="mt-1.5 text-[17px] font-bold text-white">{weeklyTop.name}</p>
-                    <p className="mt-0.5 text-[11px] text-white/70">
-                      评分 {weeklyTop.rating ?? '-'} · {weeklyTop.reviewCount ?? 0} 篇测评
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 榜单列表 */}
-          <div className="px-4 pb-6">
-            {toys.map((t, i) => (
-              <div
-                key={t.id}
-                className="rank-item"
-                onClick={() => router.push(`/bang/${t.id}`)}
-              >
-                {/* 排名 */}
-                <span
-                  className={`rank-num ${
-                    i === 0 ? 'rank-num--gold' : i === 1 ? 'rank-num--silver' : i === 2 ? 'rank-num--bronze' : 'rank-num--normal'
-                  }`}
-                >
-                  {i + 1}
-                </span>
-                <img
-                  src={toyImage(t.coverUrl?.[0])}
-                  alt={t.name}
-                  loading="lazy"
-                  className="rank-thumb"
+              ) : toys.length === 0 ? (
+                <StateCard
+                  title="当前筛选暂无榜单数据"
+                  hint="换个筛选条件试试，或返回综合热榜。"
+                  actionLabel="查看全部"
+                  onAction={resetFilter}
                 />
-                <div className="min-w-0 flex-1">
-                  <p className="rank-name truncate">{t.name}</p>
-                  <p className="rank-meta">{t.merchant ?? ''}</p>
-                  <p className="rank-tags truncate">{t.tags ?? ''}</p>
-                </div>
-                <div className="rank-score">
-                  <p className="rank-score-value">{t.rating ?? '-'}</p>
-                  <p className="rank-score-label">评分</p>
-                  <p className="rank-score-label">{t.reviewCount ?? 0} 测评</p>
-                </div>
-              </div>
-            ))}
-
-            <div ref={sentinelRef} className="py-6 text-center">
-              {loading ? (
-                <span className="end-marker">正在加载更多</span>
-              ) : hasMore ? (
-                <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
               ) : (
-                <span className="end-marker">已经到底啦</span>
+                <div className="space-y-5">
+                  <RankingTopThree toys={toys.slice(0, 3)} weeklyTop={weeklyTop} />
+                  {toys.length > 3 && <RankingList toys={toys.slice(3)} offset={4} />}
+                </div>
               )}
             </div>
-          </div>
-        </div>
-      </main>
 
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { scrollbar-width: none; }
-      `}</style>
+            {/* 无限滚动哨兵 / 底部状态 */}
+            <div ref={sentinelRef} className="py-7 text-center" aria-live="polite">
+              {showList &&
+                (loadingMore ? (
+                  <span className="loading-dots" aria-label="正在加载更多" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                ) : hasMore ? (
+                  <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
+                ) : (
+                  <span className="end-marker">已经到底啦</span>
+                ))}
+            </div>
+          </div>
+        }
+        right={
+          <RankingRightRail
+            weeklyTop={weeklyTop}
+            topToyId={toys[0]?.id}
+            type={type}
+            classify={classify}
+            loadedCount={toys.length}
+          />
+        }
+      />
+
+      <BottomNav />
     </div>
   );
 }

@@ -1,0 +1,208 @@
+/* ===== 榜单页专用样式（迁移自 globals.css 的 .rank-* 并重构） ===== */
+
+/* 页面标题 */
+.pageTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pageTitle h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 780;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+}
+
+.pageTitle p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ===== 一级筛选 Tab（导航式：active = 黑字 + 底部 accent 线） ===== */
+.typeTabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.typeTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.typeTab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 13px;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  transition: color 180ms var(--ease-out);
+}
+
+.typeTab:hover {
+  color: var(--ink-soft);
+}
+
+.typeTab[data-active='true'] {
+  color: var(--ink);
+}
+
+.typeTab[data-active='true']::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: '';
+}
+
+/* ===== 二级分类（小圆角按钮） ===== */
+.classifyTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.classifyTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.classifyTab {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out);
+}
+
+.classifyTab:hover {
+  background: var(--surface-subtle);
+  color: var(--ink-soft);
+}
+
+.classifyTab[data-active='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* ===== 第 4 名以后列表行 ===== */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 88px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  transition: background-color 180ms var(--ease-out);
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.row:hover {
+  background: var(--surface-subtle);
+}
+
+.row:active {
+  background: var(--surface-tint);
+}
+
+.rowRank {
+  display: inline-flex;
+  width: 30px;
+  flex-shrink: 0;
+  justify-content: center;
+  color: var(--muted-light);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowStage {
+  display: flex;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f4f2f0;
+  padding: 5px;
+}
+
+.rowInfo {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.rowName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rowMeta {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.rowTags {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-ink);
+  font-size: 11px;
+}
+
+.rowScore {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.rowScoreValue {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowScoreLabel {
+  margin-top: 1px;
+  color: var(--muted-light);
+  font-size: 10px;
+}

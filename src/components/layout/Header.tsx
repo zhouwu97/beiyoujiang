@@ -38,13 +38,17 @@ export default function Header() {
       if (plate === currentPlate) return;
       setPlate(plate);
       reset();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      const params = new URLSearchParams(window.location.search);
-      params.set('plate', String(plate));
-      const newUrl = `${pathname}?${params.toString()}`;
-      window.history.pushState({}, '', newUrl);
+      // 首页内切换：更新 store + 地址栏 ?plate=x；其他页面：跳回首页对应板块。
+      if (pathname === '/') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const params = new URLSearchParams(window.location.search);
+        params.set('plate', String(plate));
+        router.push(`/?${params.toString()}`, { scroll: false });
+      } else {
+        router.push(`/?plate=${plate}`);
+      }
     },
-    [currentPlate, pathname]
+    [currentPlate, pathname, router]
   );
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <div className="mx-auto flex min-h-[64px] w-full max-w-[1480px] items-center gap-3 px-4 sm:px-6 xl:h-[68px] xl:min-h-0 xl:gap-6 xl:px-7">
+      <div className="mx-auto flex min-h-[64px] w-full max-w-[1420px] items-center gap-3 px-4 sm:px-6 xl:h-[68px] xl:min-h-0 xl:gap-6 xl:px-7">
         <Link href="/" className="brand-lockup shrink-0" aria-label="杯友酱首页">
           <span className="brand-mark" aria-hidden="true">杯</span>
           <span className="brand-wordmark">

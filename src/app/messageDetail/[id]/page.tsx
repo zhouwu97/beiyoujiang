@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type { Comment, PostDetailData } from '@/lib/types';
 import { PLATES } from '@/lib/types';
@@ -215,10 +216,10 @@ export default function MessageDetailPage() {
       {/* 顶栏（面包屑导航） */}
       <header className="site-header">
         <div className="mx-auto flex min-h-[64px] w-full max-w-[1200px] items-center gap-4 px-4 sm:px-6 lg:min-h-[68px] lg:px-0">
-          <a href="/" className="brand-lockup shrink-0">
+          <Link href="/" className="brand-lockup shrink-0">
             <span className="brand-mark" aria-hidden="true">杯</span>
             <span className="brand-wordmark"><strong>杯友酱</strong></span>
-          </a>
+          </Link>
           <div className="flex items-center gap-2 border-l border-[var(--line)] pl-4 text-[11px] text-[var(--muted)]">
             <span>论坛</span>
             <span>›</span>
@@ -416,10 +417,11 @@ export default function MessageDetailPage() {
                       </div>
                     </div>
 
-                    {/* 评论内容 */}
-                    <p className="ml-[38px] mt-2 text-[11px] leading-[1.7] text-[var(--ink-soft)]">
-                      {c.content}
-                    </p>
+                    {/* 评论内容（兼容旧站表情 HTML，须走 sanitize 后渲染） */}
+                    <div
+                      className="comment-content ml-[38px] mt-2 text-[11px] leading-[1.7] text-[var(--ink-soft)]"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
+                    />
 
                     {/* 评论图片 */}
                     {c.imageUrlsArray?.length > 0 && (
@@ -443,7 +445,10 @@ export default function MessageDetailPage() {
                           <div key={r.id} className="text-[10px]">
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
-                            <span className="text-[var(--ink-soft)]">{r.content}</span>
+                            <span
+                              className="comment-content text-[var(--ink-soft)]"
+                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(r.content) }}
+                            />
                           </div>
                         ))}
                       </div>

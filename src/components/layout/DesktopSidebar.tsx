@@ -58,11 +58,19 @@ export default function DesktopSidebar() {
     if (plate === currentPlate) return;
     setPlate(plate);
     reset();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 首页内切换：更新 store + 地址栏 ?plate=x；其他页面：跳回首页对应板块。
+    if (pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const params = new URLSearchParams(window.location.search);
+      params.set('plate', String(plate));
+      router.push(`/?${params.toString()}`, { scroll: false });
+    } else {
+      router.push(`/?plate=${plate}`);
+    }
   };
 
   return (
-    <aside className="sticky top-[92px] hidden xl:block">
+    <aside className="sticky top-[92px]">
       <div className="rail-panel sidebar-panel p-3.5">
         <div className="sidebar-heading px-2 pt-1">
           <span className="rail-kicker">社区导航</span>

@@ -6,11 +6,12 @@ import Banner from '@/components/home/Banner';
 import PostList from '@/components/post/PostList';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import DesktopRightRail from '@/components/layout/DesktopRightRail';
+import DesktopPageShell from '@/components/layout/DesktopPageShell';
 import { useForumStore, setSort, reset } from '@/stores/forum';
 import { SortOrder } from '@/lib/types';
 
 /**
- * 首页：宽屏展开三栏，中等桌面保留内容与信息栏，较窄桌面优先保证主内容完整展示。
+ * 首页：宽屏三栏（左导航 + 帖子流 + 右信息栏），与榜单页共用 DesktopPageShell。
  */
 export default function HomePage() {
   const sort = useForumStore((s) => s.sort);
@@ -31,10 +32,9 @@ export default function HomePage() {
     <div className="page-shell">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <div className="main-grid grid min-w-0 gap-6 xl:grid-cols-[200px_minmax(0,1fr)_280px] xl:gap-6 2xl:grid-cols-[220px_minmax(0,1fr)_300px] 2xl:gap-8">
-          <DesktopSidebar />
-
+      <DesktopPageShell
+        left={<DesktopSidebar />}
+        main={
           <section className="feed-column">
             <Banner />
 
@@ -75,10 +75,9 @@ export default function HomePage() {
 
             <PostList />
           </section>
-
-          <DesktopRightRail />
-        </div>
-      </main>
+        }
+        right={<DesktopRightRail />}
+      />
 
       <div className="fixed bottom-[88px] right-4 z-30 flex lg:hidden">
         <button

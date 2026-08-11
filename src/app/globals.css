@@ -21,6 +21,17 @@
   --radius-panel: 18px;
   --radius-card: 20px;
   --radius-control: 12px;
+  /* 圆角等级：Hero 30 / 社区容器 28 / 模块 18~24 / 控件 12~18 */
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-2xl: 30px;
+  /* 阴影等级：主 Hero / 社区容器 shadow-sm，商品大图 shadow-md，小卡默认无 */
+  --shadow-xs: 0 4px 14px rgba(37, 27, 31, 0.035);
+  --shadow-sm: 0 12px 30px rgba(37, 27, 31, 0.045);
+  --shadow-md: 0 20px 48px rgba(37, 27, 31, 0.07);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -438,7 +449,7 @@ a:focus-visible {
   max-height: 100%;
   object-fit: cover;
   object-position: center 48%;
-  transition: transform 360ms var(--ease-out);
+  transition: transform 220ms var(--ease-out);
 }
 
 .banner-meta {
@@ -634,7 +645,7 @@ a:focus-visible {
   }
 
   .banner-slide:hover img {
-    transform: scale(1.01);
+    transform: scale(1.008);
   }
 }
 
@@ -676,7 +687,7 @@ a:focus-visible {
 .post-media {
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(135deg, #f0eeec, #eae7e4);
+  background: #f1efed;
 }
 
 .post-media--single {
@@ -685,7 +696,7 @@ a:focus-visible {
   max-width: 100%;
   max-height: 520px;
   border-radius: 14px;
-  background: transparent;
+  background: #f1efed;
   box-shadow: 0 2px 12px rgba(37, 27, 31, 0.06);
 }
 
@@ -697,7 +708,7 @@ a:focus-visible {
   height: auto;
   object-fit: contain;
   border-radius: 14px;
-  transition: transform 600ms var(--ease-out), box-shadow 400ms var(--ease-out);
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
 
 .post-media--grid {
@@ -705,17 +716,18 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   height: 240px;
+  padding: 6px;
   border-radius: 14px;
-  background: #eeecea;
+  background: #f1efed;
 }
 
 .post-img-grid {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 14px;
-  transition: transform 600ms var(--ease-out);
+  object-fit: contain;
+  border-radius: 12px;
+  transition: transform 220ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -725,7 +737,7 @@ a:focus-visible {
   }
 
   .post-card:hover .post-img-grid {
-    transform: scale(1.015);
+    transform: scale(1.012);
   }
 }
 
@@ -1398,204 +1410,22 @@ button:disabled {
   text-decoration-color: rgba(79, 121, 184, 0.55);
 }
 
-/* ===== 排行榜样式 ===== */
-.rank-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(140%);
+/* ===== 评论正文（含旧站表情） ===== */
+.comment-content img {
+  display: inline-block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
 }
 
-.rank-tab {
-  display: inline-flex;
-  align-items: center;
-  height: 36px;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 0 16px;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+/* 旧站 GIF 表情统一 25px（覆盖原始 src 与经 /api/asset 编码后的 src） */
+.comment-content img[src*="/images/meme/"],
+.comment-content img[src*="images%2Fmeme%2F"] {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  margin: 0 2px;
 }
 
-.rank-tab[data-active="true"] {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(200, 77, 107, 0.22);
-}
-
-.rank-tab:not([data-active="true"]) {
-  background: var(--surface-subtle);
-  color: var(--ink-soft);
-}
-
-.rank-tab:not([data-active="true"]):hover {
-  background: var(--line);
-  color: var(--ink);
-}
-
-.rank-subtab {
-  display: inline-flex;
-  align-items: center;
-  height: 32px;
-  border-radius: 10px;
-  padding: 0 12px;
-  font-size: 12px;
-  font-weight: 600;
-  transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out);
-}
-
-.rank-subtab[data-active="true"] {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.rank-subtab:not([data-active="true"]) {
-  color: var(--muted);
-}
-
-.rank-subtab:not([data-active="true"]):hover {
-  background: var(--surface-subtle);
-  color: var(--ink-soft);
-}
-
-.rank-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid var(--line);
-  padding: 14px 0;
-  cursor: pointer;
-  transition: background-color 180ms var(--ease-out);
-}
-
-.rank-item:active {
-  background: var(--surface-subtle);
-}
-
-.rank-num {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.rank-num--gold {
-  background: linear-gradient(135deg, #ffb347, #ffcc33);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(255, 179, 71, 0.25);
-}
-
-.rank-num--silver {
-  background: linear-gradient(135deg, #c0c0c0, #e0e0e0);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.2);
-}
-
-.rank-num--bronze {
-  background: linear-gradient(135deg, #cd7f32, #d4a373);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.2);
-}
-
-.rank-num--normal {
-  color: var(--muted-light);
-}
-
-.rank-thumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: var(--surface-subtle);
-  box-shadow: 0 2px 8px rgba(37, 27, 31, 0.05);
-}
-
-.rank-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-}
-
-.rank-meta {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.rank-tags {
-  font-size: 11px;
-  color: var(--accent-ink);
-  margin-top: 2px;
-}
-
-.rank-score {
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.rank-score-value {
-  font-size: 16px;
-  font-weight: 800;
-  color: #ff9800;
-  letter-spacing: -0.02em;
-}
-
-.rank-score-label {
-  font-size: 10px;
-  color: var(--muted-light);
-  margin-top: 1px;
-}
-
-.rank-champion {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  box-shadow: var(--shadow-soft);
-}
-
-.rank-champion img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-.rank-champion-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  background: linear-gradient(to top, rgba(24, 20, 23, 0.75) 0%, transparent 60%);
-  padding: 16px;
-}
-
-.rank-champion-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 999px;
-  background: rgba(255, 179, 71, 0.9);
-  padding: 3px 10px;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  backdrop-filter: blur(4px);
-}
-
-.rank-panel {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(10px);
-}
+/* ===== 排行榜样式已迁移至 src/components/ranking/ranking.module.css ===== */
