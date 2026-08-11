@@ -20,6 +20,8 @@ import type {
   Toy,
   ToyDetail,
   ToyReview,
+  RawToyReview,
+  AuthorFull,
 } from './types';
 import { normalizeImageList } from './utils';
 import { getToken, getUserId } from '@/stores/auth';
@@ -340,11 +342,26 @@ async function getToy(toyId: number): Promise<ToyDetail> {
 
 /**
  * 获取玩具全部评价
- * POST /api/toy/getToyAllReview { toyId }
+ * POST /api/toyComment/getToyAllReview { toyId, userId }
+ * 注意：路径是 toyComment 而非 toy（实测 toy/getToyAllReview 会 404）；
+ * 返回项的作者字段是 user 而非 author，图片字段可能为 JSON 字符串。
  */
 async function getToyAllReview(toyId: number): Promise<ToyReview[]> {
-  const res = await request<ApiResponse<ToyReview[]>>('toy/getToyAllReview', 'POST', { toyId });
-  return res.data ?? [];
+  const res = await request<ApiResponse<RawToyReview[]>>('toyComment/getToyAllReview', 'POST', {
+    toyId,
+    userId: Number(getUserId() ?? 0),
+  });
+  return (res.data ?? []).map((review) => ({
+    id: review.id,
+    content: review.content,
+    score: review.score,
+    likeCount: review.likeCount,
+    isLiked: Boolean(review.isLiked),
+    createdAt: review.createdAt,
+    timeString: review.timeString,
+    author: review.user ?? ({} as AuthorFull),
+    images: normalizeImageList(review.images ?? review.imageUrls),
+  }));
 }
 
 /**

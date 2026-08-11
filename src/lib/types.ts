@@ -182,6 +182,8 @@ export interface Toy {
 
 /**
  * 玩具详情（详情页）
+ * 实测 getToy 返回：coverUrl 是 JSON 字符串，coverUrlsArray 才是真正数组；
+ * 评分分布字段名是 starCounts（不是 scoreDistribution）。
  */
 export interface ToyDetail extends Toy {
   images: string[];
@@ -189,6 +191,10 @@ export interface ToyDetail extends Toy {
   score: number;
   scoreCount: number;
   scoreDistribution: Record<string, number>;
+  /** 实测 getToy 返回的真正图片数组 */
+  coverUrlsArray?: string[];
+  /** 实测 getToy 返回的评分分布 { "1":0, "2":1, ... } */
+  starCounts?: Record<string, number>;
   isWant: boolean;
   isBuy: boolean;
 }
@@ -206,6 +212,26 @@ export interface ToyReview {
   timeString: string;
   author: AuthorFull;
   images: string[];
+}
+
+/**
+ * getToyAllReview 原始返回项（API 边界适配前）
+ * 注意：作者字段是 user 而非 author；images/imageUrls 可能是 JSON 字符串。
+ */
+export interface RawToyReview {
+  id: number;
+  content: string;
+  score: number;
+  likeCount: number;
+  isLiked?: boolean | number;
+  createdAt: string;
+  timeString: string;
+  user?: AuthorFull;
+  images?: unknown;
+  imageUrls?: unknown;
+  commentCount?: number;
+  replyCount?: number;
+  [key: string]: unknown;
 }
 
 /**

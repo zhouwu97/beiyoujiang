@@ -1332,62 +1332,70 @@ button:disabled {
   transition: box-shadow 280ms var(--ease-out);
 }
 
-/* ===== feed列表间距微调 ===== */
-.feed-column > .space-y-3 > * + * {
-  margin-top: 0.875rem;
+/* ===== 帖子详情页专用 ===== */
+.eyebrow {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #aaa3a6;
 }
 
-/* ===== 帖子正文内容区 ===== */
-.prose-content a {
-  color: #4f79b8;
-  text-decoration: underline;
-  text-decoration-color: rgba(79, 121, 184, 0.3);
-  text-underline-offset: 2px;
-  transition: text-decoration-color 180ms var(--ease-out);
+.sectiontitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: -0.01em;
 }
 
-.prose-content a:hover {
-  text-decoration-color: rgba(79, 121, 184, 0.6);
+.sidecard {
+  border-radius: var(--radius-panel);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
 }
 
+.rel-btn {
+  border-radius: 8px;
+  margin: -2px -4px;
+  padding: 6px 8px;
+  transition: background-color 160ms var(--ease-out);
+}
+
+.ctx-row {
+  border-bottom: 1px solid var(--line);
+}
+
+.ctx-row:last-child {
+  border-bottom: 0;
+}
+
+.pill-btn {
+  transition: transform 130ms var(--ease-out), background-color 150ms var(--ease-out);
+}
+
+.pill-btn:active {
+  transform: scale(0.96);
+}
+
+/* ===== 帖子正文图片 ===== */
 .prose-content img {
   display: inline-block;
   max-width: 100%;
   height: auto;
-  border-radius: 12px;
+  border-radius: 10px;
   vertical-align: middle;
 }
 
-.prose-content p {
-  margin-bottom: 0.75em;
+.prose-content a {
+  color: #4f79b8;
+  text-decoration: underline;
+  text-decoration-color: rgba(79, 121, 184, 0.25);
+  text-underline-offset: 2px;
 }
 
-.prose-content p:last-child {
-  margin-bottom: 0;
-}
-
-.prose-content blockquote {
-  border-left: 3px solid var(--accent);
-  padding-left: 1em;
-  margin: 1em 0;
-  color: var(--ink-soft);
-}
-
-.prose-content ul,
-.prose-content ol {
-  padding-left: 1.5em;
-  margin: 0.75em 0;
-}
-
-.prose-content li {
-  margin: 0.25em 0;
-}
-
-.prose-content h3,
-.prose-content h4 {
-  font-weight: 700;
-  color: var(--ink);
-  margin: 1.2em 0 0.6em;
+.prose-content a:hover {
+  text-decoration-color: rgba(79, 121, 184, 0.55);
 }
 
 /* ===== 排行榜样式 ===== */
