@@ -212,6 +212,9 @@ export interface ToyReview {
   timeString: string;
   author: AuthorFull;
   images: string[];
+  /** 回复数（实测 getToyAllReview 返回 replyCount/commentCount） */
+  replyCount?: number;
+  commentCount?: number;
 }
 
 /**

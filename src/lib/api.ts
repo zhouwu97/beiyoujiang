@@ -361,6 +361,8 @@ async function getToyAllReview(toyId: number): Promise<ToyReview[]> {
     timeString: review.timeString,
     author: review.user ?? ({} as AuthorFull),
     images: normalizeImageList(review.images ?? review.imageUrls),
+    commentCount: review.commentCount ?? 0,
+    replyCount: review.replyCount ?? 0,
   }));
 }
 
