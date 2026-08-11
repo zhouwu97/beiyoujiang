@@ -35,8 +35,10 @@ export default function HomePage() {
       <DesktopPageShell
         left={<DesktopSidebar />}
         main={
-          <section className="feed-column">
-            <Banner />
+          <section className="feed-surface">
+            <div className="hero">
+              <Banner />
+            </div>
 
             <div className="feed-toolbar">
               <div className="feed-tabs" role="tablist" aria-label="帖子排序">
@@ -62,10 +64,10 @@ export default function HomePage() {
 
               <button
                 onClick={handleRefresh}
-                className="quiet-action hidden lg:inline-flex"
+                className="ghost-btn hidden lg:inline-flex"
                 aria-label="刷新帖子"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M23 4v6h-6" />
                   <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
                 </svg>

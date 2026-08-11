@@ -75,7 +75,7 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <div className="mx-auto flex min-h-[64px] w-full max-w-[1420px] items-center gap-3 px-4 sm:px-6 xl:h-[68px] xl:min-h-0 xl:gap-6 xl:px-7">
+      <div className="shell-width flex min-h-[64px] items-center gap-3 xl:h-[68px] xl:min-h-0 xl:gap-6">
         <Link href="/" className="brand-lockup shrink-0" aria-label="杯友酱首页">
           <span className="brand-mark" aria-hidden="true">杯</span>
           <span className="brand-wordmark">
@@ -84,6 +84,7 @@ export default function Header() {
           </span>
         </Link>
 
+        {/* 桌面主导航：首页 / 论坛 / 排行榜。板块切换交给 DesktopSidebar，不在此重复。 */}
         <nav className="hidden items-center gap-1 xl:flex" aria-label="主导航">
           <Link href="/" className="header-link header-link--home">
             首页
@@ -94,27 +95,10 @@ export default function Header() {
           </Link>
         </nav>
 
-        <nav className="hidden min-w-0 flex-1 items-center gap-5 border-l border-[var(--line)] pl-6 xl:flex" aria-label="论坛板块">
-          {PLATES.map((plateInfo) => {
-            const isActive = currentPlate === plateInfo.id;
-            return (
-              <button
-                key={plateInfo.id}
-                onClick={() => handlePlateClick(plateInfo.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className="header-section-link whitespace-nowrap"
-                data-active={isActive}
-              >
-                {plateInfo.name}
-              </button>
-            );
-          })}
-        </nav>
-
         <div className="ml-auto flex shrink-0 items-center gap-1.5 xl:gap-2.5">
           <button
             onClick={() => router.push('/search')}
-            className="search-trigger desktop-search-trigger hidden xl:inline-flex"
+            className="search-trigger desktop-search-trigger hidden xl:inline-flex xl:w-[360px]"
             aria-label="搜索帖子、用户、话题"
           >
             <SearchIcon />

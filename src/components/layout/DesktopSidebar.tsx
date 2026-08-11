@@ -71,7 +71,7 @@ export default function DesktopSidebar() {
 
   return (
     <aside className="sticky top-[92px]">
-      <div className="rail-panel sidebar-panel p-3.5">
+      <div className="rail-panel sidebar-panel p-[17px]">
         <div className="sidebar-heading px-2 pt-1">
           <span className="rail-kicker">社区导航</span>
           <h2 className="mt-1.5">探索社区</h2>
@@ -95,7 +95,7 @@ export default function DesktopSidebar() {
                 data-active={isActive}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-[var(--line)] bg-white text-[var(--muted)] transition-colors duration-150 group-hover:text-[var(--ink)]">
+                <span className={`flex h-7 w-7 items-center justify-center rounded-[9px] border border-[var(--line)] bg-white ${isActive ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
                   <SidebarIcon name="board" />
                 </span>
                 <span>{plate.name}</span>

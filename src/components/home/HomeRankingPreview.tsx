@@ -4,10 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Toy } from '@/lib/types';
 import { getAllToy } from '@/lib/api';
+import { formatCount } from '@/lib/utils';
+import { stimulationLabel } from '@/lib/toyLabels';
 import ToyImage from '@/components/toy/ToyImage';
+
+/** 2/3/4 名的序号着色，与参考稿一致 */
+const ROW_NUM_COLORS = ['#b9834d', '#8a8a8a', '#a97b68'];
 
 /**
  * 首页右栏「本周玩具榜」预览：只显示真实榜单前 4 名（综合热榜）。
+ * 第一名做成深色 rank-hero 建立层级，2~4 名用紧凑 row。
  * 加载失败或无数据时直接隐藏模块，绝不展示假榜单数据。
  */
 export default function HomeRankingPreview() {
@@ -33,52 +39,43 @@ export default function HomeRankingPreview() {
   }, []);
 
   if (!visible) return null;
+  const top = toys[0];
 
   return (
-    <section className="rail-panel p-4">
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="rail-kicker">真实数据</div>
-          <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">本周玩具榜</h2>
-        </div>
-        <span className="text-[10px] font-semibold text-[var(--muted)]">TOP 4</span>
+    <section className="rail-panel p-[17px]">
+      <div className="rail-head">
+        <h3>本周玩具榜</h3>
+        <Link href="/rankingList">进入榜单 →</Link>
       </div>
 
-      <div className="mt-3 space-y-0.5">
-        {toys.map((toy, index) => (
-          <Link
-            key={toy.id}
-            href={`/bang/${toy.id}`}
-            className="group flex w-full items-center gap-2.5 rounded-[11px] px-2 py-2 text-left transition-colors duration-150 hover:bg-[var(--surface-subtle)]"
-          >
-            <span className="min-w-[20px] text-center text-[11px] font-bold tabular-nums text-[var(--muted-light)] transition-colors duration-150 group-hover:text-[var(--accent)]">
-              {String(index + 1).padStart(2, '0')}
-            </span>
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[11px] border border-[var(--line)] bg-[#f3f1ef] p-[3px]">
-              <ToyImage src={toy.coverUrl?.[0]} alt={toy.name} className="h-full w-full object-contain" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[12px] font-semibold text-[var(--ink-soft)] transition-colors duration-150 group-hover:text-[var(--accent-ink)]">
-                {toy.name}
-              </span>
-              <span className="mt-0.5 block text-[10px] text-[var(--muted)]">
-                {toy.rating ?? '-'} 分 · {toy.reviewCount ?? 0} 测评
-              </span>
-            </span>
-          </Link>
-        ))}
-      </div>
+      {top && (
+        <Link href={`/bang/${top.id}`} className="rank-hero">
+          <div className="rank-kicker">本周榜首</div>
+          <div className="rank-top-name">{top.name}</div>
+          <div className="rank-top-meta">
+            {top.reviewCount ?? 0} 篇测评 · {formatCount(top.wantCount ?? 0)} 人想要
+          </div>
+          <div className="rank-score-big">{top.rating ?? '—'}</div>
+        </Link>
+      )}
 
-      <Link
-        href="/rankingList"
-        className="mt-1 inline-flex w-full items-center gap-1.5 rounded-[10px] px-2 py-2 text-[12px] font-bold text-[var(--accent-ink)] transition-colors duration-150 hover:text-[var(--accent)]"
-      >
-        查看完整榜单
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M5 12h13" />
-          <path d="m13 6 6 6-6 6" />
-        </svg>
-      </Link>
+      {toys.slice(1, 4).map((toy, index) => (
+        <Link key={toy.id} href={`/bang/${toy.id}`} className="rank-row">
+          <span className="rank-num" style={{ color: ROW_NUM_COLORS[index] }}>
+            {index + 2}
+          </span>
+          <span className="rank-thumb">
+            <ToyImage src={toy.coverUrl?.[0]} alt={toy.name} className="h-full w-full object-contain" />
+          </span>
+          <span className="min-w-0">
+            <span className="rank-name">{toy.name}</span>
+            <span className="rank-meta">
+              {stimulationLabel(toy.stimulation)} · {toy.reviewCount ?? 0} 测评
+            </span>
+          </span>
+          <span className="rank-score">{toy.rating ?? '—'}</span>
+        </Link>
+      ))}
     </section>
   );
 }

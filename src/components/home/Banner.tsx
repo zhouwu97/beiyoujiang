@@ -19,8 +19,9 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
 }
 
 /**
- * 顶部 Banner 轮播：触摸滑动 + 自动轮播 + 可见的前后切换控制。
- * 轮播移动使用 transform，避免内容切换触发布局重排。
+ * 顶部 Banner 轮播（参考稿 hero-frame）：
+ * 高 260px 圆角外框，图片 object-fit: contain（禁止 cover 裁切横幅画面）；
+ * 左右箭头默认隐藏，hover 后淡入；dot 6×6，active 拉长为 20px。
  */
 export default function Banner() {
   const router = useRouter();
@@ -53,24 +54,19 @@ export default function Banner() {
 
   return (
     <div
-      className="hero-banner"
+      className="hero-frame"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-roledescription="轮播"
       aria-label="社区精选内容"
     >
-      <div className="banner-meta" aria-hidden="true">
-        <span className="banner-meta__dot" />
-        社区精选
-      </div>
-
-      <div className="banner-track" style={{ transform: `translateX(-${current * 100}%)` }}>
+      <div className="hero-track" style={{ transform: `translateX(-${current * 100}%)` }}>
         {BANNERS.map((banner) => (
           <button
             key={banner.id}
             type="button"
             aria-label={`查看${banner.label}`}
-            className="banner-slide text-left"
+            className="hero-slide"
             onClick={() => router.push(`/messageDetail/${banner.postId}`)}
           >
             <Image
@@ -78,8 +74,8 @@ export default function Banner() {
               alt={banner.label}
               fill
               priority={banner.id === 1}
-              sizes="(min-width: 1536px) 900px, (min-width: 1280px) 760px, (min-width: 768px) 680px, 100vw"
-              className="object-cover"
+              sizes="(min-width: 1280px) 820px, 100vw"
+              className="object-contain"
               draggable={false}
             />
           </button>
@@ -88,7 +84,7 @@ export default function Banner() {
 
       <button
         type="button"
-        className="banner-control banner-control--prev"
+        className="banner-arrow prev"
         onClick={() => goTo(current - 1)}
         aria-label="上一张"
       >
@@ -96,31 +92,25 @@ export default function Banner() {
       </button>
       <button
         type="button"
-        className="banner-control banner-control--next"
+        className="banner-arrow next"
         onClick={() => goTo(current + 1)}
         aria-label="下一张"
       >
         <ChevronIcon direction="right" />
       </button>
 
-      <div className="banner-dots" aria-label="轮播位置">
+      <div className="hero-dots" aria-label="轮播位置">
         {BANNERS.map((banner, index) => (
           <button
             key={banner.id}
             type="button"
-            className="banner-dot"
+            className={`hero-dot${index === current ? ' active' : ''}`}
             data-active={index === current}
             onClick={() => goTo(index)}
             aria-label={`第${index + 1}张`}
             aria-current={index === current ? 'true' : undefined}
           />
         ))}
-      </div>
-
-      <div className="banner-index" aria-hidden="true">
-        <span>{String(current + 1).padStart(2, '0')}</span>
-        <i />
-        <span>{String(BANNERS.length).padStart(2, '0')}</span>
       </div>
     </div>
   );

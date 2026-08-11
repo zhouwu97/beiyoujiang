@@ -5,7 +5,7 @@ import type { MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/lib/types';
 import { PLATES } from '@/lib/types';
-import { resolveAvatar, resolveImage, resolvePostImage } from '@/lib/utils';
+import { resolveAvatar, resolvePostImage } from '@/lib/utils';
 import { likePost, unlikePost } from '@/lib/api';
 import { useRewardToast } from '@/components/common/RewardToast';
 
@@ -21,7 +21,7 @@ export function stripHtml(html: string): string {
 function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
   if (type === 'eye') {
     return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5Z" />
         <circle cx="12" cy="12" r="2.3" />
       </svg>
@@ -30,14 +30,14 @@ function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
 
   if (type === 'comment') {
     return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 12.5z" />
       </svg>
     );
   }
 
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
     </svg>
   );
@@ -47,6 +47,11 @@ interface PostCardProps {
   post: Post;
 }
 
+/**
+ * 帖子行（参考稿 post-row）：扁平行，无独立卡片边框/阴影/大圆角。
+ * hover 仅轻微改背景；有图帖子在右侧显示 136×98 contain 缩略图。
+ * 点赞乐观更新逻辑保持不变。
+ */
 function PostCard({ post }: PostCardProps) {
   const router = useRouter();
   const { show: showReward } = useRewardToast();
@@ -56,7 +61,7 @@ function PostCard({ post }: PostCardProps) {
 
   const plateName = PLATES.find((plate) => plate.id === post.plate)?.name ?? '';
   const preview = stripHtml(post.content);
-  const images = (post.imageUrls ?? []).slice(0, 3);
+  const cover = (post.imageUrls ?? [])[0];
   const openPost = () => router.push(`/messageDetail/${post.id}`);
 
   const handleLike = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -92,79 +97,58 @@ function PostCard({ post }: PostCardProps) {
         }
       }}
       tabIndex={0}
-      className="post-card group cursor-pointer p-5 sm:p-6"
+      className={`post-row${cover ? '' : ' no-image'}`}
     >
-      <div className="flex items-center gap-3">
-        <img
-          src={resolveAvatar(post.author?.photo)}
-          alt=""
-          className="author-avatar h-9 w-9 rounded-[12px] bg-[var(--surface-subtle)] object-cover"
-          loading="lazy"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="max-w-[150px] truncate text-[13px] font-semibold text-[var(--ink)]">
-              {post.author?.username ?? '杯友'}
-            </span>
-            {post.author?.level ? (
-              <img
-                src={resolveImage(`/images/level/leve${post.author.level}.png`)}
-                alt={`Lv.${post.author.level}`}
-                className="h-4 w-4 object-contain"
-                loading="lazy"
-              />
-            ) : null}
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            {plateName && <span className="topic-tag">{plateName}</span>}
-            <span className="text-[11px] text-[var(--muted)]">{post.timeAgo ?? '刚刚'}</span>
-          </div>
-        </div>
-        <span className="text-[10px] font-semibold tracking-[0.12em] text-[var(--muted-light)]">#{String(post.id).padStart(4, '0')}</span>
-      </div>
-
-      <h2 className="mt-5 text-[17px] font-bold leading-[1.45] tracking-[-0.02em] text-[var(--ink)] sm:text-[18px]">
-        {post.title}
-      </h2>
-
-      {images.length === 0 && preview && (
-        <p className="mt-2.5 line-clamp-3 max-w-[62ch] text-[13px] leading-6 text-[var(--ink-soft)] sm:text-[14px]">{preview}</p>
-      )}
-
-      {images.length > 0 && (
-        <div className={`mt-4 grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {images.map((image, index) => (
-            <div key={`${post.id}-${index}`} className={`post-media ${images.length === 1 ? 'post-media--single' : 'post-media--grid'}`}>
-              <img
-                src={resolvePostImage(image)}
-                alt=""
-                loading="lazy"
-                className={images.length === 1 ? 'post-img-single' : 'post-img-grid'}
-              />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2.5">
+          <img
+            src={resolveAvatar(post.author?.photo)}
+            alt=""
+            className="h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover"
+            loading="lazy"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              <strong className="max-w-[150px] truncate text-[12px] font-bold text-[var(--ink)]">
+                {post.author?.username ?? '杯友'}
+              </strong>
+              {plateName && <span className="topic">{plateName}</span>}
             </div>
-          ))}
+            <div className="mt-0.5 text-[9px] text-[var(--muted)]">
+              {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
+            </div>
+          </div>
+        </div>
+
+        <h2 className="post-title">{post.title}</h2>
+        {preview && <p className="post-desc">{preview}</p>}
+
+        <div className="stats">
+          <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
+          <span className="post-stat"><StatIcon type="comment" />{post.commentCount ?? 0}</span>
+          <button
+            onClick={handleLike}
+            className="post-stat post-like interactive-press"
+            data-liked={liked}
+            aria-label={liked ? '取消点赞' : '点赞'}
+            aria-pressed={liked}
+            disabled={liking}
+          >
+            <StatIcon type="heart" />
+            <span>{likeCount}</span>
+          </button>
+          <span className="post-open-hint hidden items-center gap-1.5 sm:inline-flex">
+            查看讨论
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+          </span>
+        </div>
+      </div>
+
+      {cover && (
+        <div className="thumb">
+          <img src={resolvePostImage(cover)} alt="" loading="lazy" />
         </div>
       )}
-
-      <div className="mt-5 flex items-center gap-5 border-t border-[var(--line)] pt-4">
-        <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
-        <span className="post-stat"><StatIcon type="comment" />{post.commentCount ?? 0}</span>
-        <span className="post-open-hint hidden items-center gap-1.5 text-[11px] font-semibold text-[var(--muted)] sm:inline-flex">
-          查看讨论
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
-        </span>
-        <button
-          onClick={handleLike}
-          className="post-stat post-like interactive-press"
-          data-liked={liked}
-          aria-label={liked ? '取消点赞' : '点赞'}
-          aria-pressed={liked}
-          disabled={liking}
-        >
-          <StatIcon type="heart" />
-          <span>{likeCount}</span>
-        </button>
-      </div>
     </article>
   );
 }
