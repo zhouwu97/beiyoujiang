@@ -20,7 +20,7 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
 
 /**
  * 顶部 Banner 轮播（参考稿 hero-frame）：
- * 高 260px 圆角外框，图片 object-fit: contain（禁止 cover 裁切横幅画面）；
+ * 高 260px 圆角外框，图片 object-fit: fill（拉伸沾满外框）；
  * 左右箭头默认隐藏，hover 后淡入；dot 6×6，active 拉长为 20px。
  */
 export default function Banner() {
@@ -75,7 +75,7 @@ export default function Banner() {
               fill
               priority={banner.id === 1}
               sizes="(min-width: 1280px) 820px, 100vw"
-              className="object-contain"
+              className="object-fill"
               draggable={false}
             />
           </button>

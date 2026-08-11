@@ -1,12 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
-import { reset, setPlate, useForumStore } from '@/stores/forum';
 import { PLATES } from '@/lib/types';
-import type { Plate } from '@/lib/types';
+import type { Plate, UserData } from '@/lib/types';
+import { resolveAvatar } from '@/lib/utils';
+import { useAuthStore, getUserId } from '@/stores/auth';
+import { getUserData } from '@/lib/api';
+import { reset, setPlate, useForumStore } from '@/stores/forum';
 
-type SidebarIconName = 'grid' | 'board' | 'message' | 'rank' | 'edit' | 'bell' | 'user';
+type SidebarIconName = 'grid' | 'board' | 'message' | 'rank' | 'edit' | 'user';
 
 function SidebarIcon({ name }: { name: SidebarIconName }) {
   const common = {
@@ -22,7 +25,7 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
   };
 
   if (name === 'grid') {
-    return <svg {...common}><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg>;
+    return <svg {...common}><rect x="4" y="4" width="6" height="6" rx="1.4" /><rect x="14" y="4" width="6" height="6" rx="1.4" /><rect x="4" y="14" width="6" height="6" rx="1.4" /><rect x="14" y="14" width="6" height="6" rx="1.4" /></svg>;
   }
 
   if (name === 'board') {
@@ -41,99 +44,168 @@ function SidebarIcon({ name }: { name: SidebarIconName }) {
     return <svg {...common}><path d="M13.5 5.5 18.5 10.5M5 19l3.5-.8L19.2 7.5a2.1 2.1 0 0 0-3-3L5.8 14.9z" /></svg>;
   }
 
-  if (name === 'bell') {
-    return <svg {...common}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>;
-  }
-
   return <svg {...common}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
 }
 
+/**
+ * 首页桌面左栏：严格使用独立个人资料卡、两组开放式导航和底部发布按钮。
+ * 登录状态下通过 getUserData 拉取真实 profile，禁止继续显示 Lv.undefined 与假数据。
+ */
 export default function DesktopSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const currentPlate = useForumStore((state) => state.plate);
   const currentUser = useAuthStore((state) => state.currentUser);
+  const [activePlateParam, setActivePlateParam] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const isCommunityHomeActive = pathname === '/' && !activePlateParam;
+
+  const userId = getUserId();
+  const isLoggedIn = Boolean(userId);
+
+  useEffect(() => {
+    const syncActivePlate = () => {
+      setActivePlateParam(new URLSearchParams(window.location.search).get('plate'));
+    };
+
+    syncActivePlate();
+    window.addEventListener('popstate', syncActivePlate);
+    return () => window.removeEventListener('popstate', syncActivePlate);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!userId) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    getUserData(userId, 0)
+      .then((data) => setProfile(data))
+      .catch(() => setProfile(null))
+      .finally(() => setLoading(false));
+  }, [userId]);
 
   const handlePlateClick = (plate: Plate) => {
-    if (plate === currentPlate) return;
+    if (plate === currentPlate && activePlateParam === String(plate)) return;
+
     setPlate(plate);
     reset();
+
     // 首页内切换：更新 store + 地址栏 ?plate=x；其他页面：跳回首页对应板块。
     if (pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       const params = new URLSearchParams(window.location.search);
       params.set('plate', String(plate));
+      setActivePlateParam(String(plate));
       router.push(`/?${params.toString()}`, { scroll: false });
-    } else {
-      router.push(`/?plate=${plate}`);
+      return;
     }
+
+    router.push(`/?plate=${plate}`);
   };
 
-  return (
-    <aside className="sticky top-[92px]">
-      <div className="rail-panel sidebar-panel p-[17px]">
-        <div className="sidebar-heading px-2 pt-1">
-          <span className="rail-kicker">社区导航</span>
-          <h2 className="mt-1.5">探索社区</h2>
-        </div>
+  const handleCommunityHome = () => {
+    setActivePlateParam(null);
+    if (pathname !== '/' || activePlateParam) router.push('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-        <button onClick={() => router.push('/postMessage')} className="sidebar-compose interactive-press mt-4">
-          <span className="flex h-6 w-6 items-center justify-center rounded-[8px] bg-white/15"><SidebarIcon name="edit" /></span>
-          <span>发布新帖</span>
-          <svg className="ml-auto" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+  const name = profile?.username ?? currentUser?.username ?? '杯友';
+  const photo = profile?.photo ?? currentUser?.photo;
+  const level = profile?.level ?? currentUser?.level ?? 1;
+
+  const posts = profile?.invitationNumber;
+  const likes = profile?.likeNumber;
+  const collections = profile?.collectNumber;
+
+  return (
+    <aside className="desktop-sidebar">
+      <section className="profile-card">
+        {isLoggedIn ? (
+          <>
+            <div className="profile-top">
+              <span className="profile-avatar" aria-hidden="true">
+                <img src={resolveAvatar(photo)} alt="" />
+              </span>
+              <div className="min-w-0">
+                <div className="profile-name truncate">晚上好，{name}</div>
+                <div className="profile-meta truncate">Lv.{level}</div>
+              </div>
+            </div>
+
+            <div className="profile-stats" aria-label="个人统计">
+              <div><strong>{loading ? '—' : (posts ?? '—')}</strong><span>帖子</span></div>
+              <div><strong>{loading ? '—' : (likes ?? '—')}</strong><span>获赞</span></div>
+              <div><strong>{loading ? '—' : (collections ?? '—')}</strong><span>收藏</span></div>
+            </div>
+          </>
+        ) : (
+          <div className="profile-top">
+            <span className="profile-avatar" aria-hidden="true">
+              <img src={resolveAvatar(undefined)} alt="" />
+            </span>
+            <div className="min-w-0">
+              <div className="profile-name truncate">登录后查看个人资料</div>
+              <div className="profile-meta truncate">同步你的帖子与收藏</div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <nav className="side-section" aria-label="社区导航">
+        <div className="side-label">Community</div>
+        <button
+          type="button"
+          onClick={handleCommunityHome}
+          className="side-link"
+          data-active={isCommunityHomeActive}
+          aria-current={isCommunityHomeActive ? 'page' : undefined}
+        >
+          <SidebarIcon name="grid" />
+          <span>社区首页</span>
         </button>
 
-        <div className="mt-5 px-2 rail-kicker">版块</div>
-        <div className="mt-2 space-y-0.5">
-          {PLATES.map((plate) => {
-            const isActive = currentPlate === plate.id;
-            return (
-              <button
-                key={plate.id}
-                onClick={() => handlePlateClick(plate.id)}
-                className="side-link"
-                data-active={isActive}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <span className={`flex h-7 w-7 items-center justify-center rounded-[9px] border border-[var(--line)] bg-white ${isActive ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
-                  <SidebarIcon name="board" />
-                </span>
-                <span>{plate.name}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="my-4 h-px bg-[var(--line)]" />
-
-        <div className="px-2 rail-kicker">快捷入口</div>
-        <div className="mt-2 space-y-0.5">
-          <button onClick={() => router.push('/message')} className="side-link">
-            <SidebarIcon name="message" />
-            <span>回复我的</span>
-          </button>
-          <button onClick={() => router.push('/rankingList')} className="side-link" data-active={pathname.startsWith('/rankingList')}>
-            <SidebarIcon name="rank" />
-            <span>社区榜单</span>
-          </button>
-        </div>
-
-        <div className="sidebar-account mt-4 rounded-[13px] px-3 py-3">
-          <div className="flex items-center gap-2 text-[12px] font-bold text-[var(--ink-soft)]">
-            <span className="text-[var(--muted)]"><SidebarIcon name={currentUser ? 'user' : 'bell'} /></span>
-            <span>{currentUser ? '欢迎回来' : '登录后参与交流'}</span>
-          </div>
-          <p className="mt-1.5 text-[11px] leading-5 text-[var(--muted)]">
-            {currentUser ? '管理你的帖子、收藏和互动。' : '登录后可同步个人资料与消息。'}
-          </p>
-          {!currentUser && (
-            <button onClick={() => router.push('/login')} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--accent-ink)] transition-colors duration-150 hover:text-[var(--accent)]">
-              去登录
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+        {PLATES.map((plate) => {
+          const isActive = pathname === '/' && activePlateParam === String(plate.id);
+          return (
+            <button
+              key={plate.id}
+              type="button"
+              onClick={() => handlePlateClick(plate.id)}
+              className="side-link"
+              data-active={isActive}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <SidebarIcon name="board" />
+              <span>{plate.name}</span>
             </button>
-          )}
-        </div>
-      </div>
+          );
+        })}
+      </nav>
+
+      <nav className="side-section" aria-label="发现入口">
+        <div className="side-label">Discover</div>
+        <button type="button" onClick={() => router.push('/rankingList')} className="side-link" data-active={pathname.startsWith('/rankingList')}>
+          <SidebarIcon name="rank" />
+          <span>玩具榜单</span>
+        </button>
+        <button type="button" onClick={() => router.push('/message')} className="side-link" data-active={pathname.startsWith('/message')}>
+          <SidebarIcon name="message" />
+          <span>回复我的</span>
+        </button>
+        <button type="button" onClick={() => router.push(currentUser ? '/myuser' : '/login')} className="side-link" data-active={pathname.startsWith('/myuser')}>
+          <SidebarIcon name="user" />
+          <span>个人中心</span>
+        </button>
+      </nav>
+
+      <button type="button" onClick={() => router.push('/postMessage')} className="side-compose">
+        <SidebarIcon name="edit" />
+        <span>发布新帖</span>
+      </button>
     </aside>
   );
 }
