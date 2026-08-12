@@ -307,7 +307,7 @@ a:focus-visible {
     gap: 8px;
     border: 0;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--panel-pink), var(--panel-pink-deep));
+    background: #f8b5d9;
     box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.2);
     padding: 0 16px;
     color: #fff;
@@ -317,7 +317,7 @@ a:focus-visible {
   }
 
   .desktop-header-compose:hover {
-    background: linear-gradient(135deg, var(--panel-pink-hover), var(--panel-pink-hover-deep));
+    background: var(--accent-strong);
     box-shadow: 0 10px 22px rgba(var(--accent-rgb), 0.26);
   }
 
@@ -1798,7 +1798,7 @@ a:focus-visible {
   padding: 0 16px;
   border: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--panel-pink), var(--panel-pink-deep));
+  background: var(--accent);
   color: #fff;
   font-size: 13px;
   font-weight: 750;
