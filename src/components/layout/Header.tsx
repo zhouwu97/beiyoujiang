@@ -18,11 +18,10 @@ function SearchIcon() {
   );
 }
 
-function BellIcon() {
+function MessageIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 12.5z" />
     </svg>
   );
 }
@@ -90,7 +89,9 @@ export default function Header() {
     <header className="site-header">
       <div className="desktop-header-inner">
         <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
-          <span className="desktop-header-brand-mark" aria-hidden="true">杯</span>
+          <span className="desktop-header-brand-mark" aria-hidden="true">
+            <img src="/images/load.gif" alt="" />
+          </span>
           <span className="desktop-header-brand-text">杯友酱</span>
           <span className="desktop-header-brand-dot" aria-hidden="true" />
         </Link>
@@ -117,7 +118,8 @@ export default function Header() {
           </button>
 
           <button type="button" onClick={() => router.push('/message')} className="desktop-header-icon-button" aria-label="消息">
-            <BellIcon />
+            <MessageIcon />
+            <span className="notification-dot" aria-hidden="true" />
           </button>
 
           <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
@@ -136,7 +138,7 @@ export default function Header() {
         </div>
       </div>
 
-      <nav className="flex min-w-0 items-center gap-5 overflow-x-auto border-t border-[var(--line)] px-4 xl:hidden" aria-label="论坛板块">
+      <nav className="flex min-w-0 items-stretch border-t border-[var(--line)] px-1 xl:hidden" aria-label="论坛板块">
         {PLATES.map((plateInfo) => {
           const isActive = currentPlate === plateInfo.id;
           return (
@@ -145,7 +147,7 @@ export default function Header() {
               type="button"
               onClick={() => handlePlateClick(plateInfo.id)}
               aria-current={isActive ? 'page' : undefined}
-              className="header-section-link shrink-0"
+              className="header-section-link flex-1 justify-center"
               data-active={isActive}
             >
               {plateInfo.name}

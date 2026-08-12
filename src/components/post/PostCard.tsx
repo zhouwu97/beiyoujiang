@@ -4,8 +4,9 @@ import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/lib/types';
 import { PLATES } from '@/lib/types';
-import { resolveAvatar, resolvePostImage } from '@/lib/utils';
+import { resolveAvatar } from '@/lib/utils';
 import { usePostLike } from '@/components/post/usePostLike';
+import PostMedia from '@/components/post/PostMedia';
 
 export function stripHtml(html: string): string {
   return html
@@ -19,7 +20,7 @@ export function stripHtml(html: string): string {
 export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
   if (type === 'eye') {
     return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5Z" />
         <circle cx="12" cy="12" r="2.3" />
       </svg>
@@ -28,14 +29,14 @@ export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
 
   if (type === 'comment') {
     return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 12.5z" />
       </svg>
     );
   }
 
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
     </svg>
   );
@@ -46,10 +47,9 @@ interface PostCardProps {
 }
 
 /**
- * 帖子行（参考稿 post-row）：扁平行，无独立卡片边框/阴影/大圆角。
- * hover 仅轻微改背景；有图帖子在右侧按原始宽高比展示首图
- * （图片列 42%、img max-height 340px，禁止固定 136×98/155×175 之类写死尺寸，见 globals.css .thumb）。
- * 多图扩展：当前取第一张；后续若做 2 图双列 / 3+ 图网格，在 .thumb 层扩展即可。
+ * 帖子行（贴吧式纵向内容流）：作者 → 标题 → 正文摘要 → 图片/图片组 → 浏览/回复/点赞。
+ * 图片作为正文的一部分下置（PostMedia 统一渲染，保持原始宽高比、禁止 cover/固定比例）。
+ * 无图帖不预留图片区，纯文字帖保持紧凑。
  */
 function PostCard({ post }: PostCardProps) {
   const router = useRouter();
@@ -57,7 +57,6 @@ function PostCard({ post }: PostCardProps) {
 
   const plateName = PLATES.find((plate) => plate.id === post.plate)?.name ?? '';
   const preview = stripHtml(post.content);
-  const cover = (post.imageUrls ?? [])[0];
   const openPost = () => router.push(`/messageDetail/${post.id}`);
 
   return (
@@ -70,24 +69,24 @@ function PostCard({ post }: PostCardProps) {
         }
       }}
       tabIndex={0}
-      className={`post-row${cover ? '' : ' no-image'}`}
+      className="post-row"
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
           <img
             src={resolveAvatar(post.author?.photo)}
             alt=""
-            className="h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover"
+            className="post-avatar h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover max-md:h-8 max-md:w-8"
             loading="lazy"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <strong className="max-w-[150px] truncate text-[14px] font-bold text-[var(--ink)]">
+              <strong className="post-author-name max-w-[170px] truncate text-[14px] font-bold text-[var(--ink)] max-md:text-[13px]">
                 {post.author?.username ?? '杯友'}
               </strong>
               {plateName && <span className="topic">{plateName}</span>}
             </div>
-            <div className="mt-0.5 text-[11px] text-[var(--muted)]">
+            <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[10px]">
               {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
             </div>
           </div>
@@ -95,6 +94,8 @@ function PostCard({ post }: PostCardProps) {
 
         <h2 className="post-title">{post.title}</h2>
         {preview && <p className="post-desc">{preview}</p>}
+
+        <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} />
 
         <div className="stats">
           <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
@@ -110,18 +111,12 @@ function PostCard({ post }: PostCardProps) {
             <StatIcon type="heart" />
             <span>{likeCount}</span>
           </button>
-          <span className="post-open-hint hidden items-center gap-1.5 sm:inline-flex">
+          <span className="post-open-hint hidden items-center gap-1.5 lg:inline-flex">
             查看讨论
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
           </span>
         </div>
       </div>
-
-      {cover && (
-        <div className="thumb">
-          <img src={resolvePostImage(cover)} alt="" loading="lazy" />
-        </div>
-      )}
     </article>
   );
 }

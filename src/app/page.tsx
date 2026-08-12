@@ -50,7 +50,7 @@ export default function HomePage() {
                   role="tab"
                   aria-selected={sort === SortOrder.ByTime}
                 >
-                  发布
+                  最新发布
                 </button>
                 <button
                   onClick={() => handleSortChange(SortOrder.ByReply)}
@@ -59,14 +59,14 @@ export default function HomePage() {
                   role="tab"
                   aria-selected={sort === SortOrder.ByReply}
                 >
-                  回复
+                  最近回复
                 </button>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRefresh}
-                  className="ghost-btn hidden lg:inline-flex"
+                  className="ghost-btn"
                   aria-label="刷新帖子"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -76,7 +76,10 @@ export default function HomePage() {
                   刷新
                 </button>
 
-                <PlateFilterDropdown />
+                {/* 桌面（>=1280）才显示：手机/平板板块选择由 Header 板块导航承载 */}
+                <div className="hidden xl:block">
+                  <PlateFilterDropdown />
+                </div>
               </div>
             </div>
 
@@ -85,19 +88,6 @@ export default function HomePage() {
         }
         right={<DesktopRightRail />}
       />
-
-      <div className="fixed bottom-[88px] right-4 z-30 flex lg:hidden">
-        <button
-          onClick={handleRefresh}
-          aria-label="刷新"
-          className="interactive-press flex h-10 w-10 items-center justify-center rounded-[13px] border border-[var(--line)] bg-white/90 text-[var(--ink-soft)] shadow-[0_10px_24px_rgba(37,27,31,0.1)] backdrop-blur"
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M23 4v6h-6" />
-            <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
-          </svg>
-        </button>
-      </div>
 
       <BottomNav />
     </div>

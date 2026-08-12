@@ -5,37 +5,36 @@ interface DesktopPageShellProps {
   left?: ReactNode;
   /** 中央主内容，始终显示 */
   main: ReactNode;
-  /** 右栏，>=1024px 显示 */
+  /** 右栏，>=900px 显示 */
   right?: ReactNode;
 }
 
 /**
  * 统一桌面布局壳（首页 / 榜单共用），只负责布局，不含业务。
  *
- * 断点规则（对齐参考稿）：
- *  <1024       单栏，左右栏均隐藏
- *  1024~1279   main + 右栏（左栏隐藏）
- *  1280~1535   200px | main | 280px，gap 20px
- *  >=1536      218px | main | 306px，gap 24px
+ * 断点规则（列宽定义在 globals.css .main-grid，此处只提供三块内容）：
+ *  <768        单栏满宽（手机，无顶部留白，正文从 Header 下直接开始）
+ *  768~1023    单栏居中 max-width 760
+ *  1024~1279   Feed + 右栏（左栏隐藏）
+ *  1280~1535   220px | Feed | 300px，gap 24
+ *  >=1536      236px | Feed | 320px，gap 28
  *
- * 整体宽度始终 width:min(1380px,calc(100% - 48px))，不再叠加内层 padding，
- * 避免真实内容宽度与参考发生漂移。
+ * 整体宽度跟随 .shell-width：<1280 保持原样（不动移动端），
+ * 1280~1535 为 min(1400px, calc(100% - 32px))，>=1536 为 min(1440px, calc(100% - 40px))。
  *
- * Sticky 注意：左右栏的 grid item 本身必须是 sticky + self-start（同一元素）。
- * 不能把 sticky 放在 item 内部的子元素上——self-start 会让 item 收缩到内容高度，
- * 内部子元素的 sticky 会因为没有可移动空间而失效（整栏跟着页面滚走）。
+ * Sticky 注意：sticky + self-start 必须放在 grid item 自身
+ * （.main-left-col / .main-right-col）。不能放在内部子元素上——self-start 会让
+ * item 收缩到内容高度，内部子元素的 sticky 会因为没有可移动空间而失效
+ * （整栏跟着页面滚走）。右栏可能超过一屏：.main-right-col 自身限高并内部滚动
+ * （滚动条隐藏）。
  */
 export default function DesktopPageShell({ left, main, right }: DesktopPageShellProps) {
   return (
-    <div className="shell-width pt-6 pb-[72px]">
-      <div className="main-grid grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[200px_minmax(0,1fr)_280px] 2xl:grid-cols-[218px_minmax(0,1fr)_306px] 2xl:gap-6">
-        {left ? (
-          <div className="hidden min-w-0 xl:block xl:self-start xl:sticky xl:top-[90px]">{left}</div>
-        ) : null}
+    <div className="shell-width pt-6 pb-[72px] max-md:pt-0">
+      <div className="main-grid">
+        {left ? <div className="main-left-col">{left}</div> : null}
         <div className="min-w-0">{main}</div>
-        {right ? (
-          <div className="hidden min-w-0 lg:block lg:self-start lg:sticky lg:top-[90px]">{right}</div>
-        ) : null}
+        {right ? <div className="main-right-col">{right}</div> : null}
       </div>
     </div>
   );
