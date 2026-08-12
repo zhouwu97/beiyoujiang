@@ -306,7 +306,7 @@ a:focus-visible {
     gap: 8px;
     border: 0;
     border-radius: 12px;
-    background: var(--accent);
+    background: #f8b5d9;
     box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.2);
     padding: 0 16px;
     color: #fff;
