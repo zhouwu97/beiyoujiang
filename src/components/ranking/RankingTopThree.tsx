@@ -5,6 +5,7 @@ import type { Toy } from '@/lib/types';
 import { formatCount } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
 import { categoryLabel, stimulationLabel } from '@/lib/toyLabels';
+import styles from './ranking.module.css';
 
 function ChampionBadge() {
   return (
@@ -39,10 +40,10 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
       {/* Top 1 */}
       <Link
         href={`/bang/${top.id}`}
-        className="group block rounded-[22px] bg-[#252123] p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(37,27,31,0.2)] sm:p-6 lg:p-7"
+        className={`group block rounded-[22px] p-5 transition-transform duration-200 hover:-translate-y-0.5 sm:p-6 lg:p-7 ${styles.topFeature}`}
       >
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
-          <div className="flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#f3f1ef] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44">
+        <div className={`flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7 ${styles.topFeatureContent}`}>
+          <div className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#f3f1ef] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44 ${styles.topFeatureImage}`}>
             <ToyImage src={top.coverUrl?.[0]} alt={top.name} className="h-full w-full object-contain" />
           </div>
 

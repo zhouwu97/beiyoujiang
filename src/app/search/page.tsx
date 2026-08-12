@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAllKeywords, searchToyPost } from '@/lib/api';
 import type { Keyword, Post, Toy } from '@/lib/types';
-import { resolveToyImage } from '@/lib/utils';
 import PostCard from '@/components/post/PostCard';
+import ToyImage from '@/components/toy/ToyImage';
 
 /**
  * 搜索页：热词 + 实时搜索结果（玩具 + 帖子）
@@ -129,12 +129,14 @@ export default function SearchPage() {
                     key={t.id}
                     className="bg-white rounded-[16px] card-shadow overflow-hidden cursor-pointer active:opacity-80"
                   >
-                    <img
-                      src={resolveToyImage(t.coverUrl?.[0])}
-                      alt={t.name}
-                      loading="lazy"
-                      className="w-full h-28 object-cover bg-[#F7F7F9]"
-                    />
+                    <div className="flex aspect-[16/7] w-full items-center justify-center bg-[#F7F7F9] p-3 sm:p-4">
+                      <ToyImage
+                        src={t.coverUrl?.[0]}
+                        alt={t.name}
+                        loading="lazy"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                     <div className="p-2.5">
                       <p className="text-[13px] font-semibold text-[#2C2C2C] truncate">{t.name}</p>
                       <p className="text-[11px] text-[#929292] mt-0.5">

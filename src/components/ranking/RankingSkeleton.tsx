@@ -1,5 +1,7 @@
 'use client';
 
+import styles from './ranking.module.css';
+
 /**
  * 首次进入榜单时的骨架屏：Top1 + Top2/3 + 6 行列表，避免白屏 spinner。
  */
@@ -7,9 +9,9 @@ export default function RankingSkeleton() {
   return (
     <div className="space-y-4" aria-label="榜单加载中" role="status">
       {/* Top 1 */}
-      <div className="flex items-center gap-6 rounded-[22px] bg-[#252123] p-6">
-        <div className="skeleton h-36 w-36 rounded-[18px] sm:h-40 sm:w-40" />
-        <div className="min-w-0 flex-1">
+      <div className={`flex items-center gap-6 rounded-[22px] p-6 ${styles.topFeature}`}>
+        <div className={`skeleton h-36 w-36 rounded-[18px] sm:h-40 sm:w-40 ${styles.topFeatureImage}`} />
+        <div className={`min-w-0 flex-1 ${styles.topFeatureContent}`}>
           <div className="skeleton h-3 w-24 rounded-full" />
           <div className="skeleton mt-3 h-6 w-48 rounded-full" />
           <div className="skeleton mt-3 h-3 w-32 rounded-full" />
