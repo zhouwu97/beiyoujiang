@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 开发时允许通过 127.0.0.1 访问，避免 Next 阻止客户端开发资源导致页面无法完成 hydration。
-  allowedDevOrigins: ['127.0.0.1'],
+  // 开发时允许本机和 ngrok 隧道加载 Next 客户端资源，避免跨源校验阻断 hydration。
+  allowedDevOrigins: ['127.0.0.1', '*.ngrok-free.dev'],
 };
 
 export default nextConfig;

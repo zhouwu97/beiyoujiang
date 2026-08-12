@@ -59,9 +59,15 @@ export default function DesktopSidebar() {
   const [activePlateParam, setActivePlateParam] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isCommunityHomeActive = pathname === '/' && !activePlateParam;
 
-  const userId = getUserId();
+  // 挂载后再切换客户端状态，避免 localStorage 读取导致的 hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const userId = mounted ? getUserId() : null;
   const isLoggedIn = Boolean(userId);
 
   useEffect(() => {

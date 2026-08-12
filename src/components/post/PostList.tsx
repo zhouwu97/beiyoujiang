@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useForumStore, fetchNextPage, getCachedPosts } from '@/stores/forum';
 import PostCard from '@/components/post/PostCard';
+import FeaturePostCard from '@/components/post/FeaturePostCard';
 
 function PostSkeleton() {
   return (
@@ -27,6 +28,7 @@ function PostSkeleton() {
 /**
  * 帖子流：无限滚动列表。
  * 行与行之间只用 1px 分割线，不出现独立悬浮卡片。
+ * 第一条带图帖子自动升级为 Featured（无带图帖则取 posts[0]），其余为紧凑 PostRow。
  */
 export default function PostList() {
   const plate = useForumStore((state) => state.plate);
@@ -35,6 +37,13 @@ export default function PostList() {
   const exhausted = useForumStore((state) => state.exhausted);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const posts = getCachedPosts();
+
+  // 精选帖：优先第一条真实带图帖；当前页全无图时退回 posts[0]。不硬编码、不造假。
+  const featured =
+    posts.length > 0
+      ? posts.find((post) => (post.imageUrls?.length ?? 0) > 0) ?? posts[0]
+      : null;
+  const remaining = featured ? posts.filter((post) => post.id !== featured.id) : posts;
 
   useEffect(() => {
     fetchNextPage();
@@ -71,8 +80,14 @@ export default function PostList() {
         </div>
       )}
 
-      {posts.map((post, index) => (
-        <div key={post.id} className="feed-item" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
+      {featured && (
+        <div key={featured.id} className="feed-item" style={{ animationDelay: '0ms' }}>
+          <FeaturePostCard post={featured} />
+        </div>
+      )}
+
+      {remaining.map((post, index) => (
+        <div key={post.id} className="feed-item" style={{ animationDelay: `${Math.min(index + 1, 8) * 30}ms` }}>
           <PostCard post={post} />
         </div>
       ))}

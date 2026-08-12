@@ -496,7 +496,7 @@
 
 .reviewUser strong {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink);
   font-weight: 720;
 }
@@ -511,7 +511,7 @@
 .reviewTime {
   margin-left: auto;
   color: var(--muted-light);
-  font-size: 10px;
+  font-size: 11px;
   flex-shrink: 0;
 }
 
@@ -519,10 +519,37 @@
   margin: 12px 0 0 51px;
   max-width: 720px;
   color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.85;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 测评接口中保留旧站富文本：仅渲染经 sanitizeHtml 清理后的安全标签。 */
+.reviewBody img {
+  display: inline-block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.reviewBody img[src*="/images/meme/"],
+.reviewBody img[src*="images%2Fmeme%2F"] {
+  width: 25px;
+  height: 25px;
+  margin: 0 2px;
+  border-radius: 0;
+  object-fit: contain;
+}
+
+.reviewBody p {
+  margin: 0 0 0.6em;
+}
+
+.reviewBody p:last-child {
+  margin-bottom: 0;
 }
 
 .reviewImgs {
@@ -547,7 +574,7 @@
   gap: 18px;
   align-items: center;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .likeBtn {

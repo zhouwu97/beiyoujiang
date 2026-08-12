@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import Banner from '@/components/home/Banner';
 import PostList from '@/components/post/PostList';
+import PlateFilterDropdown from '@/components/post/PlateFilterDropdown';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import DesktopRightRail from '@/components/layout/DesktopRightRail';
 import DesktopPageShell from '@/components/layout/DesktopPageShell';
@@ -62,17 +63,21 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <button
-                onClick={handleRefresh}
-                className="ghost-btn hidden lg:inline-flex"
-                aria-label="刷新帖子"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M23 4v6h-6" />
-                  <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
-                </svg>
-                刷新
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefresh}
+                  className="ghost-btn hidden lg:inline-flex"
+                  aria-label="刷新帖子"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M23 4v6h-6" />
+                    <path d="M20.5 15a9 9 0 1 1-2.1-9.3L23 10" />
+                  </svg>
+                  刷新
+                </button>
+
+                <PlateFilterDropdown />
+              </div>
             </div>
 
             <PostList />

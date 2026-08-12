@@ -1,7 +1,7 @@
 'use client';
 
 import type { ToyReview } from '@/lib/types';
-import { resolveAvatar } from '@/lib/utils';
+import { resolveAvatar, sanitizeHtml } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
 import styles from './toy-detail.module.css';
 
@@ -46,7 +46,10 @@ export default function ToyReviewItem({ review, onLike }: ToyReviewItemProps) {
         <span className={styles.reviewTime}>{review.timeString}</span>
       </div>
 
-      <p className={styles.reviewBody}>{review.content}</p>
+      <div
+        className={styles.reviewBody}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(review.content) }}
+      />
 
       {review.images && review.images.length > 0 && (
         <div className={styles.reviewImgs}>

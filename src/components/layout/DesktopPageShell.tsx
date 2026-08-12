@@ -26,11 +26,11 @@ export default function DesktopPageShell({ left, main, right }: DesktopPageShell
     <div className="shell-width pt-6 pb-[72px]">
       <div className="main-grid grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[200px_minmax(0,1fr)_280px] 2xl:grid-cols-[218px_minmax(0,1fr)_306px] 2xl:gap-6">
         {left ? (
-          <div className="hidden min-w-0 xl:block xl:self-stretch">{left}</div>
+          <div className="hidden min-w-0 xl:block xl:self-start">{left}</div>
         ) : null}
         <div className="min-w-0">{main}</div>
         {right ? (
-          <div className="hidden min-w-0 lg:block lg:self-stretch">{right}</div>
+          <div className="hidden min-w-0 lg:block lg:self-start">{right}</div>
         ) : null}
       </div>
     </div>

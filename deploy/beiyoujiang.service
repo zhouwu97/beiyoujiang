@@ -1,0 +1,25 @@
+[Unit]
+Description=Beiyoujiang Next.js application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/beiyoujiang
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+# 显式限制在回环网卡，公网只能通过 Nginx 访问应用进程。
+ExecStart=/usr/bin/npm run start -- --hostname 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=beiyoujiang
+
+[Install]
+WantedBy=multi-user.target

@@ -252,12 +252,12 @@ export default function MessageDetailPage() {
                   loading="lazy"
                 />
                 <div className="min-w-0 flex-1">
-                  <span className="text-[12px] font-semibold text-[var(--ink)]">
+                  <span className="text-[14px] font-semibold text-[var(--ink)]">
                     {author?.username ?? '杯友'}
                   </span>
-                  <div className="mt-1 flex items-center gap-2 text-[9px] text-[var(--muted)]">
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--muted)]">
                     {plateName && (
-                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[8px] font-bold text-[var(--accent-ink)]">
+                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[10px] font-bold text-[var(--accent-ink)]">
                         {plateName}
                       </span>
                     )}
@@ -265,19 +265,19 @@ export default function MessageDetailPage() {
                     <span>阅读 {post.readingQuantity ?? 0}</span>
                   </div>
                 </div>
-                <button className="ml-auto h-[30px] rounded-[8px] bg-[var(--accent-soft)] px-3 text-[10px] font-bold text-[var(--accent-ink)] transition-transform active:scale-[0.96]">
+                <button className="ml-auto h-[30px] rounded-[8px] bg-[var(--accent-soft)] px-3 text-[12px] font-bold text-[var(--accent-ink)] transition-transform active:scale-[0.96]">
                   关注
                 </button>
               </div>
 
               {/* 标题 */}
-              <h1 className="mt-4 text-[20px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
+              <h1 className="mt-4 text-[22px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
                 {post.title}
               </h1>
 
               {/* 正文 */}
               <div
-                className="mt-2 max-w-[68ch] text-[12px] leading-[1.82] text-[var(--ink-soft)]"
+                className="mt-2 max-w-[68ch] text-[14px] leading-[1.82] text-[var(--ink-soft)]"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
               />
 
@@ -307,7 +307,7 @@ export default function MessageDetailPage() {
               <div className="mt-4 flex items-center gap-2 border-t border-[var(--line)] pt-3.5">
                 <button
                   onClick={handleLike}
-                  className={`pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[10px] font-semibold transition-colors ${
+                  className={`pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[12px] font-semibold transition-colors ${
                     liked ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'bg-[var(--surface-subtle)] text-[var(--muted)]'
                   }`}
                 >
@@ -318,7 +318,7 @@ export default function MessageDetailPage() {
                 </button>
                 <button
                   onClick={handleCollect}
-                  className={`pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[10px] font-semibold transition-colors ${
+                  className={`pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[12px] font-semibold transition-colors ${
                     collected ? 'bg-orange-50 text-orange-500' : 'bg-[var(--surface-subtle)] text-[var(--muted)]'
                   }`}
                 >
@@ -327,18 +327,18 @@ export default function MessageDetailPage() {
                   </svg>
                   {collected ? '已收藏' : '收藏'}
                 </button>
-                <button className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[10px] font-semibold text-[var(--muted)]">
+                <button className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[12px] font-semibold text-[var(--muted)]">
                   分享
                 </button>
                 {me === author?.id && (
                   <button
                     onClick={handleDeletePost}
-                    className="pill-btn interactive-press ml-2 flex h-8 items-center rounded-[9px] bg-red-50 px-3 text-[10px] font-semibold text-red-400"
+                    className="pill-btn interactive-press ml-2 flex h-8 items-center rounded-[9px] bg-red-50 px-3 text-[12px] font-semibold text-red-400"
                   >
                     删除
                   </button>
                 )}
-                <span className="ml-auto text-[9px] text-[var(--muted-light)]">
+                <span className="ml-auto text-[11px] text-[var(--muted-light)]">
                   {post.commentCount ?? comments.length} 条评论
                 </span>
               </div>
@@ -346,12 +346,12 @@ export default function MessageDetailPage() {
 
             {/* 评论区 */}
             <section className="border-t border-[var(--line)] px-5 py-5 sm:px-7">
-              <h2 className="mb-1 text-[14px] font-bold text-[var(--ink)]">
-                全部评论 <span className="text-[10px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
+              <h2 className="mb-1 text-[16px] font-bold text-[var(--ink)]">
+                全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
 
               {comments.length === 0 && (
-                <p className="py-6 text-center text-[12px] text-[var(--muted)]">还没有评论，抢个沙发~</p>
+                <p className="py-6 text-center text-[14px] text-[var(--muted)]">还没有评论，抢个沙发~</p>
               )}
 
               <div className="space-y-0">
@@ -367,19 +367,19 @@ export default function MessageDetailPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold text-[var(--ink)]">
+                          <span className="text-[13px] font-bold text-[var(--ink)]">
                             {c.author?.username ?? '杯友'}
                           </span>
                           {c.isPostAuthor && (
-                            <span className="rounded bg-blue-50 px-1 py-[1px] text-[8px] font-medium text-blue-500">
+                            <span className="rounded bg-blue-50 px-1 py-[1px] text-[10px] font-medium text-blue-500">
                               楼主
                             </span>
                           )}
-                          <span className="text-[8px] text-[var(--muted-light)]">{c.floor}楼</span>
+                          <span className="text-[10px] text-[var(--muted-light)]">{c.floor}楼</span>
                         </div>
-                        <span className="block text-[8px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
+                        <span className="block text-[10px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-[9px] text-[var(--muted)]">
+                      <div className="flex items-center gap-3 text-[11px] text-[var(--muted)]">
                         {me === c.author?.id && (
                           <button onClick={() => handleDeleteComment(c.id)} className="transition-colors hover:text-red-400">
                             删除
@@ -419,7 +419,7 @@ export default function MessageDetailPage() {
 
                     {/* 评论内容（兼容旧站表情 HTML，须走 sanitize 后渲染） */}
                     <div
-                      className="comment-content ml-[38px] mt-2 text-[11px] leading-[1.7] text-[var(--ink-soft)]"
+                      className="comment-content ml-[38px] mt-2 text-[13px] leading-[1.7] text-[var(--ink-soft)]"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
                     />
 
@@ -442,7 +442,7 @@ export default function MessageDetailPage() {
                     {c.replies && c.replies.length > 0 && (
                       <div className="ml-[38px] mt-2 space-y-1 rounded-[9px] bg-[var(--surface-subtle)] p-2.5">
                         {c.replies.map((r) => (
-                          <div key={r.id} className="text-[10px]">
+                          <div key={r.id} className="text-[12px]">
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
                             <span
@@ -462,7 +462,7 @@ export default function MessageDetailPage() {
             <div className="sticky bottom-0 z-30 flex items-end gap-2 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur-md sm:px-6">
               <div className="flex-1">
                 {replyingTo && (
-                  <div className="mb-1 flex items-center justify-between text-[9px] text-[var(--muted)]">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-[var(--muted)]">
                     <span>回复 @{replyingTo.username}</span>
                     <button onClick={() => setReplyingTo(null)} className="text-[var(--accent)]">取消</button>
                   </div>
@@ -473,20 +473,20 @@ export default function MessageDetailPage() {
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder={replyingTo ? '写下你的回复…' : '说点什么吧…'}
                   rows={1}
-                  className="w-full min-h-[38px] resize-none rounded-[10px] border border-[var(--line)] bg-[var(--surface-subtle)] px-3 py-2 text-[10px] outline-none transition-colors focus:border-[var(--accent)] focus:bg-white"
+                  className="w-full min-h-[38px] resize-none rounded-[10px] border border-[var(--line)] bg-[var(--surface-subtle)] px-3 py-2 text-[12px] outline-none transition-colors focus:border-[var(--accent)] focus:bg-white"
                 />
               </div>
               <button
                 onClick={submitComment}
                 disabled={sending}
-                className="interactive-press h-[38px] shrink-0 rounded-[10px] bg-[var(--accent)] px-4 text-[10px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
+                className="interactive-press h-[38px] shrink-0 rounded-[10px] bg-[var(--accent)] px-4 text-[12px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)] disabled:opacity-50"
               >
                 {sending ? '发送中' : '发送'}
               </button>
             </div>
           </div>
 
-          {/* 右侧边栏 */}
+            {/* 右侧边栏 */}
           <aside className="sticky top-[90px] hidden space-y-3.5 lg:flex lg:flex-col">
             {/* 作者卡片 */}
             <section className="rail-panel sidecard p-4">
@@ -499,24 +499,24 @@ export default function MessageDetailPage() {
                   loading="lazy"
                 />
                 <div>
-                  <span className="block text-[11px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
-                  <span className="block text-[8px] text-[var(--muted)]">
+                  <span className="block text-[13px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
+                  <span className="block text-[10px] text-[var(--muted)]">
                     Lv.{author?.level ?? 1} · {author?.introduction ? '杯友' : '杯友'}
                   </span>
                 </div>
               </div>
-              <p className="mt-2 text-[9px] leading-[1.7] text-[var(--muted)]">
+              <p className="mt-2 text-[11px] leading-[1.7] text-[var(--muted)]">
                 {author?.introduction || '这位杯友还没有写简介~'}
               </p>
               <div className="mt-3 grid grid-cols-3 border-t border-[var(--line)] pt-3">
                 {authorStats.map((s) => (
                   <div key={s.label} className="text-center">
-                    <span className="block text-[11px] font-bold text-[var(--ink)]">{s.value}</span>
-                    <span className="block text-[8px] text-[var(--muted)]">{s.label}</span>
+                    <span className="block text-[13px] font-bold text-[var(--ink)]">{s.value}</span>
+                    <span className="block text-[10px] text-[var(--muted)]">{s.label}</span>
                   </div>
                 ))}
               </div>
-              <button className="mt-3 h-[34px] w-full rounded-[9px] bg-[var(--accent)] text-[10px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)]">
+              <button className="mt-3 h-[34px] w-full rounded-[9px] bg-[var(--accent)] text-[12px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)]">
                 关注作者
               </button>
             </section>
@@ -524,8 +524,8 @@ export default function MessageDetailPage() {
             {/* 同类热门 */}
             <section className="rail-panel sidecard p-4">
               <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[13px] font-bold text-[var(--ink)]">同类热门</h3>
-                <span className="text-[8px] text-[var(--muted-light)]">更多推荐</span>
+                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">同类热门</h3>
+                <span className="text-[10px] text-[var(--muted-light)]">更多推荐</span>
               </div>
               <div className="space-y-0">
                 {cachedPosts.length > 0 ? cachedPosts.map((p) => (
@@ -534,15 +534,15 @@ export default function MessageDetailPage() {
                     onClick={() => router.push(`/messageDetail/${p.id}`)}
                     className="rel-btn group w-full rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[var(--surface-subtle)]"
                   >
-                    <span className="block truncate text-[10px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
+                    <span className="block truncate text-[12px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
                       {p.title}
                     </span>
-                    <span className="mt-1 block text-[8px] text-[var(--muted)]">
+                    <span className="mt-1 block text-[10px] text-[var(--muted)]">
                       {p.commentCount ?? 0} 条回复 · {p.timeAgo ?? '刚刚'}
                     </span>
                   </button>
                 )) : (
-                  <p className="text-[9px] text-[var(--muted)]">暂无更多推荐</p>
+                  <p className="text-[11px] text-[var(--muted)]">暂无更多推荐</p>
                 )}
               </div>
             </section>
@@ -550,8 +550,8 @@ export default function MessageDetailPage() {
             {/* 本帖信息 */}
             <section className="rail-panel sidecard p-4">
               <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[13px] font-bold text-[var(--ink)]">本帖信息</h3>
-                <span className="text-[8px] text-[var(--muted-light)]">#{post.id}</span>
+                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">本帖信息</h3>
+                <span className="text-[10px] text-[var(--muted-light)]">#{post.id}</span>
               </div>
               <div className="space-y-0">
                 {[
@@ -560,7 +560,7 @@ export default function MessageDetailPage() {
                   { label: '阅读', value: post.readingQuantity ?? 0 },
                   { label: '最后回复', value: comments.length > 0 ? (comments[comments.length - 1]?.timeString ?? '刚刚') : '—' },
                 ].map((item) => (
-                  <div key={item.label} className="ctx-row flex h-[35px] items-center justify-between border-b border-[var(--line)] text-[9px] last:border-0">
+                  <div key={item.label} className="ctx-row flex h-[35px] items-center justify-between border-b border-[var(--line)] text-[11px] last:border-0">
                     <span className="text-[var(--muted)]">{item.label}</span>
                     <span className="text-[var(--ink-soft)]">{item.value}</span>
                   </div>

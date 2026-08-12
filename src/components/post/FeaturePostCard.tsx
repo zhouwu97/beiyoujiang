@@ -5,52 +5,20 @@ import { useRouter } from 'next/navigation';
 import type { Post } from '@/lib/types';
 import { PLATES } from '@/lib/types';
 import { resolveAvatar, resolvePostImage } from '@/lib/utils';
+import { StatIcon, stripHtml } from '@/components/post/PostCard';
 import { usePostLike } from '@/components/post/usePostLike';
 
-export function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
-  if (type === 'eye') {
-    return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5Z" />
-        <circle cx="12" cy="12" r="2.3" />
-      </svg>
-    );
-  }
-
-  if (type === 'comment') {
-    return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 12.5z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
-    </svg>
-  );
-}
-
-interface PostCardProps {
+interface FeaturePostCardProps {
   post: Post;
 }
 
 /**
- * 帖子行（参考稿 post-row）：扁平行，无独立卡片边框/阴影/大圆角。
- * hover 仅轻微改背景；有图帖子在右侧按原始宽高比展示首图
- * （max-width 240px / max-height 220px，禁止固定 136×98 之类缩略框，见 globals.css .thumb）。
+ * 首页精选主帖（参考稿 featured-post）：
+ * 由 PostList 从真实帖子中选择（优先第一条带图帖，否则 posts[0]），绝不硬编码。
+ * desktop 两列：左 68%（作者 + 18px 标题 + 2~3 行摘要 + 统计），右 32%（第一张真实配图，按原始宽高比展示，max 280×240）。
+ * 仍是 feed-surface 内的扁平块，仅以分割线与下方紧凑行区分，不出现独立卡片阴影。
  */
-function PostCard({ post }: PostCardProps) {
+function FeaturePostCard({ post }: FeaturePostCardProps) {
   const router = useRouter();
   const { liked, likeCount, liking, handleLike } = usePostLike(post);
 
@@ -69,19 +37,19 @@ function PostCard({ post }: PostCardProps) {
         }
       }}
       tabIndex={0}
-      className={`post-row${cover ? '' : ' no-image'}`}
+      className={`featured-post${cover ? '' : ' no-image'}`}
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
           <img
             src={resolveAvatar(post.author?.photo)}
             alt=""
-            className="h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover"
+            className="h-[40px] w-[40px] rounded-[12px] bg-[var(--surface-subtle)] object-cover"
             loading="lazy"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <strong className="max-w-[150px] truncate text-[14px] font-bold text-[var(--ink)]">
+              <strong className="max-w-[160px] truncate text-[14px] font-bold text-[var(--ink)]">
                 {post.author?.username ?? '杯友'}
               </strong>
               {plateName && <span className="topic">{plateName}</span>}
@@ -92,8 +60,8 @@ function PostCard({ post }: PostCardProps) {
           </div>
         </div>
 
-        <h2 className="post-title">{post.title}</h2>
-        {preview && <p className="post-desc">{preview}</p>}
+        <h2 className="featured-title">{post.title}</h2>
+        {preview && <p className="featured-desc">{preview}</p>}
 
         <div className="stats">
           <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
@@ -117,7 +85,7 @@ function PostCard({ post }: PostCardProps) {
       </div>
 
       {cover && (
-        <div className="thumb">
+        <div className="featured-thumb">
           <img src={resolvePostImage(cover)} alt="" loading="lazy" />
         </div>
       )}
@@ -125,4 +93,4 @@ function PostCard({ post }: PostCardProps) {
   );
 }
 
-export default memo(PostCard);
+export default memo(FeaturePostCard);

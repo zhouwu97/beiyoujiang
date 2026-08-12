@@ -1,43 +1,56 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useForumStore, setPlate, reset } from '@/stores/forum';
-import { useAuthStore } from '@/stores/auth';
+import { usePathname, useRouter } from 'next/navigation';
 import { PLATES } from '@/lib/types';
 import type { Plate } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
+import { reset, setPlate, useForumStore } from '@/stores/forum';
 
 function SearchIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="7.5" />
-      <path d="m16.5 16.5 4.5 4.5" />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.6-3.6" />
     </svg>
   );
 }
 
 function BellIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
     </svg>
   );
 }
 
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+/**
+ * 全站页头：桌面端严格采用「品牌 / 搜索 / 操作」三段式，板块入口留给左侧导航。
+ * 移动端保留已有的板块快捷导航和底部导航，避免改变小屏使用路径。
+ */
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const currentPlate = useForumStore((s) => s.plate);
-  const currentUser = useAuthStore((s) => s.currentUser);
+  const currentPlate = useForumStore((state) => state.plate);
+  const currentUser = useAuthStore((state) => state.currentUser);
 
   const handlePlateClick = useCallback(
     (plate: Plate) => {
       if (plate === currentPlate) return;
       setPlate(plate);
       reset();
+
       // 首页内切换：更新 store + 地址栏 ?plate=x；其他页面：跳回首页对应板块。
       if (pathname === '/') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -75,61 +88,50 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <div className="shell-width flex min-h-[64px] items-center gap-3 xl:h-[68px] xl:min-h-0 xl:gap-6">
-        <Link href="/" className="brand-lockup shrink-0" aria-label="杯友酱首页">
-          <span className="brand-mark" aria-hidden="true">杯</span>
-          <span className="brand-wordmark">
-            <strong>杯友酱</strong>
-            <small>社区</small>
-          </span>
+      <div className="desktop-header-inner">
+        <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
+          <span className="desktop-header-brand-mark" aria-hidden="true">杯</span>
+          <span className="desktop-header-brand-text">杯友酱</span>
+          <span className="desktop-header-brand-dot" aria-hidden="true" />
         </Link>
 
-        {/* 桌面主导航：首页 / 论坛 / 排行榜。板块切换交给 DesktopSidebar，不在此重复。 */}
-        <nav className="hidden items-center gap-1 xl:flex" aria-label="主导航">
-          <Link href="/" className="header-link header-link--home">
-            首页
-          </Link>
-          <span className="header-link" data-active={pathname === '/'} aria-current={pathname === '/' ? 'page' : undefined}>论坛</span>
-          <Link href="/rankingList" className="header-link" data-active={pathname.startsWith('/rankingList')}>
-            排行榜
-          </Link>
-        </nav>
+        <button
+          type="button"
+          onClick={() => router.push('/search')}
+          className="desktop-header-search"
+          aria-label="搜索玩具、帖子、用户"
+        >
+          <SearchIcon />
+          <span>搜索玩具、帖子、用户</span>
+          <kbd>Ctrl K</kbd>
+        </button>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 xl:gap-2.5">
+        <div className="desktop-header-actions">
           <button
+            type="button"
             onClick={() => router.push('/search')}
-            className="search-trigger desktop-search-trigger hidden xl:inline-flex xl:w-[360px]"
-            aria-label="搜索帖子、用户、话题"
-          >
-            <SearchIcon />
-            <span>搜索帖子、用户、话题</span>
-            <span className="search-shortcut">Ctrl K</span>
-          </button>
-
-          <button
-            onClick={() => router.push('/search')}
-            className="icon-button mobile-search-button xl:hidden"
+            className="desktop-header-mobile-search icon-button xl:hidden"
             aria-label="搜索"
           >
             <SearchIcon />
           </button>
 
-          <button onClick={() => router.push('/message')} className="icon-button" aria-label="消息">
+          <button type="button" onClick={() => router.push('/message')} className="desktop-header-icon-button" aria-label="消息">
             <BellIcon />
-            <span className="notification-dot" />
+          </button>
+
+          <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
+            <PlusIcon />
+            <span>发布帖子</span>
           </button>
 
           <button
+            type="button"
             onClick={() => router.push(currentUser ? '/myuser' : '/login')}
-            className="hidden items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-semibold text-[var(--ink-soft)] transition-colors duration-150 hover:bg-[var(--surface-subtle)] xl:inline-flex"
+            className="desktop-header-avatar"
             aria-label={currentUser ? '打开个人中心' : '登录'}
           >
-            <img
-              src={resolveAvatar(currentUser?.photo)}
-              alt=""
-              className="h-7 w-7 rounded-[10px] border border-[var(--line)] bg-[var(--surface-subtle)] object-cover"
-            />
-            <span className="max-w-[82px] truncate">{currentUser?.username ?? '登录'}</span>
+            <img src={resolveAvatar(currentUser?.photo)} alt="" />
           </button>
         </div>
       </div>
@@ -140,6 +142,7 @@ export default function Header() {
           return (
             <button
               key={plateInfo.id}
+              type="button"
               onClick={() => handlePlateClick(plateInfo.id)}
               aria-current={isActive ? 'page' : undefined}
               className="header-section-link shrink-0"
