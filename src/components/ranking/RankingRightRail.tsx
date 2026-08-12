@@ -56,7 +56,7 @@ export default function RankingRightRail({
   const classifyLabel = CLASSIFY_TABS.find((c) => c.id === classify)?.label ?? '全部';
 
   return (
-    <div className="sticky top-[92px] space-y-4">
+    <div className="space-y-4">
       {showWeekly && weeklyTop && (
         <section className="rail-panel p-4">
           <div className="rail-kicker">每周更新</div>

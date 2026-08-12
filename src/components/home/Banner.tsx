@@ -20,7 +20,8 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
 
 /**
  * 顶部 Banner 轮播（参考稿 hero-frame）：
- * 高 260px 圆角外框，图片 object-fit: cover（3:1 素材铺满外框，仅裁极少像素）；
+ * 外框 aspect-ratio 3/1（跟随 2172×724 素材真实比例），图片 object-fit: contain 完整展示；
+ * 禁止再写死 height:260px 之类固定高度，否则不同宽度下会裁掉标题。
  * 左右箭头默认隐藏，hover 后淡入；dot 6×6，active 拉长为 20px。
  */
 export default function Banner() {

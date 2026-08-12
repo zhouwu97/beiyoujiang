@@ -48,7 +48,8 @@ interface PostCardProps {
 /**
  * 帖子行（参考稿 post-row）：扁平行，无独立卡片边框/阴影/大圆角。
  * hover 仅轻微改背景；有图帖子在右侧按原始宽高比展示首图
- * （max-width 240px / max-height 220px，禁止固定 136×98 之类缩略框，见 globals.css .thumb）。
+ * （图片列 42%、img max-height 340px，禁止固定 136×98/155×175 之类写死尺寸，见 globals.css .thumb）。
+ * 多图扩展：当前取第一张；后续若做 2 图双列 / 3+ 图网格，在 .thumb 层扩展即可。
  */
 function PostCard({ post }: PostCardProps) {
   const router = useRouter();

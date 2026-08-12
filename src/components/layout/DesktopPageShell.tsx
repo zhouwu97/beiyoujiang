@@ -20,17 +20,21 @@ interface DesktopPageShellProps {
  *
  * 整体宽度始终 width:min(1380px,calc(100% - 48px))，不再叠加内层 padding，
  * 避免真实内容宽度与参考发生漂移。
+ *
+ * Sticky 注意：左右栏的 grid item 本身必须是 sticky + self-start（同一元素）。
+ * 不能把 sticky 放在 item 内部的子元素上——self-start 会让 item 收缩到内容高度，
+ * 内部子元素的 sticky 会因为没有可移动空间而失效（整栏跟着页面滚走）。
  */
 export default function DesktopPageShell({ left, main, right }: DesktopPageShellProps) {
   return (
     <div className="shell-width pt-6 pb-[72px]">
       <div className="main-grid grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[200px_minmax(0,1fr)_280px] 2xl:grid-cols-[218px_minmax(0,1fr)_306px] 2xl:gap-6">
         {left ? (
-          <div className="hidden min-w-0 xl:block xl:self-start">{left}</div>
+          <div className="hidden min-w-0 xl:block xl:self-start xl:sticky xl:top-[90px]">{left}</div>
         ) : null}
         <div className="min-w-0">{main}</div>
         {right ? (
-          <div className="hidden min-w-0 lg:block lg:self-start">{right}</div>
+          <div className="hidden min-w-0 lg:block lg:self-start lg:sticky lg:top-[90px]">{right}</div>
         ) : null}
       </div>
     </div>

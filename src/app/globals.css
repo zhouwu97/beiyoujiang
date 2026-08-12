@@ -508,10 +508,11 @@ a:focus-visible {
   box-shadow: none;
 }
 
-/* ===== 首页左栏：独立 Profile Card + 开放式导航 ===== */
+/* ===== 首页左栏：独立 Profile Card + 开放式导航 =====
+ * 说明：sticky 由 DesktopPageShell 的 grid item（wrapper）承担，这里不再写 position:sticky。
+ * 若在此处写 sticky，会因 wrapper self-start 收缩到内容高度而失效（整栏跟着页面滚走）。
+ */
 .desktop-sidebar {
-  position: sticky;
-  top: 90px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -719,10 +720,13 @@ a:focus-visible {
   background: linear-gradient(145deg, rgba(248, 246, 245, 0.95), rgba(240, 237, 235, 0.72));
 }
 
-/* ===== 首页 Banner（参考稿：260px 圆角外框 + contain 大图） ===== */
+/* ===== 首页 Banner（外框随素材比例走，不再死守固定高度） ===== */
 .hero-frame {
   position: relative;
-  height: 260px;
+  width: 100%;
+  /* 素材实测 2172×724，严格 3:1；容器跟素材比例走，不同宽度下自动缩放，杜绝裁剪 */
+  aspect-ratio: 3 / 1;
+  height: auto;
   overflow: hidden;
   border: 1px solid #eee8e6;
   border-radius: 16px;
@@ -752,7 +756,7 @@ a:focus-visible {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -896,9 +900,9 @@ a:focus-visible {
 /* ---- 帖子行（扁平，无独立卡片） ---- */
 .post-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 32%);
-  gap: 22px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 42%);
+  gap: 24px;
+  align-items: start;
   padding: 22px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
@@ -957,10 +961,9 @@ a:focus-visible {
 .thumb {
   width: 100%;
   min-width: 0;
-  max-width: 240px;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
 
   height: auto;
@@ -976,13 +979,14 @@ a:focus-visible {
   height: auto;
 
   max-width: 100%;
-  max-height: 220px;
+  max-height: 340px;
 
   object-fit: contain;
 
-  border: 1px solid #eee9e6;
-  border-radius: 12px;
-  background: #f2f0ef;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  cursor: zoom-in;
 }
 
 /* ---- 首页精选主帖（第一条真实帖子自动升级，无硬编码） ---- */
@@ -990,7 +994,7 @@ a:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 68fr) minmax(0, 32fr);
   gap: 24px;
-  align-items: center;
+  align-items: start;
   padding: 26px 24px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
@@ -1036,7 +1040,7 @@ a:focus-visible {
   max-width: 280px;
 
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
 
   height: auto;
@@ -1208,14 +1212,24 @@ a:focus-visible {
   }
 }
 
-/* ===== 右栏：卡片头 / 刚刚更新 / 本周玩具榜 / 发布 CTA ===== */
+/* ===== 右栏：卡片头 / 刚刚更新 / 本周玩具榜 / 发布 CTA =====
+ * sticky 由 DesktopPageShell 的 grid item（wrapper）承担。
+ * 右栏内容可能超过一屏：允许自身轻量内部滚动，隐藏滚动条。
+ */
 .desktop-right-rail {
-  position: sticky;
-  top: 90px;
   display: flex;
   width: 100%;
   flex-direction: column;
   gap: 14px;
+
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.desktop-right-rail::-webkit-scrollbar {
+  display: none;
 }
 
 .desktop-right-rail > .rail-panel,
@@ -1854,18 +1868,15 @@ a:focus-visible {
   }
 }
 
-/* 1280~1535：中间档，图片列约 30%，上限略收敛 */
+/* 1280~1535：中间档，图片列约 38~40%，上限略收敛 */
 @media (min-width: 1280px) and (max-width: 1535px) {
   .post-row {
-    grid-template-columns: minmax(0, 1fr) minmax(160px, 30%);
-  }
-
-  .thumb {
-    max-width: 220px;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 38%);
+    gap: 22px;
   }
 
   .thumb img {
-    max-height: 200px;
+    max-height: 300px;
   }
 
   .featured-thumb {
@@ -1885,11 +1896,11 @@ a:focus-visible {
 
   .thumb {
     justify-content: flex-start;
-    max-width: min(100%, 320px);
+    max-width: min(100%, 420px);
   }
 
   .thumb img {
-    max-height: 260px;
+    max-height: 420px;
   }
 
   .featured-post {
@@ -1916,7 +1927,6 @@ a:focus-visible {
   }
 
   .hero-frame {
-    height: 200px;
     border-radius: 12px;
   }
 
