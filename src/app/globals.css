@@ -239,6 +239,7 @@ a:focus-visible {
   width: 36px;
   height: 36px;
   place-items: center;
+  position: relative;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
@@ -306,7 +307,7 @@ a:focus-visible {
     gap: 8px;
     border: 0;
     border-radius: 12px;
-    background: #f8b5d9;
+    background: linear-gradient(135deg, var(--panel-pink), var(--panel-pink-deep));
     box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.2);
     padding: 0 16px;
     color: #fff;
@@ -316,7 +317,7 @@ a:focus-visible {
   }
 
   .desktop-header-compose:hover {
-    background: var(--accent-strong);
+    background: linear-gradient(135deg, var(--panel-pink-hover), var(--panel-pink-hover-deep));
     box-shadow: 0 10px 22px rgba(var(--accent-rgb), 0.26);
   }
 
@@ -1785,23 +1786,28 @@ a:focus-visible {
   color: var(--accent);
 }
 
-.mobile-compose {
+.mobile-compose-float {
+  position: fixed;
+  right: 16px;
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  z-index: 40;
   display: inline-flex;
-  width: 44px;
   height: 44px;
-  align-self: center;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
   border: 0;
   border-radius: 14px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--panel-pink), var(--panel-pink-deep));
   color: #fff;
-  box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.3);
+  font-size: 13px;
+  font-weight: 750;
+  box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.32);
   transition: box-shadow 180ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
-.mobile-compose:active {
-  transform: scale(0.95);
+.mobile-compose-float:active {
+  transform: scale(0.96);
 }
 
 .interactive-press {
@@ -2153,29 +2159,22 @@ a:focus-visible {
     display: none;
   }
 
-  /* 手机 Header：52~54px 顶层，板块导航压缩为 40px 第二层 */
+  /* 手机 Header：54px 顶层，板块导航压缩为 42px 第二层 */
   .desktop-header-inner {
     min-height: 54px;
   }
 
   .header-section-link {
-    height: 40px;
+    height: 42px;
     font-size: 13px;
   }
 }
 
-/* 手机（<1024，BottomNav 已承载「回复」）：顶部 Bell 与底部导航重复，隐藏 */
-@media (max-width: 1023px) {
-  .desktop-header-icon-button {
-    display: none;
-  }
-}
-
-/* 手机图片（<768）：单图只约束最大显示面积；多图改横向滑动 Media Strip，保持各自比例 */
+/* 手机图片（<768）：单图只约束最大显示面积（超长截图给预览视窗，不占整屏）；多图横向滑动 */
 @media (max-width: 767px) {
   .post-media-single {
     max-width: 100%;
-    max-height: min(58vh, 480px);
+    max-height: min(48vh, 440px);
   }
 
   .post-media-grid {
@@ -2197,7 +2196,7 @@ a:focus-visible {
     display: block;
     width: auto;
     max-width: 82vw;
-    max-height: min(58vh, 460px);
+    max-height: min(48vh, 440px);
     height: auto;
     object-fit: contain;
   }
