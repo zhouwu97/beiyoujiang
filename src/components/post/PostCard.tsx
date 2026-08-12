@@ -4,8 +4,9 @@ import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/lib/types';
 import { PLATES } from '@/lib/types';
-import { resolveAvatar, resolvePostImage } from '@/lib/utils';
+import { resolveAvatar } from '@/lib/utils';
 import { usePostLike } from '@/components/post/usePostLike';
+import PostMedia from '@/components/post/PostMedia';
 
 export function stripHtml(html: string): string {
   return html
@@ -46,10 +47,9 @@ interface PostCardProps {
 }
 
 /**
- * 帖子行（参考稿 post-row）：扁平行，无独立卡片边框/阴影/大圆角。
- * hover 仅轻微改背景；有图帖子在右侧按原始宽高比展示首图
- * （图片列 42%、img max-height 340px，禁止固定 136×98/155×175 之类写死尺寸，见 globals.css .thumb）。
- * 多图扩展：当前取第一张；后续若做 2 图双列 / 3+ 图网格，在 .thumb 层扩展即可。
+ * 帖子行（贴吧式纵向内容流）：作者 → 标题 → 正文摘要 → 图片/图片组 → 浏览/回复/点赞。
+ * 图片作为正文的一部分下置（PostMedia 统一渲染，保持原始宽高比、禁止 cover/固定比例）。
+ * 无图帖不预留图片区，纯文字帖保持紧凑。
  */
 function PostCard({ post }: PostCardProps) {
   const router = useRouter();
@@ -57,7 +57,6 @@ function PostCard({ post }: PostCardProps) {
 
   const plateName = PLATES.find((plate) => plate.id === post.plate)?.name ?? '';
   const preview = stripHtml(post.content);
-  const cover = (post.imageUrls ?? [])[0];
   const openPost = () => router.push(`/messageDetail/${post.id}`);
 
   return (
@@ -70,7 +69,7 @@ function PostCard({ post }: PostCardProps) {
         }
       }}
       tabIndex={0}
-      className={`post-row${cover ? '' : ' no-image'}`}
+      className="post-row"
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
@@ -96,6 +95,8 @@ function PostCard({ post }: PostCardProps) {
         <h2 className="post-title">{post.title}</h2>
         {preview && <p className="post-desc">{preview}</p>}
 
+        <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} />
+
         <div className="stats">
           <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
           <span className="post-stat"><StatIcon type="comment" />{post.commentCount ?? 0}</span>
@@ -116,12 +117,6 @@ function PostCard({ post }: PostCardProps) {
           </span>
         </div>
       </div>
-
-      {cover && (
-        <div className="thumb">
-          <img src={resolvePostImage(cover)} alt="" loading="lazy" />
-        </div>
-      )}
     </article>
   );
 }

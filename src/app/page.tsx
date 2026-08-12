@@ -50,7 +50,7 @@ export default function HomePage() {
                   role="tab"
                   aria-selected={sort === SortOrder.ByTime}
                 >
-                  发布
+                  最新发布
                 </button>
                 <button
                   onClick={() => handleSortChange(SortOrder.ByReply)}
@@ -59,7 +59,7 @@ export default function HomePage() {
                   role="tab"
                   aria-selected={sort === SortOrder.ByReply}
                 >
-                  回复
+                  最近回复
                 </button>
               </div>
 

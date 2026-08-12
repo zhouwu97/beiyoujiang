@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description:
     "欢迎来到杯友酱！这里是杯友的真实分享聚集地，也是全网活跃飞机杯友用户最多的倒模名器与玩具交流论坛。",
   keywords: "飞机杯,倒模,名器,杯友酱,交流论坛,测评,体验报告",
+  icons: {
+    icon: "/images/load.gif",
+    shortcut: "/images/load.gif",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

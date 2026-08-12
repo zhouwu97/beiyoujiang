@@ -5,9 +5,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 const BANNERS = [
-  // 首页主视觉使用随应用发布的静态资源，避免外部图片服务异常时 Banner 留白。
-  { id: 1, img: '/images/banners/community-featured.webp', postId: 2321, label: '社区精选' },
-  { id: 2, img: '/images/banners/experience-sharing.webp', postId: 448, label: '体验分享' },
+  // 使用项目内静态资源，避免外部图片服务异常时 Banner 留白。
+  { id: 1, img: '/images/banners/banner-pink.png', postId: 2321, label: '修女忏悔室' },
+  { id: 2, img: '/images/banners/banner-warm.png', postId: 448, label: '杯友酱 APP' },
 ];
 
 function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {

@@ -90,7 +90,9 @@ export default function Header() {
     <header className="site-header">
       <div className="desktop-header-inner">
         <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
-          <span className="desktop-header-brand-mark" aria-hidden="true">杯</span>
+          <span className="desktop-header-brand-mark" aria-hidden="true">
+            <img src="/images/load.gif" alt="" />
+          </span>
           <span className="desktop-header-brand-text">杯友酱</span>
           <span className="desktop-header-brand-dot" aria-hidden="true" />
         </Link>
