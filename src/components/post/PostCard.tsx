@@ -20,7 +20,7 @@ export function stripHtml(html: string): string {
 export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
   if (type === 'eye') {
     return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M2.5 12s3.3-5 9.5-5 9.5 5 9.5 5-3.3 5-9.5 5-9.5-5-9.5-5Z" />
         <circle cx="12" cy="12" r="2.3" />
       </svg>
@@ -29,14 +29,14 @@ export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
 
   if (type === 'comment') {
     return (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-3.8 3v-3H7.5A2.5 2.5 0 0 1 5 12.5z" />
       </svg>
     );
   }
 
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M20.8 8.7c0 5.5-8.8 10-8.8 10s-8.8-4.5-8.8-10A4.2 4.2 0 0 1 11 6.1a4.2 4.2 0 0 1 9.8 2.6Z" />
     </svg>
   );
@@ -76,17 +76,17 @@ function PostCard({ post }: PostCardProps) {
           <img
             src={resolveAvatar(post.author?.photo)}
             alt=""
-            className="h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover"
+            className="post-avatar h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover max-md:h-8 max-md:w-8"
             loading="lazy"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <strong className="max-w-[150px] truncate text-[14px] font-bold text-[var(--ink)]">
+              <strong className="post-author-name max-w-[170px] truncate text-[14px] font-bold text-[var(--ink)] max-md:text-[13px]">
                 {post.author?.username ?? '杯友'}
               </strong>
               {plateName && <span className="topic">{plateName}</span>}
             </div>
-            <div className="mt-0.5 text-[11px] text-[var(--muted)]">
+            <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[10px]">
               {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
             </div>
           </div>
@@ -111,9 +111,9 @@ function PostCard({ post }: PostCardProps) {
             <StatIcon type="heart" />
             <span>{likeCount}</span>
           </button>
-          <span className="post-open-hint hidden items-center gap-1.5 sm:inline-flex">
+          <span className="post-open-hint hidden items-center gap-1.5 lg:inline-flex">
             查看讨论
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
           </span>
         </div>
       </div>

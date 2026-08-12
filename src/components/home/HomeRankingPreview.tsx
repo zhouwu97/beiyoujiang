@@ -42,7 +42,7 @@ export default function HomeRankingPreview() {
   const top = toys[0];
 
   return (
-    <section className="rail-panel p-[15px]">
+    <section className="rail-panel p-[18px]">
       <div className="rail-head">
         <h3>本周玩具榜</h3>
         <Link href="/rankingList">进入榜单 →</Link>

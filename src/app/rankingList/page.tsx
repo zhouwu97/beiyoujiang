@@ -176,7 +176,7 @@ export default function RankingListPage() {
         left={<DesktopSidebar />}
         main={
           <div className="min-w-0">
-            <div className={`${styles.pageTitle} mb-4`}>
+            <div className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
               <h1>玩具榜单</h1>
               <p>排名按站点榜单接口返回顺序</p>
             </div>

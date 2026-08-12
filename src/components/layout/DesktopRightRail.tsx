@@ -28,7 +28,7 @@ export default function DesktopRightRail() {
 
   return (
     <aside className="desktop-right-rail">
-      <section className="rail-panel p-[15px]">
+      <section className="rail-panel p-[18px]">
         <div className="rail-head">
           <h3>刚刚更新</h3>
           <button type="button" onClick={() => router.push('/')} className="rail-head-action">全部</button>

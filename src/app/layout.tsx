@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CustomAlertProvider>
           <RewardToastProvider>
             <ClientInit />
-            <main className="flex-1 w-full min-h-screen pb-20 lg:pb-0">
+            <main className="flex-1 w-full min-h-screen pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0">
               {children}
             </main>
           </RewardToastProvider>

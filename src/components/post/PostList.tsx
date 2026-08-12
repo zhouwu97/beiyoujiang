@@ -13,7 +13,7 @@ function PostSkeleton({ withMedia = false }: { withMedia?: boolean }) {
     <div className="post-row" aria-hidden="true">
       <div>
         <div className="flex items-center gap-2.5">
-          <div className="skeleton h-[34px] w-[34px] rounded-[11px]" />
+          <div className="skeleton post-avatar h-[34px] w-[34px] rounded-[11px]" />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="skeleton h-3 w-28 rounded-full" />
             <div className="skeleton h-2.5 w-16 rounded-full" />

@@ -13,13 +13,14 @@ interface DesktopPageShellProps {
  * 统一桌面布局壳（首页 / 榜单共用），只负责布局，不含业务。
  *
  * 断点规则（列宽定义在 globals.css .main-grid，此处只提供三块内容）：
- *  <900        单栏（Feed only，左右栏均隐藏）
- *  900~1279    Feed + 右栏（左栏隐藏）
- *  1280~1535   190px | Feed | 270px，gap 16
- *  >=1536      208px | Feed | 292px，gap 18
+ *  <768        单栏满宽（手机，无顶部留白，正文从 Header 下直接开始）
+ *  768~1023    单栏居中 max-width 760
+ *  1024~1279   Feed + 右栏（左栏隐藏）
+ *  1280~1535   220px | Feed | 300px，gap 24
+ *  >=1536      236px | Feed | 320px，gap 28
  *
  * 整体宽度跟随 .shell-width：<1280 保持原样（不动移动端），
- * 1280~1535 为 min(1440px, calc(100% - 32px))，>=1536 为 min(1440px, calc(100% - 40px))。
+ * 1280~1535 为 min(1400px, calc(100% - 32px))，>=1536 为 min(1440px, calc(100% - 40px))。
  *
  * Sticky 注意：sticky + self-start 必须放在 grid item 自身
  * （.main-left-col / .main-right-col）。不能放在内部子元素上——self-start 会让
@@ -29,7 +30,7 @@ interface DesktopPageShellProps {
  */
 export default function DesktopPageShell({ left, main, right }: DesktopPageShellProps) {
   return (
-    <div className="shell-width pt-6 pb-[72px]">
+    <div className="shell-width pt-6 pb-[72px] max-md:pt-0">
       <div className="main-grid">
         {left ? <div className="main-left-col">{left}</div> : null}
         <div className="min-w-0">{main}</div>

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent/tooling artifacts（git 已忽略，避免快照目录被 ESLint 扫到）
+    ".playwright-mcp/**",
+    ".omo/**",
   ]),
 ]);
 

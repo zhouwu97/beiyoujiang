@@ -138,7 +138,7 @@ export default function Header() {
         </div>
       </div>
 
-      <nav className="flex min-w-0 items-center gap-5 overflow-x-auto border-t border-[var(--line)] px-4 xl:hidden" aria-label="论坛板块">
+      <nav className="flex min-w-0 items-stretch border-t border-[var(--line)] px-1 xl:hidden" aria-label="论坛板块">
         {PLATES.map((plateInfo) => {
           const isActive = currentPlate === plateInfo.id;
           return (
@@ -147,7 +147,7 @@ export default function Header() {
               type="button"
               onClick={() => handlePlateClick(plateInfo.id)}
               aria-current={isActive ? 'page' : undefined}
-              className="header-section-link shrink-0"
+              className="header-section-link flex-1 justify-center"
               data-active={isActive}
             >
               {plateInfo.name}
