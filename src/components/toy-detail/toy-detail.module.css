@@ -552,20 +552,80 @@
   margin-bottom: 0;
 }
 
+/* 测评图片：单图 / 双图 / 多图按数量分级放大，禁止固定小缩略图。
+ * 统一 contain，竖图截图能完整看清，不做 cover 裁切。 */
 .reviewImgs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0 0 51px;
+  gap: 10px;
+  margin: 14px 0 0 51px;
 }
 
+.reviewImgBtn {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+/* 通用：竖图截图不限死 64×64，最大 200 宽 / 360 高完整 contain */
 .reviewImg {
-  width: 82px;
-  height: 82px;
+  width: 100%;
+  max-width: 200px;
+  max-height: 360px;
+  height: auto;
   border-radius: 12px;
   object-fit: contain;
   background: var(--surface-subtle);
   box-shadow: 0 0 0 1px var(--line);
+  transition: box-shadow 180ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.reviewImgBtn:hover .reviewImg {
+  box-shadow: 0 0 0 1px var(--line-strong), 0 10px 24px rgba(37, 27, 31, 0.09);
+}
+
+.reviewImgBtn:active .reviewImg {
+  transform: scale(0.985);
+}
+
+/* 单图：明显放大，clamp(140, 22vw, 220) */
+.single {
+  display: block;
+}
+
+.single .reviewImg {
+  width: clamp(140px, 22vw, 220px);
+  max-width: none;
+  max-height: 320px;
+}
+
+/* 2 张：两列并排，每张 140~180 */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 180px));
+  justify-content: start;
+}
+
+.pair .reviewImg {
+  width: 100%;
+  max-width: none;
+  max-height: 300px;
+}
+
+/* 3~4 张：缩略网格 110~140，仍 contain 不裁切 */
+.thumb {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 140px));
+  justify-content: start;
+}
+
+.thumb .reviewImg {
+  width: 100%;
+  max-width: none;
+  max-height: 260px;
 }
 
 .reviewFoot {

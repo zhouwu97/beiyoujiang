@@ -44,6 +44,8 @@ export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
 
 interface PostCardProps {
   post: Post;
+  /** search：搜索结果页变体，单图放大到原始比例（横 620 / 竖 320） */
+  variant?: 'default' | 'search';
 }
 
 /**
@@ -51,7 +53,7 @@ interface PostCardProps {
  * 图片作为正文的一部分下置（PostMedia 统一渲染，保持原始宽高比、禁止 cover/固定比例）。
  * 无图帖不预留图片区，纯文字帖保持紧凑。
  */
-function PostCard({ post }: PostCardProps) {
+function PostCard({ post, variant = 'default' }: PostCardProps) {
   const router = useRouter();
   const { liked, likeCount, liking, handleLike } = usePostLike(post);
 
@@ -95,7 +97,7 @@ function PostCard({ post }: PostCardProps) {
         <h2 className="post-title">{post.title}</h2>
         {preview && <p className="post-desc">{preview}</p>}
 
-        <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} />
+        <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} variant={variant} />
 
         <div className="stats">
           <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>

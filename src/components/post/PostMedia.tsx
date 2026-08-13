@@ -23,6 +23,8 @@ interface PostMediaProps {
   maxCount?: number;
   /** 点击图片回调（调用方负责跳详情 / 开查看器），组件内已 stopPropagation */
   onImageClick?: (url: string, index: number) => void;
+  /** default：首页密度；search：搜索结果页，单图明显放大（横 620 / 竖 320 / 其他 460） */
+  variant?: 'default' | 'search';
 }
 
 /** 单图展示宽度：连续公式 + 高度上限回退，禁止 portrait/square/landscape 三档硬分类。 */
@@ -44,6 +46,22 @@ export function computeSingleWidth(naturalWidth: number, naturalHeight: number):
   return Math.round(width);
 }
 
+/** 搜索结果页单图宽度：按自然比例分档，竖图不放小到缩略图。 */
+export function computeSearchWidth(naturalWidth: number, naturalHeight: number): number {
+  if (!naturalWidth || !naturalHeight) return 0;
+
+  const ratio = naturalWidth / naturalHeight;
+  let width = ratio >= 1.2 ? 620 : ratio <= 0.8 ? 320 : 460;
+
+  const height = width / ratio;
+  const maxHeight = 620;
+  if (height > maxHeight) {
+    width = Math.max(220, maxHeight * ratio);
+  }
+
+  return Math.round(width);
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -52,15 +70,20 @@ function clamp(value: number, min: number, max: number): number {
 function SingleImage({
   url,
   onClick,
+  variant,
 }: {
   url: string;
   onClick?: (url: string, index: number) => void;
+  variant: 'default' | 'search';
 }) {
   const [width, setWidth] = useState<number | null>(null);
 
   const handleLoad = (event: SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget;
-    const w = computeSingleWidth(img.naturalWidth, img.naturalHeight);
+    const w =
+      variant === 'search'
+        ? computeSearchWidth(img.naturalWidth, img.naturalHeight)
+        : computeSingleWidth(img.naturalWidth, img.naturalHeight);
     if (w > 0) setWidth(w);
   };
 
@@ -121,7 +144,7 @@ function MediaGrid({
   );
 }
 
-function PostMedia({ images, maxCount = 4, onImageClick }: PostMediaProps) {
+function PostMedia({ images, maxCount = 4, onImageClick, variant = 'default' }: PostMediaProps) {
   const validImages = (images ?? []).filter((url) => typeof url === 'string' && url.trim().length > 0);
 
   if (validImages.length === 0) return null;
@@ -129,14 +152,14 @@ function PostMedia({ images, maxCount = 4, onImageClick }: PostMediaProps) {
   // 单图走原比例连续公式；多图走网格
   if (validImages.length === 1) {
     return (
-      <div className="post-media">
-        <SingleImage url={validImages[0]} onClick={onImageClick} />
+      <div className={`post-media${variant === 'search' ? ' post-media--search' : ''}`}>
+        <SingleImage url={validImages[0]} onClick={onImageClick} variant={variant} />
       </div>
     );
   }
 
   return (
-    <div className="post-media">
+    <div className={`post-media${variant === 'search' ? ' post-media--search' : ''}`}>
       <MediaGrid images={validImages} maxCount={maxCount} onClick={onImageClick} />
     </div>
   );
