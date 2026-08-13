@@ -649,6 +649,36 @@ a:focus-visible {
   }
 }
 
+/* ===== 无右栏（.main-grid--no-right）=====
+ * 页面不传 right 时自动挂上（见 DesktopPageShell）：删除第三列，
+ * 主内容吃满剩余空间，杜绝「220 | main | 300」里 300px 幽灵右栏。
+ * 定义在所有 main-grid / main-grid--ranking 之后，保证同权重覆盖生效。
+ * 1024~1279 左栏本来就隐藏，收成单列；1280/1536 保留左栏导航。
+ */
+.main-grid--no-right {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .main-grid--no-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .main-grid--no-right {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .main-grid--no-right {
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
 .rail-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
@@ -2325,26 +2355,27 @@ button:disabled {
 
 /* ===== 搜索页 Focus Shell 与布局 ===== */
 /* 搜索页独立于社区 Header：顶部只允许一个搜索框。
- * 整体容器加宽（1320），帖子阅读区单独收窄（1080），不把帖子拉满全宽。
+ * 整体容器继续加宽（桌面 1440），帖子阅读区单独收窄（1220），
+ * 1920 下玩具区约 1400、帖子约 1220，仍保留阅读留白但不再两侧大空。
  * 手机：Shell 自带 16px 左右边距，内层不再重复 padding。 */
 .search-shell {
-  width: min(1320px, calc(100% - 32px));
+  width: min(1440px, calc(100% - 32px));
   margin-inline: auto;
 }
 
 .search-shell--narrow {
-  width: min(1080px, calc(100% - 32px));
+  width: min(1220px, calc(100% - 32px));
   margin-inline: auto;
 }
 
 @media (min-width: 768px) {
   .search-shell,
   .search-shell--narrow {
-    width: min(1320px, calc(100% - 48px));
+    width: min(1440px, calc(100% - 48px));
   }
 
   .search-shell--narrow {
-    width: min(1080px, calc(100% - 48px));
+    width: min(1220px, calc(100% - 48px));
   }
 }
 
@@ -2376,13 +2407,15 @@ button:disabled {
   justify-content: center;
   overflow: hidden;
   background: var(--surface-subtle);
-  padding: 14px;
+  padding: 10px;
 }
 
 .search-toy-media img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  /* 素材自带白边，轻微放大吃掉空白又不裁主体；容器 overflow:hidden 兜底 */
+  transform: scale(1.08);
 }
 
 .search-toy-body {
@@ -2432,14 +2465,14 @@ button:disabled {
 
 @media (min-width: 768px) {
   .search-toy-card {
-    grid-template-columns: 44% minmax(0, 1fr);
-    height: 210px;
+    grid-template-columns: 50% minmax(0, 1fr);
+    height: 220px;
   }
 
   .search-toy-media {
     aspect-ratio: auto;
     height: 100%;
-    padding: 16px;
+    padding: 8px;
     border-right: 1px solid var(--line);
   }
 
@@ -2592,6 +2625,23 @@ button:disabled {
   height: 25px;
   object-fit: contain;
   margin: 0 2px;
+}
+
+/* 消息深链定位到的评论：淡粉色高亮 1.8s 后淡出 */
+.comment-target {
+  animation: comment-target 1.8s var(--ease-out);
+}
+
+@keyframes comment-target {
+  0% {
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 /* ===== 排行榜样式已迁移至 src/components/ranking/ranking.module.css ===== */

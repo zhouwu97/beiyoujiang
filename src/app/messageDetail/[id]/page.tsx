@@ -67,6 +67,7 @@ export default function MessageDetailPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrolledToHashRef = useRef<string | null>(null);
   const me = getUserId();
 
   const post = detail?.post;
@@ -96,6 +97,28 @@ export default function MessageDetailPage() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  // 从消息列表深链进来（#comment-{id} 或 #comments）：评论渲染完成后定位 + 高亮。
+  // 找不到目标评论时兜底到评论区；不做第一轮猜测式 getMoreComments 拉取。
+  useEffect(() => {
+    if (loading) return;
+    const hash = window.location.hash;
+    if (!hash || hash === '#') return;
+    if (scrolledToHashRef.current === hash) return;
+
+    requestAnimationFrame(() => {
+      const el = document.querySelector(hash);
+      const target = el ?? document.getElementById('comments');
+      if (!target) return;
+
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) {
+        target.classList.add('comment-target');
+        window.setTimeout(() => target.classList.remove('comment-target'), 2000);
+      }
+      scrolledToHashRef.current = hash;
+    });
+  }, [loading, comments]);
 
   const handleLike = useCallback(async () => {
     if (!me) { setShowLoginTip(true); return; }
@@ -357,7 +380,7 @@ export default function MessageDetailPage() {
             </article>
 
             {/* 评论区 */}
-            <section className="border-t border-[var(--line)] px-5 py-5 sm:px-7">
+            <section id="comments" className="scroll-mt-[96px] border-t border-[var(--line)] px-5 py-5 sm:px-7">
               <h2 className="mb-1 text-[16px] font-bold text-[var(--ink)]">
                 全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
@@ -368,7 +391,12 @@ export default function MessageDetailPage() {
 
               <div className="space-y-0">
                 {comments.map((c) => (
-                  <div key={c.id} className="border-b border-[var(--line)] py-3.5 last:border-0">
+                  <div
+                    key={c.id}
+                    id={`comment-${c.id}`}
+                    data-comment-id={c.id}
+                    className="comment-item scroll-mt-[96px] border-b border-[var(--line)] py-3.5 last:border-0"
+                  >
                     {/* 评论头 */}
                     <div className="flex items-center gap-2">
                       <img
@@ -459,7 +487,7 @@ export default function MessageDetailPage() {
                     {c.replies && c.replies.length > 0 && (
                       <div className="ml-[38px] mt-2 space-y-1 rounded-[9px] bg-[var(--surface-subtle)] p-2.5">
                         {c.replies.map((r) => (
-                          <div key={r.id} className="text-[12px]">
+                          <div key={r.id} id={`comment-${r.id}`} className="scroll-mt-[96px] text-[12px]">
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
                             <span

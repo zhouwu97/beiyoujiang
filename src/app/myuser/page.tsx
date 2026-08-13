@@ -84,23 +84,23 @@ export default function MyUserPage() {
       <DesktopPageShell
         left={<DesktopSidebar />}
         main={
-          <div className="min-w-0">
-      {/* 用户卡片 */}
+          <div className="min-w-0 max-w-[1100px]">
+      {/* 用户卡片：完整 Profile Hero（幽灵右栏已由 --no-right 删除） */}
       <section className="px-4 pt-5 lg:px-0 lg:pt-0">
-        <div className="bg-gradient-to-br from-[#FFF0F3] to-[#FFE8EC] rounded-[20px] p-5">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="rounded-[20px] bg-gradient-to-br from-[#FFF0F3] to-[#FFE8EC] p-6 sm:p-7">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-4">
             <img
               src={resolveAvatar(displayPhoto)}
               alt=""
-              className="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
+              className="h-[68px] w-[68px] rounded-full border-2 border-white object-cover shadow sm:h-20 sm:w-20"
             />
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-[17px] font-bold text-[var(--ink)]">{displayName}</span>
+                <span className="text-[18px] font-bold text-[var(--ink)]">{displayName}</span>
                 <img
                   src={resolveImage(`/images/level/leve${level}.png`)}
                   alt={`Lv.${level}`}
-                  className="w-5 h-5"
+                  className="h-5 w-5"
                 />
               </div>
               {isGuest && (
@@ -111,32 +111,36 @@ export default function MyUserPage() {
                   登录正式账号
                 </button>
               )}
-              <p className="text-[12px] text-[var(--muted)] mt-1">
+              <p className="mt-1 truncate text-[12px] text-[var(--muted)]">
                 {data?.introduction ?? '快来写你的简介吧'}
               </p>
             </div>
+
+            {/* U酱币：右侧 */}
+            <div className="flex items-center gap-2">
+              <img src={resolveImage('/images/u.webp')} alt="U酱币" className="h-5 w-5" />
+              <span className="text-[17px] font-bold text-[#FF9800]">
+                {data?.USauceBean ?? 0}
+              </span>
+              <span className="text-[11px] text-[var(--muted)]">U酱币</span>
+            </div>
           </div>
 
-          {/* U酱币 + 经验条 */}
-          <div className="flex items-center gap-2 mb-3">
-            <img src={resolveImage('/images/u.webp')} alt="U酱币" className="w-5 h-5" />
-            <span className="text-[15px] font-bold text-[#FF9800]">
-              {data?.USauceBean ?? 0}
-            </span>
-            <span className="text-[11px] text-[var(--muted)]">U酱币</span>
-            <div className="flex-1 h-1.5 bg-white/70 rounded-full overflow-hidden ml-2">
+          {/* 经验条 */}
+          <div className="mt-5 flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/70">
               <div
                 className="h-full w-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-[#FFAFBD] to-[var(--accent)] transition-transform duration-200"
                 style={{ transform: `scaleX(${Math.min(100, experience % 100) / 100})` }}
               />
             </div>
-            <span className="text-[11px] text-[var(--muted)] whitespace-nowrap">
+            <span className="whitespace-nowrap text-[11px] text-[var(--muted)]">
               经验 {experience}
             </span>
           </div>
 
           {/* 统计 */}
-          <div className="flex items-center justify-around bg-white/60 rounded-[14px] py-3">
+          <div className="mt-5 flex items-center justify-around rounded-[14px] bg-white/60 py-3.5">
             <div className="text-center">
               <p className="text-[16px] font-bold text-[var(--ink)]">{data?.fans ?? 0}</p>
               <p className="text-[11px] text-[var(--muted)]">粉丝</p>

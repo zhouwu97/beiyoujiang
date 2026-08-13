@@ -58,6 +58,8 @@ export default function RankingListPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const rulesRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef(1);
   const requestVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -141,6 +143,23 @@ export default function RankingListPage() {
     return () => window.removeEventListener('popstate', onPop);
   }, [type, classify]);
 
+  // 榜单规则 Popover：点外部 / Esc 关闭
+  useEffect(() => {
+    if (!showRules) return;
+    const onDown = (e: MouseEvent) => {
+      if (rulesRef.current && !rulesRef.current.contains(e.target as Node)) setShowRules(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowRules(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [showRules]);
+
   // 加载更多（与首屏/筛选请求独立加锁）
   const loadMore = useCallback(async () => {
     if (filterLoading || loadingMore || !hasMore) return;
@@ -211,6 +230,8 @@ export default function RankingListPage() {
   };
 
   const showList = !filterLoading && !error && toys.length > 0;
+  // 只有真正存在「本周冠军 ≠ 当前榜首」时右栏才有增量信息，否则整个页面收成两栏
+  const showRankingRail = weeklyTop !== null && weeklyTop.id !== toys[0]?.id;
 
   return (
     <div className="page-shell min-h-screen">
@@ -223,9 +244,30 @@ export default function RankingListPage() {
           <div className="min-w-0">
             <header className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
               <h1>玩具榜单</h1>
+              <div ref={rulesRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRules((v) => !v)}
+                  aria-expanded={showRules}
+                  aria-haspopup="dialog"
+                  className={styles.rulesButton}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8h.01" />
+                    <path d="M11 12h1v4h1" />
+                  </svg>
+                  榜单规则
+                </button>
+                {showRules && (
+                  <div className={styles.rulesPopover} role="dialog" aria-label="榜单规则">
+                    榜单按官方站实时数据排序，每周更新。评分、测评量与想中数作为商品信息展示。
+                  </div>
+                )}
+              </div>
             </header>
 
-            {/* 筛选条：独立 sticky 区（底色挡透），与内容区 z 分层，避免 Top1 滚入重叠 */}
+            {/* 筛选条：普通文档流（不再 sticky），滚动时不压 Top1 */}
             <section className={styles.filterZone}>
               <RankingFilters
                 type={type}
@@ -277,7 +319,9 @@ export default function RankingListPage() {
             </section>
           </div>
         }
-        right={<RankingRightRail weeklyTop={weeklyTop} topToyId={toys[0]?.id} />}
+        right={
+          showRankingRail && weeklyTop ? <RankingRightRail weeklyTop={weeklyTop} /> : undefined
+        }
       />
 
       <BottomNav />
