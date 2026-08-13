@@ -112,15 +112,14 @@ export default function MessagePage() {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-[13px] font-semibold text-[var(--ink)]">回复了你的帖子</p>
+                  {String(m.content ?? '').trim() ? (
+                    <p className="truncate text-[13px] font-semibold text-[var(--ink)]">{String(m.content ?? '')}</p>
+                  ) : (
+                    <p className="truncate text-[13px] font-semibold text-[var(--muted)]">新消息</p>
+                  )}
                   {!m.isRead && <span className="h-2 w-2 flex-none rounded-full bg-[var(--accent)]" />}
                   <span className="ml-auto flex-none text-[11px] text-[var(--muted)]">{formatTime(m.createdAt)}</span>
                 </div>
-                {String(m.content ?? '').trim() && (
-                  <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-[var(--ink-soft)]">
-                    {String(m.content ?? '')}
-                  </p>
-                )}
               </div>
               {href && (
                 <svg

@@ -247,7 +247,7 @@ export default function MessageDetailPage() {
   const author = post.author;
 
   // 右侧推荐：从缓存取同板块帖子
-  const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id).slice(0, 5);
+  const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id && p.plate === post.plate).slice(0, 5);
 
   // 作者统计数据
   const authorStats = [
@@ -260,7 +260,7 @@ export default function MessageDetailPage() {
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <main className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:py-6">
+      <main className="mx-auto w-full max-w-[1328px] px-4 py-5 sm:px-6 lg:py-6">
         {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
           <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
@@ -471,11 +471,13 @@ export default function MessageDetailPage() {
                             key={i}
                             src={postImageUrl(img)}
                             alt=""
-                            className="w-auto cursor-zoom-in rounded-[10px] border border-[var(--line)] object-contain"
+                            className="h-auto w-auto cursor-zoom-in rounded-[10px] border border-[var(--line)] object-contain"
                             style={
                               c.imageUrlsArray.length === 1
-                                ? { maxWidth: '240px', maxHeight: '320px' }
-                                : { width: '110px', height: '110px' }
+                                ? { maxWidth: '360px', maxHeight: '480px' }
+                                : c.imageUrlsArray.length === 2
+                                  ? { maxWidth: '260px', maxHeight: '340px' }
+                                  : { maxWidth: '200px', maxHeight: '260px' }
                             }
                             onClick={() => setPreviewImage(postImageUrl(img))}
                           />
