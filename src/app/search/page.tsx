@@ -3,17 +3,20 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getAllKeywords, searchToyPost } from '@/lib/api';
+import { getAllKeywords, getAllToy, searchToyPost } from '@/lib/api';
 import type { Keyword, Post, Toy } from '@/lib/types';
+import { PLATES } from '@/lib/types';
+import { categoryLabel, stimulationLabel } from '@/lib/toyLabels';
 import PostCard from '@/components/post/PostCard';
 import ToyImage from '@/components/toy/ToyImage';
 
 /**
- * 搜索页：热词 + 实时搜索结果（玩具 + 帖子）
+ * 搜索页：未输入态为「搜索发现」（热词 + 板块入口 + 热门玩具）；输入后实时搜索玩具 + 帖子。
  */
 export default function SearchPage() {
   const router = useRouter();
   const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const [hotToys, setHotToys] = useState<Toy[]>([]);
   const [query, setQuery] = useState('');
   const [toys, setToys] = useState<Toy[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -25,10 +28,13 @@ export default function SearchPage() {
   // 请求序号：快速连续搜索时，过期响应直接丢弃（与榜单页 requestVersion 同一模式）
   const requestVersionRef = useRef(0);
 
-  // 加载热词
+  // 加载热词 + 4 个热门玩具（榜单数据，不造数据）
   useEffect(() => {
     getAllKeywords()
       .then(setKeywords)
+      .catch(() => {});
+    getAllToy('', '', 0, 1, 4)
+      .then((res) => setHotToys(res.list.slice(0, 4)))
       .catch(() => {});
   }, []);
 
@@ -111,25 +117,60 @@ export default function SearchPage() {
         </div>
       </header>
 
-      {/* 热词 */}
+      {/* 搜索发现（未输入）：热门搜索 + 板块快捷入口 + 热门玩具 */}
       {!searched && (
-        <section className="search-shell pt-4 lg:pt-8">
-          <h3 className="mb-3 text-[13px] text-[var(--muted)]">大家都在搜</h3>
-          <div className="flex flex-wrap gap-2">
-            {keywords.map((k) => (
-              <button
-                key={k.id}
-                onClick={() => {
-                  setQuery(k.keyword);
-                  doSearch(k.keyword, 1);
-                }}
-                className="rounded-full bg-[var(--background)] px-3 py-1.5 text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--surface-tint)]"
-              >
-                {k.keyword}
-              </button>
-            ))}
-          </div>
-        </section>
+        <div className="search-shell pb-12 pt-4 lg:pt-8">
+          {/* 热门搜索 */}
+          <section>
+            <h3 className="mb-3 text-[13px] text-[var(--muted)]">大家都在搜</h3>
+            <div className="flex flex-wrap gap-2">
+              {keywords.map((k) => (
+                <button
+                  key={k.id}
+                  onClick={() => {
+                    setQuery(k.keyword);
+                    doSearch(k.keyword, 1);
+                  }}
+                  className="search-keyword"
+                >
+                  {k.keyword}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 快速浏览：板块快捷入口 */}
+          <section className="mt-8">
+            <h3 className="mb-3 text-[13px] text-[var(--muted)]">快速浏览</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {PLATES.map((p) => (
+                <Link key={p.id} href={`/?plate=${p.id}`} className="search-plate-card">
+                  {p.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* 热门玩具：复用榜单数据加载 4 个 */}
+          {hotToys.length > 0 && (
+            <section className="mt-8">
+              <h3 className="mb-3 text-[13px] text-[var(--muted)]">热门玩具</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {hotToys.map((t) => (
+                  <Link key={t.id} href={`/bang/${t.id}`} className="search-hot-toy">
+                    <div className="search-hot-toy-media">
+                      <ToyImage src={t.coverUrl?.[0]} alt={t.name} loading="lazy" />
+                    </div>
+                    <div className="search-hot-toy-body">
+                      <p className="search-hot-toy-name">{t.name}</p>
+                      <p className="search-hot-toy-score">{t.rating ?? '-'}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       )}
 
       {/* 搜索结果 */}
@@ -172,6 +213,11 @@ export default function SearchPage() {
                         <span>分 · {t.reviewCount ?? 0} 篇测评</span>
                       </p>
                       <p className="search-toy-tags">{t.tags ?? ''}</p>
+                      <p className="search-toy-meta">
+                        <span>{t.merchant || '杯友酱'}</span>
+                        <span>{categoryLabel(t.category)} · {stimulationLabel(t.stimulation)}</span>
+                      </p>
+                      <span className="search-toy-cta">查看详情 →</span>
                     </div>
                   </Link>
                 ))}
@@ -179,9 +225,9 @@ export default function SearchPage() {
             </section>
           )}
 
-          {/* 帖子结果：收窄容器，图片放大 */}
+          {/* 帖子结果：全宽容器，文字与图片双列并排 */}
           {posts.length > 0 && (
-            <section className="search-shell--narrow">
+            <section className="search-shell">
               <h3 className="mb-1 text-[13px] text-[var(--muted)]">帖子（{posts.length}）</h3>
               {posts.map((p) => (
                 <PostCard key={p.id} post={p} variant="search" />
@@ -190,7 +236,7 @@ export default function SearchPage() {
           )}
 
           {hasMore && (
-            <div className="search-shell--narrow">
+            <div className="search-shell">
               <button
                 onClick={handleLoadMore}
                 className="w-full py-3 text-center text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]"

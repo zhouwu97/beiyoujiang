@@ -44,7 +44,7 @@ export function StatIcon({ type }: { type: 'eye' | 'comment' | 'heart' }) {
 
 interface PostCardProps {
   post: Post;
-  /** search：搜索结果页变体，单图放大到原始比例（横 620 / 竖 320） */
+  /** search：搜索结果页变体，文字与图片双列并排，避免视觉主体只占左半边 */
   variant?: 'default' | 'search';
 }
 
@@ -52,6 +52,9 @@ interface PostCardProps {
  * 帖子行（贴吧式纵向内容流）：作者 → 标题 → 正文摘要 → 图片/图片组 → 浏览/回复/点赞。
  * 图片作为正文的一部分下置（PostMedia 统一渲染，保持原始宽高比、禁止 cover/固定比例）。
  * 无图帖不预留图片区，纯文字帖保持紧凑。
+ *
+ * search 变体：文字列（作者/标题/摘要/统计）+ 图片列左右并排，图片右对齐放大，
+ * 单张竖图不再把右侧留成整块空白。
  */
 function PostCard({ post, variant = 'default' }: PostCardProps) {
   const router = useRouter();
@@ -60,6 +63,82 @@ function PostCard({ post, variant = 'default' }: PostCardProps) {
   const plateName = PLATES.find((plate) => plate.id === post.plate)?.name ?? '';
   const preview = stripHtml(post.content);
   const openPost = () => router.push(`/messageDetail/${post.id}`);
+
+  const authorRow = (
+    <div className="flex items-center gap-2.5">
+      <img
+        src={resolveAvatar(post.author?.photo)}
+        alt=""
+        className="post-avatar h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover max-md:h-8 max-md:w-8"
+        loading="lazy"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1">
+          <strong className="post-author-name max-w-[170px] truncate text-[14px] font-bold text-[var(--ink)] max-md:text-[13px]">
+            {post.author?.username ?? '杯友'}
+          </strong>
+          {plateName && <span className="topic">{plateName}</span>}
+        </div>
+        <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[10px]">
+          {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
+        </div>
+      </div>
+    </div>
+  );
+
+  const statsRow = (
+    <div className="stats">
+      <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
+      <span className="post-stat"><StatIcon type="comment" />{post.commentCount ?? 0}</span>
+      <button
+        onClick={handleLike}
+        className="post-stat post-like interactive-press"
+        data-liked={liked}
+        aria-label={liked ? '取消点赞' : '点赞'}
+        aria-pressed={liked}
+        disabled={liking}
+      >
+        <StatIcon type="heart" />
+        <span>{likeCount}</span>
+      </button>
+      <span className="post-open-hint hidden items-center gap-1.5 lg:inline-flex">
+        查看讨论
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
+      </span>
+    </div>
+  );
+
+  const hasImage = (post.imageUrls ?? []).some((url) => typeof url === 'string' && url.trim().length > 0);
+
+  if (variant === 'search') {
+    return (
+      <article
+        onClick={openPost}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openPost();
+          }
+        }}
+        tabIndex={0}
+        className={`post-row post-row--search${hasImage ? '' : ' post-row--search-noimage'}`}
+      >
+        <div className="search-post-grid">
+          <div className="search-post-main min-w-0">
+            {authorRow}
+            <h2 className="post-title">{post.title}</h2>
+            {preview && <p className="post-desc">{preview}</p>}
+            {statsRow}
+          </div>
+          {hasImage && (
+            <div className="search-post-media-col">
+              <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} variant="search" />
+            </div>
+          )}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -74,50 +153,14 @@ function PostCard({ post, variant = 'default' }: PostCardProps) {
       className="post-row"
     >
       <div className="min-w-0">
-        <div className="flex items-center gap-2.5">
-          <img
-            src={resolveAvatar(post.author?.photo)}
-            alt=""
-            className="post-avatar h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover max-md:h-8 max-md:w-8"
-            loading="lazy"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <strong className="post-author-name max-w-[170px] truncate text-[14px] font-bold text-[var(--ink)] max-md:text-[13px]">
-                {post.author?.username ?? '杯友'}
-              </strong>
-              {plateName && <span className="topic">{plateName}</span>}
-            </div>
-            <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[10px]">
-              {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
-            </div>
-          </div>
-        </div>
+        {authorRow}
 
         <h2 className="post-title">{post.title}</h2>
         {preview && <p className="post-desc">{preview}</p>}
 
         <PostMedia images={post.imageUrls ?? []} onImageClick={openPost} variant={variant} />
 
-        <div className="stats">
-          <span className="post-stat"><StatIcon type="eye" />{post.readingQuantity ?? 0}</span>
-          <span className="post-stat"><StatIcon type="comment" />{post.commentCount ?? 0}</span>
-          <button
-            onClick={handleLike}
-            className="post-stat post-like interactive-press"
-            data-liked={liked}
-            aria-label={liked ? '取消点赞' : '点赞'}
-            aria-pressed={liked}
-            disabled={liking}
-          >
-            <StatIcon type="heart" />
-            <span>{likeCount}</span>
-          </button>
-          <span className="post-open-hint hidden items-center gap-1.5 lg:inline-flex">
-            查看讨论
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h13" /><path d="m13 6 6 6-6 6" /></svg>
-          </span>
-        </div>
+        {statsRow}
       </div>
     </article>
   );

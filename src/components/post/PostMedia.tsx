@@ -51,12 +51,12 @@ export function computeSearchWidth(naturalWidth: number, naturalHeight: number):
   if (!naturalWidth || !naturalHeight) return 0;
 
   const ratio = naturalWidth / naturalHeight;
-  let width = ratio >= 1.2 ? 620 : ratio <= 0.8 ? 320 : 460;
+  let width = ratio >= 1.2 ? 700 : ratio <= 0.8 ? 400 : 520;
 
   const height = width / ratio;
-  const maxHeight = 620;
+  const maxHeight = 680;
   if (height > maxHeight) {
-    width = Math.max(220, maxHeight * ratio);
+    width = Math.max(240, maxHeight * ratio);
   }
 
   return Math.round(width);
