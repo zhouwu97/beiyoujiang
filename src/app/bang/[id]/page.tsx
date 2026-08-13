@@ -60,6 +60,8 @@ export default function ToyDetailPage() {
   const [similar, setSimilar] = useState<Toy[]>([]);
   const [sortBy, setSortBy] = useState<'latest' | 'useful'>('latest');
   const [loading, setLoading] = useState(true);
+  const [toyError, setToyError] = useState(false);
+  const [reviewError, setReviewError] = useState(false);
   const [showLoginTip, setShowLoginTip] = useState(false);
   /** 测评大图查看器 */
   const [preview, setPreview] = useState<string | null>(null);
@@ -69,13 +71,15 @@ export default function ToyDetailPage() {
     (async () => {
       try {
         const [t, r] = await Promise.all([
-          getToy(toyId).catch(() => null),
-          getToyAllReview(toyId).catch(() => []),
+          getToy(toyId),
+          getToyAllReview(toyId),
         ]);
         if (cancelled) return;
+        setToy(t);
+        setReviews(r);
+        setToyError(false);
+        setReviewError(false);
         if (t) {
-          setToy(t);
-          // 同类热卖（侧边栏相似条目）
           getAllToy('', t.category || '', 0, 1, 8)
             .then((res) => {
               if (!cancelled) setSimilar(res.list.filter((x) => x.id !== toyId).slice(0, 3));
@@ -84,9 +88,11 @@ export default function ToyDetailPage() {
               if (!cancelled) setSimilar([]);
             });
         }
-        setReviews(r);
       } catch {
-        if (!cancelled) showAlert('加载失败，请重试');
+        if (!cancelled) {
+          setToyError(true);
+          setReviewError(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -192,7 +198,30 @@ export default function ToyDetailPage() {
     );
   }
 
-  // 不存在 / 下架（保留统一 Header）
+  // 加载失败（API 挂了 / 网络异常）
+  if (toyError) {
+    return (
+      <div className="page-shell min-h-screen">
+        <Header variant="detail" />
+        <div className={styles.page}>
+          <nav className={styles.breadcrumb} aria-label="面包屑">
+            <Link href="/rankingList">玩具榜单</Link>
+          </nav>
+          <div className={styles.notFound}>
+            <p>加载失败，请检查网络后重试</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="interactive-press btn-gradient inline-flex px-5 py-2.5 text-[12px]"
+            >
+              重新加载
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 不存在 / 下架（API 成功但无数据）
   if (!toy) {
     return (
       <div className="page-shell min-h-screen">
@@ -256,6 +285,7 @@ export default function ToyDetailPage() {
             sortBy={sortBy}
             onSortChange={setSortBy}
             onLike={handleReviewLike}
+            error={reviewError}
             onPreview={setPreview}
           />
           <aside className={styles.side}>

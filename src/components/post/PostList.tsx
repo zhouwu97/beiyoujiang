@@ -41,6 +41,7 @@ function PostSkeleton({ withMedia = false }: { withMedia?: boolean }) {
 export default function PostList() {
   const plate = useForumStore((state) => state.plate);
   const sort = useForumStore((state) => state.sort);
+  const error = useForumStore((state) => state.error);
   const loading = useForumStore((state) => state.loading);
   const exhausted = useForumStore((state) => state.exhausted);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -75,7 +76,19 @@ export default function PostList() {
         </div>
       )}
 
-      {posts.length === 0 && !loading && (
+      {posts.length === 0 && !loading && error && (
+        <div className="flex flex-col items-center py-16 text-center">
+          <p className="mb-4 text-[13px] text-[var(--muted)]">加载失败，请检查网络后重试</p>
+          <button
+            onClick={() => fetchNextPage()}
+            className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+          >
+            重新加载
+          </button>
+        </div>
+      )}
+
+      {posts.length === 0 && !loading && !error && (
         <div className="py-16 text-center text-[13px] text-[var(--muted)]">
           这里还没有帖子，快来发布第一帖吧~
         </div>

@@ -134,7 +134,11 @@ export default function Header({ variant = 'community' }: HeaderProps) {
 
         <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
           <span className="desktop-header-brand-mark" aria-hidden="true">
-            <img src="/images/load.gif" alt="" />
+            {/* TODO: 替换为品牌静态图（原 load.gif 2.8MB 过大），当前为占位 SVG */}
+            <svg viewBox="0 0 34 34" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
+              <rect width="34" height="34" rx="11" fill="#1f1b1d" />
+              <circle cx="27" cy="7" r="3" fill="#df5d91" />
+            </svg>
           </span>
           <span className="desktop-header-brand-text">杯友酱</span>
           <span className="desktop-header-brand-dot" aria-hidden="true" />

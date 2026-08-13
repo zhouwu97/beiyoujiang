@@ -31,14 +31,17 @@ export default function MessagePage() {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const me = getUserId();
   const [loading, setLoading] = useState(() => Boolean(me));
+  const [error, setError] = useState(false);
   const setHasUnread = useMessageStore((s) => s.setHasUnread);
 
   useEffect(() => {
     if (!me) {
+      setLoading(false);
       return;
     }
     let cancelled = false;
-    // 拉取消息 → 推导未读 → 全部标记已读 → 本地同步 isRead，红点立即消失。
+    setLoading(true);
+    setError(false);
     getAllMessages(0)
       .then((msgs) => {
         if (cancelled) return;
@@ -51,7 +54,7 @@ export default function MessagePage() {
         });
       })
       .catch(() => {
-        // 加载失败不影响浏览
+        if (!cancelled) setError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -87,9 +90,36 @@ export default function MessagePage() {
               <h1 className="text-[22px] font-bold tracking-[-0.04em] text-[var(--ink)]">回复我的</h1>
             </div>
 
-      {loading && <p className="text-center text-[13px] text-[var(--muted)] py-16">加载中...</p>}
+      {!me && (
+        <div className="flex flex-col items-center py-20">
+          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
+            🔒
+          </div>
+          <p className="text-[14px] text-[var(--muted)] mb-4">登录后查看回复与通知</p>
+          <Link href="/login" className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]">
+            去登录
+          </Link>
+        </div>
+      )}
 
-      {!loading && messages.length === 0 && (
+      {me && loading && <p className="text-center text-[13px] text-[var(--muted)] py-16">加载中...</p>}
+
+      {me && !loading && error && (
+        <div className="flex flex-col items-center py-20">
+          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
+            ⚠️
+          </div>
+          <p className="text-[14px] text-[var(--muted)] mb-4">加载失败，请检查网络后重试</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+          >
+            重新加载
+          </button>
+        </div>
+      )}
+
+      {me && !loading && !error && messages.length === 0 && (
         <div className="flex flex-col items-center py-20">
           <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
             🔔
@@ -98,7 +128,8 @@ export default function MessagePage() {
         </div>
       )}
 
-      <div className="max-w-[980px] rounded-[18px] border border-[var(--line)] bg-white px-3 py-2 shadow-[0_10px_30px_rgba(27,27,38,0.035)]">
+      {me && !loading && !error && messages.length > 0 && (
+        <div className="max-w-[980px] rounded-[18px] border border-[var(--line)] bg-white px-3 py-2 shadow-[0_10px_30px_rgba(27,27,38,0.035)]">
         {messages.map((m) => {
           const href = getMessageHref(m);
           const baseCls =
@@ -151,6 +182,7 @@ export default function MessagePage() {
           );
         })}
       </div>
+      )}
           </div>
         }
       />

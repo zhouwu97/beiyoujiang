@@ -57,6 +57,7 @@ export default function MessageDetailPage() {
 
   const [detail, setDetail] = useState<PostDetailData | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsError, setCommentsError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -77,16 +78,22 @@ export default function MessageDetailPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [d, c] = await Promise.all([
-          getPost(postId),
-          getPostComments(postId).catch(() => []),
-        ]);
+        const d = await getPost(postId);
         if (cancelled) return;
         setDetail(d);
         setLiked(d.isLiked);
         setLikeCount(d.post.likeCount ?? 0);
         setCollected(d.isCollection);
-        setComments(c);
+
+        try {
+          const c = await getPostComments(postId);
+          if (!cancelled) {
+            setComments(c);
+            setCommentsError(false);
+          }
+        } catch {
+          if (!cancelled) setCommentsError(true);
+        }
       } catch {
         if (!cancelled) showAlert('帖子加载失败');
       } finally {
@@ -191,8 +198,12 @@ export default function MessageDetailPage() {
       await addComment(fd);
       setCommentText('');
       setReplyingTo(null);
-      const c = await getPostComments(postId).catch(() => []);
-      setComments(c);
+      try {
+        const c = await getPostComments(postId);
+        setComments(c);
+      } catch {
+        // 刷新评论列表失败，不覆盖已有评论
+      }
       showReward('评论成功');
     } catch {
       showAlert('评论失败，请重试');
@@ -205,8 +216,12 @@ export default function MessageDetailPage() {
     if (!window.confirm('确定删除这条评论吗？')) return;
     try {
       await deleteComment(commentId);
-      const c = await getPostComments(postId).catch(() => []);
-      setComments(c);
+      try {
+        const c = await getPostComments(postId);
+        setComments(c);
+      } catch {
+        // 刷新评论列表失败，不覆盖已有评论
+      }
       showAlert('删除成功');
     } catch {
       showAlert('删除失败');
@@ -249,11 +264,10 @@ export default function MessageDetailPage() {
   // 右侧推荐：从缓存取同板块帖子
   const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id && p.plate === post.plate).slice(0, 5);
 
-  // 作者统计数据
+  // 作者统计数据（只显示后端真实返回的字段，不要硬编码'—'填充）
   const authorStats = [
-    { label: '帖子', value: '—' },
-    { label: '获赞', value: author?.likeNumber ?? 0 },
-    { label: '关注者', value: author?.followersNumber ?? 0 },
+    ...(typeof author?.likeNumber === 'number' ? [{ label: '获赞', value: author.likeNumber }] : []),
+    ...(typeof author?.followersNumber === 'number' ? [{ label: '关注者', value: author.followersNumber }] : []),
   ];
 
   return (
@@ -385,7 +399,27 @@ export default function MessageDetailPage() {
                 全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
 
-              {comments.length === 0 && (
+              {commentsError && (
+                <div className="flex flex-col items-center py-6 text-center">
+                  <p className="mb-3 text-[14px] text-[var(--muted)]">评论加载失败，请检查网络后重试</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const c = await getPostComments(postId);
+                        setComments(c);
+                        setCommentsError(false);
+                      } catch {
+                        setCommentsError(true);
+                      }
+                    }}
+                    className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[12px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+                  >
+                    重试
+                  </button>
+                </div>
+              )}
+
+              {!commentsError && comments.length === 0 && (
                 <p className="py-6 text-center text-[14px] text-[var(--muted)]">还没有评论，抢个沙发~</p>
               )}
 
@@ -555,14 +589,16 @@ export default function MessageDetailPage() {
               <p className="mt-3 text-[12px] leading-[1.7] text-[var(--muted)]">
                 {author?.introduction || '这位杯友还没有写简介~'}
               </p>
-              <div className="mt-4 grid grid-cols-3 border-t border-[var(--line)] pt-3.5">
-                {authorStats.map((s) => (
-                  <div key={s.label} className="text-center">
-                    <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
-                    <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
-                  </div>
-                ))}
-              </div>
+              {authorStats.length > 0 && (
+                <div className={`mt-4 grid border-t border-[var(--line)] pt-3.5 ${authorStats.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {authorStats.map((s) => (
+                    <div key={s.label} className="text-center">
+                      <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
+                      <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {/* 关注作者：官方 API 未提供关注接口（已实测 404），移除假按钮 */}
             </section>
 

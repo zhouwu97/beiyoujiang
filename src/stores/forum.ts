@@ -20,6 +20,8 @@ interface ForumState {
   totalPagesCache: Record<string, number>;
   /** 加载中标志 */
   loading: boolean;
+  /** 加载错误（仅 API 失败时设置，不为 null 时 postsCache[key] 为空不代表真无数据） */
+  error: string | null;
   /** 已全部加载完标志 */
   exhausted: boolean;
 }
@@ -59,7 +61,7 @@ async function fetchNextPage(): Promise<void> {
 
   if (loading || exhausted) return;
 
-  useForumStore.setState({ loading: true });
+  useForumStore.setState({ loading: true, error: null });
 
   try {
     const params: GetAllPostParams = {
@@ -89,7 +91,7 @@ async function fetchNextPage(): Promise<void> {
       loading: false,
     }));
   } catch {
-    useForumStore.setState({ loading: false });
+    useForumStore.setState({ loading: false, error: '加载失败' });
   }
 }
 
@@ -110,6 +112,7 @@ function reset(): void {
       page: 0,
       loading: false,
       exhausted: false,
+      error: null,
     };
   });
 }
@@ -136,6 +139,7 @@ const useForumStore = create<ForumState>()(() => ({
   totalPagesCache: {},
   loading: false,
   exhausted: false,
+  error: null,
 }));
 
 export {
