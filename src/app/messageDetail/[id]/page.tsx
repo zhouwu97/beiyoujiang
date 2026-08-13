@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import type { Comment, Post, PostDetailData } from '@/lib/types';
-import { PLATES, SortOrder } from '@/lib/types';
+import type { Comment, PostDetailData } from '@/lib/types';
+import { PLATES } from '@/lib/types';
 import {
   getPost,
   getPostComments,
-  getAllPost,
   readingQuantity,
   likePost,
   unlikePost,
@@ -17,9 +17,9 @@ import {
   deletePost,
   deleteComment,
 } from '@/lib/api';
-import { resolveAvatar, resolvePostImage, sanitizeHtml } from '@/lib/utils';
+import { resolveAvatar, resolveImage, resolvePostImage, sanitizeHtml } from '@/lib/utils';
 import { getUserId } from '@/stores/auth';
-import { getCachedPosts } from '@/stores/forum';
+import { useForumStore, getCachedPosts } from '@/stores/forum';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
@@ -43,7 +43,7 @@ function ImageMeta({ src }: { src: string }) {
   if (!size) return null;
   return (
     <span className="mt-1.5 block text-[9px] text-[var(--muted-light)]">
-      {size} · 点击查看原图
+      {size} · 点击查看原图 · 完整比例展示
     </span>
   );
 }
@@ -71,25 +71,6 @@ export default function MessageDetailPage() {
   const me = getUserId();
 
   const post = detail?.post;
-
-  // 同类热门 fallback：外部直达详情时缓存可能为空，拉该板块热门帖子兜底
-  const [fallbackPosts, setFallbackPosts] = useState<Post[]>([]);
-  useEffect(() => {
-    const p = detail?.post;
-    if (!p) return;
-    if (getCachedPosts().some((c) => c.plate === p.plate)) return;
-    let cancelled = false;
-    getAllPost({ plate: p.plate, most: SortOrder.ByReply, userId: null, page: 1, pageSize: 5 })
-      .then((res) => {
-        if (cancelled) return;
-        setFallbackPosts(res.list.filter((x) => x.id !== p.id).slice(0, 5));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detail?.post?.id, detail?.post?.plate]);
 
   // 加载详情 + 评论 + 阅读量
   useEffect(() => {
@@ -265,9 +246,8 @@ export default function MessageDetailPage() {
   const plateName = PLATES.find((p) => p.id === post.plate)?.name ?? '';
   const author = post.author;
 
-  // 右侧推荐：优先用缓存（同板块），缓存为空时回退到 API 拉取的该板块热门
+  // 右侧推荐：从缓存取同板块帖子
   const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id).slice(0, 5);
-  const relatedPosts = cachedPosts.length > 0 ? cachedPosts : fallbackPosts;
 
   // 作者统计数据
   const authorStats = [
@@ -281,19 +261,25 @@ export default function MessageDetailPage() {
       <Header variant="detail" />
 
       <main className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:py-6">
-        <div className="detail-grid">
-          {/* 左侧主内容：仅正文（板块上下文 + 作者 + 标题 + 正文 + 图片 + 操作） */}
-          <article className="detail-article rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
-            <div className="px-5 pt-5 sm:px-7 sm:pt-6">
-              {/* 板块上下文：板块 chip + 编号 + 时间，替代整行 breadcrumb */}
-              <div className="post-context">
-                {plateName && <span className="post-context-plate">{plateName}</span>}
-                <span>#{post.id}</span>
-                <span>{post.timeAgo ?? ''}</span>
-              </div>
+        {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
+        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
+          <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            论坛
+          </Link>
+          <span aria-hidden="true">›</span>
+          <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
+        </nav>
 
+        <div className="detail-grid">
+          {/* 左侧主内容 */}
+          <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
+            <article className="px-5 pt-5 sm:px-7 sm:pt-6">
               {/* 作者行 */}
-              <div className="mt-4 flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5">
                 <img
                   src={resolveAvatar(author?.photo)}
                   alt=""
@@ -305,6 +291,12 @@ export default function MessageDetailPage() {
                     {author?.username ?? '杯友'}
                   </span>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--muted)]">
+                    {plateName && (
+                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[10px] font-bold text-[var(--accent-ink)]">
+                        {plateName}
+                      </span>
+                    )}
+                    <span>{post.timeAgo ?? ''}</span>
                     <span>阅读 {post.readingQuantity ?? 0}</span>
                   </div>
                 </div>
@@ -385,12 +377,10 @@ export default function MessageDetailPage() {
                   {post.commentCount ?? comments.length} 条评论
                 </span>
               </div>
-            </div>
-          </article>
+            </article>
 
-          {/* 评论区：脱离右栏限制，跨双列全宽 */}
-          <section id="comments" className="detail-comments rail-panel min-w-0 overflow-hidden">
-            <div className="px-5 py-5 sm:px-7">
+            {/* 评论区 */}
+            <section id="comments" className="scroll-mt-[96px] border-t border-[var(--line)] px-5 py-5 sm:px-7">
               <h2 className="mb-1 text-[16px] font-bold text-[var(--ink)]">
                 全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
@@ -511,7 +501,7 @@ export default function MessageDetailPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
             {/* 底部输入栏 */}
             <div className="sticky bottom-0 z-30 flex items-end gap-2 border-t border-[var(--line)] bg-white/95 px-4 py-2.5 backdrop-blur-md sm:px-6">
@@ -539,9 +529,9 @@ export default function MessageDetailPage() {
                 {sending ? '发送中' : '发送'}
               </button>
             </div>
-          </section>
+          </div>
 
-          {/* 右侧边栏 */}
+            {/* 右侧边栏 */}
           <aside className="detail-aside">
             {/* 作者卡片 */}
             <section className="rail-panel sidecard max-xl:col-span-2 p-5">
@@ -581,7 +571,7 @@ export default function MessageDetailPage() {
                 <span className="text-[11px] text-[var(--muted-light)]">更多推荐</span>
               </div>
               <div className="space-y-1">
-                {relatedPosts.length > 0 ? relatedPosts.map((p) => (
+                {cachedPosts.length > 0 ? cachedPosts.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/messageDetail/${p.id}`)}

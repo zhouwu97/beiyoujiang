@@ -460,59 +460,15 @@ async function getUserData(userId: number, type = 0): Promise<UserData> {
 
 /* ==================== 消息 ==================== */
 
-/** 把未知字段安全转成 number（官方字段命名不稳定，兼容数字与数字字符串）。 */
-function toNumber(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim() !== '') {
-    const n = Number(value);
-    if (Number.isFinite(n)) return n;
-  }
-  return undefined;
-}
-
-/**
- * 归一化消息通知：官方 getAllMessages 的帖子/评论关联字段命名不稳定，
- * 可能是 postId/post_id/post.id、commentId/comment_id/comment.id 等。
- * 统一在 API 边界提取为 { postId, commentId }，页面层不再散落字段兼容。
- */
-function normalizeMessage(raw: unknown): MessageItem {
-  const m = (raw ?? {}) as Record<string, unknown>;
-  const post = (m.post ?? {}) as Record<string, unknown>;
-  const comment = (m.comment ?? {}) as Record<string, unknown>;
-
-  const postId =
-    toNumber(m.postId) ?? toNumber(m.post_id) ?? toNumber(m.postID) ?? toNumber(post.id);
-  const commentId =
-    toNumber(m.commentId) ?? toNumber(m.comment_id) ?? toNumber(m.commentID) ?? toNumber(comment.id);
-
-  return {
-    ...m,
-    id: toNumber(m.id) ?? 0,
-    type: toNumber(m.type) ?? 0,
-    content: typeof m.content === 'string' ? m.content : '',
-    isRead: Boolean(m.isRead ?? m.is_read ?? m.read),
-    createdAt: typeof m.createdAt === 'string' ? m.createdAt : '',
-    ...(postId !== undefined ? { postId } : {}),
-    ...(commentId !== undefined ? { commentId } : {}),
-  } as MessageItem;
-}
-
 /**
  * 获取消息列表
  * POST /api/message/getAllMessages { type }
  */
 async function getAllMessages(type = 0): Promise<MessageItem[]> {
-  const res = await request<ApiResponse<unknown[]>>('message/getAllMessages', 'POST', {
+  const res = await request<ApiResponse<MessageItem[]>>('message/getAllMessages', 'POST', {
     type: Number(type),
   });
-  const raw = res.data ?? [];
-
-  // 开发环境打印真实响应结构，用于核对 post/comment 关联字段（以真实数据为准，禁止猜字段）
-  if (process.env.NODE_ENV === 'development' && raw.length > 0) {
-    console.table(raw.slice(0, 5));
-  }
-
-  return raw.map(normalizeMessage);
+  return res.data ?? [];
 }
 
 /**

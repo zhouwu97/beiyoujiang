@@ -145,15 +145,6 @@ a:focus-visible {
   margin-inline: auto;
 }
 
-/* 返回 + 品牌合并为 leading，保证 Header 永远只有 leading / search / actions 三个 Grid 子项。
- * 不再用 xl:hidden 控制返回按钮显隐（.icon-button 的 display:inline-flex 会覆盖 Tailwind 隐藏规则）。 */
-.desktop-header-leading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
 .desktop-header-brand {
   display: inline-flex;
   width: max-content;
@@ -174,6 +165,12 @@ a:focus-visible {
   font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.08em;
+}
+
+.desktop-header-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .desktop-header-brand-text {
@@ -298,12 +295,6 @@ a:focus-visible {
   .desktop-header-icon-button,
   .desktop-header-avatar {
     display: grid;
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-  }
-
-  .desktop-header-back {
     width: 38px;
     height: 38px;
     border-radius: 12px;
@@ -524,14 +515,6 @@ a:focus-visible {
 .icon-button:hover {
   background: var(--surface-subtle);
   color: var(--ink);
-}
-
-/* 图标按钮点击热区：视觉 36/38px，热区用 ::before 扩展到 >=44px（无障碍） */
-.icon-button::before,
-.desktop-header-icon-button::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
 }
 
 .notification-dot {
@@ -2372,126 +2355,31 @@ button:disabled {
 
 /* ===== 搜索页 Focus Shell 与布局 ===== */
 /* 搜索页独立于社区 Header：顶部只允许一个搜索框。
- * 玩具/帖子区与 Shell 同宽（桌面 1440），帖子内部用双列并排平衡左右空间。
+ * 整体容器继续加宽（桌面 1440），帖子阅读区单独收窄（1220），
+ * 1920 下玩具区约 1400、帖子约 1220，仍保留阅读留白但不再两侧大空。
  * 手机：Shell 自带 16px 左右边距，内层不再重复 padding。 */
 .search-shell {
   width: min(1440px, calc(100% - 32px));
   margin-inline: auto;
 }
 
+.search-shell--narrow {
+  width: min(1220px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
 @media (min-width: 768px) {
-  .search-shell {
+  .search-shell,
+  .search-shell--narrow {
     width: min(1440px, calc(100% - 48px));
+  }
+
+  .search-shell--narrow {
+    width: min(1220px, calc(100% - 48px));
   }
 }
 
-/* 搜索发现（未输入态）：热词 chip + 板块快捷入口 + 热门玩具，不再整页空白 */
-.search-keyword {
-  display: inline-flex;
-  height: 34px;
-  align-items: center;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: 0 2px 10px rgba(37, 27, 31, 0.025);
-  color: var(--ink);
-  font-size: 13px;
-  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 140ms var(--ease-out);
-}
-
-.search-keyword:hover,
-.search-keyword:active {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  border-color: rgba(var(--accent-rgb), 0.18);
-}
-
-.search-keyword:active {
-  transform: scale(0.97);
-}
-
-.search-plate-card {
-  display: flex;
-  height: 52px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: var(--surface);
-  box-shadow: var(--shadow-xs);
-  color: var(--ink-soft);
-  font-size: 13.5px;
-  font-weight: 650;
-  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease, transform 140ms var(--ease-out);
-}
-
-.search-plate-card:hover {
-  border-color: rgba(var(--accent-rgb), 0.25);
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
-.search-plate-card:active {
-  transform: scale(0.98);
-}
-
-.search-hot-toy {
-  display: block;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: var(--shadow-xs);
-  transition: box-shadow 180ms var(--ease-out), transform 140ms var(--ease-out);
-}
-
-.search-hot-toy:hover {
-  box-shadow: var(--shadow-sm);
-}
-
-.search-hot-toy:active {
-  transform: scale(0.98);
-}
-
-.search-hot-toy-media {
-  display: flex;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-subtle);
-  padding: 12px;
-}
-
-.search-hot-toy-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.search-hot-toy-body {
-  padding: 10px 12px 12px;
-}
-
-.search-hot-toy-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.search-hot-toy-score {
-  margin-top: 4px;
-  color: var(--accent-ink);
-  font-size: 12px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-/* 搜索顶部玩具卡：手机竖卡 → 桌面横向媒体卡（图 46% + 信息区）。
+/* 搜索顶部玩具卡：手机竖卡 → 桌面横向媒体卡（图 44% + 信息区）。
  * 图片区 object-contain + padding，横包装明显变大、竖包装不缩成邮票。 */
 .search-toy-card {
   display: grid;
@@ -2575,34 +2463,10 @@ button:disabled {
   font-weight: 600;
 }
 
-/* 商家 + 分类/刺激等级：用 API 已有字段填实信息区，不写废文案 */
-.search-toy-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 11.5px;
-}
-
-.search-toy-meta span + span::before {
-  margin-right: 10px;
-  content: "·";
-  color: var(--muted-light);
-}
-
-.search-toy-cta {
-  margin-top: 10px;
-  color: var(--accent-ink);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 @media (min-width: 768px) {
   .search-toy-card {
-    grid-template-columns: 46% minmax(0, 1fr);
-    height: 208px;
+    grid-template-columns: 50% minmax(0, 1fr);
+    height: 220px;
   }
 
   .search-toy-media {
@@ -2616,37 +2480,14 @@ button:disabled {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 16px 18px;
+    padding: 18px 20px;
   }
 }
 
-/* 搜索帖子图片：比首页明显放大，按原始比例定宽（横 700 / 竖 400），最大高度 680 */
+/* 搜索帖子图片：比首页明显放大，按原始比例定宽，最大高度 620 */
 .post-media--search .post-media-single {
-  max-width: min(760px, 100%);
-  max-height: 680px;
-}
-
-/* 搜索帖子：文字列 + 图片列左右并排，图片右对齐放大，视觉主体不再只占左半边 */
-.search-post-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 44%);
-  gap: 28px;
-  align-items: center;
-}
-
-.search-post-main {
-  min-width: 0;
-}
-
-.search-post-media-col {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.post-row--search-noimage .search-post-grid {
-  grid-template-columns: minmax(0, 1fr);
+  max-width: min(640px, 88%);
+  max-height: 620px;
 }
 
 /* ===== 帖子详情页专用 ===== */
@@ -2676,33 +2517,6 @@ button:disabled {
     gap: 28px;
     max-width: 1280px;
   }
-}
-
-/* 评论区脱离右栏：跨双列全宽（grid-column:1/-1），正文不再被锁在 900px 左栏，
- * 右侧「结束后大片空白」随之消失。 */
-.detail-comments {
-  grid-column: 1 / -1;
-  min-width: 0;
-}
-
-/* 板块上下文 chip 行：恢复板块识别，但不抢标题、不用重粉整块背景 */
-.post-context {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.post-context-plate {
-  border-radius: 7px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
 }
 
 /* 详情右栏：<1024 隐藏；1024~1279 下沉到文章下方（双列卡）；>=1280 回到 sticky 单列 */
@@ -2796,11 +2610,6 @@ button:disabled {
 }
 
 /* ===== 评论正文（含旧站表情） ===== */
-.comment-content {
-  /* 评论区跨双列后，评论文字仍保持易读行长，不拉满整宽 */
-  max-width: 88ch;
-}
-
 .comment-content img {
   display: inline-block;
   width: auto;
