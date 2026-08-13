@@ -235,9 +235,9 @@ export default function MessageDetailPage() {
 
   return (
     <div className="page-shell min-h-screen">
-      <Header variant="compact" />
+      <Header variant="detail" />
 
-      <main className="mx-auto w-full max-w-[1200px] px-4 py-5 sm:px-6 lg:py-6">
+      <main className="mx-auto w-full max-w-[1280px] px-4 py-5 sm:px-6 lg:py-6">
         {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
           <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
@@ -251,7 +251,7 @@ export default function MessageDetailPage() {
           <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
         </nav>
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,824px)_320px] lg:gap-7">
+        <div className="detail-grid">
           {/* 左侧主内容 */}
           <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
             <article className="px-5 pt-5 sm:px-7 sm:pt-6">
@@ -284,9 +284,9 @@ export default function MessageDetailPage() {
                 {post.title}
               </h1>
 
-              {/* 正文 */}
+              {/* 正文：仅文本限制阅读宽度，图片/操作栏/评论保持主区全宽 */}
               <div
-                className="mt-2 max-w-[68ch] text-[14px] leading-[1.82] text-[var(--ink-soft)]"
+                className="mt-2 max-w-[72ch] text-[14px] leading-[1.82] text-[var(--ink-soft)]"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
               />
 
@@ -435,15 +435,20 @@ export default function MessageDetailPage() {
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
                     />
 
-                    {/* 评论图片 */}
+                    {/* 评论图片：完整比例展示（禁止固定正方形 cover）；单图放大，多图缩略网格，点击看大图 */}
                     {c.imageUrlsArray?.length > 0 && (
-                      <div className="ml-[38px] mt-2 flex flex-wrap gap-1.5">
+                      <div className="ml-[38px] mt-2 flex flex-wrap gap-2">
                         {c.imageUrlsArray.map((img, i) => (
                           <img
                             key={i}
                             src={postImageUrl(img)}
                             alt=""
-                            className="h-16 w-16 cursor-zoom-in rounded-[8px] border border-[var(--line)] object-cover"
+                            className="w-auto cursor-zoom-in rounded-[10px] border border-[var(--line)] object-contain"
+                            style={
+                              c.imageUrlsArray.length === 1
+                                ? { maxWidth: '240px', maxHeight: '320px' }
+                                : { width: '110px', height: '110px' }
+                            }
                             onClick={() => setPreviewImage(postImageUrl(img))}
                           />
                         ))}
@@ -499,32 +504,32 @@ export default function MessageDetailPage() {
           </div>
 
             {/* 右侧边栏 */}
-          <aside className="sticky top-[90px] hidden space-y-3.5 lg:flex lg:flex-col">
+          <aside className="detail-aside">
             {/* 作者卡片 */}
-            <section className="rail-panel sidecard p-4">
-              <div className="eyebrow mb-2">POST AUTHOR</div>
-              <div className="flex items-center gap-2.5">
+            <section className="rail-panel sidecard max-xl:col-span-2 p-5">
+              <div className="eyebrow mb-3">POST AUTHOR</div>
+              <div className="flex items-center gap-3">
                 <img
                   src={resolveAvatar(author?.photo)}
                   alt=""
-                  className="h-[42px] w-[42px] rounded-[11px] border border-[var(--line)] object-cover ring-2 ring-white"
+                  className="h-12 w-12 rounded-[13px] border border-[var(--line)] object-cover ring-2 ring-white"
                   loading="lazy"
                 />
                 <div>
-                  <span className="block text-[13px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
-                  <span className="block text-[10px] text-[var(--muted)]">
-                    Lv.{author?.level ?? 1} · {author?.introduction ? '杯友' : '杯友'}
+                  <span className="block text-[15px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
+                  <span className="mt-1 block text-[11px] text-[var(--muted)]">
+                    Lv.{author?.level ?? 1} · 杯友
                   </span>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] leading-[1.7] text-[var(--muted)]">
+              <p className="mt-3 text-[12px] leading-[1.7] text-[var(--muted)]">
                 {author?.introduction || '这位杯友还没有写简介~'}
               </p>
-              <div className="mt-3 grid grid-cols-3 border-t border-[var(--line)] pt-3">
+              <div className="mt-4 grid grid-cols-3 border-t border-[var(--line)] pt-3.5">
                 {authorStats.map((s) => (
                   <div key={s.label} className="text-center">
-                    <span className="block text-[13px] font-bold text-[var(--ink)]">{s.value}</span>
-                    <span className="block text-[10px] text-[var(--muted)]">{s.label}</span>
+                    <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
+                    <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
                   </div>
                 ))}
               </div>
@@ -532,36 +537,36 @@ export default function MessageDetailPage() {
             </section>
 
             {/* 同类热门 */}
-            <section className="rail-panel sidecard p-4">
+            <section className="rail-panel sidecard p-5">
               <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">同类热门</h3>
-                <span className="text-[10px] text-[var(--muted-light)]">更多推荐</span>
+                <h3 className="sectiontitle font-bold text-[var(--ink)]">同类热门</h3>
+                <span className="text-[11px] text-[var(--muted-light)]">更多推荐</span>
               </div>
-              <div className="space-y-0">
+              <div className="space-y-1">
                 {cachedPosts.length > 0 ? cachedPosts.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/messageDetail/${p.id}`)}
-                    className="rel-btn group w-full rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[var(--surface-subtle)]"
+                    className="group w-full rounded-[10px] px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--surface-subtle)]"
                   >
-                    <span className="block truncate text-[12px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
                       {p.title}
                     </span>
-                    <span className="mt-1 block text-[10px] text-[var(--muted)]">
+                    <span className="mt-1.5 block text-[11px] text-[var(--muted)]">
                       {p.commentCount ?? 0} 条回复 · {p.timeAgo ?? '刚刚'}
                     </span>
                   </button>
                 )) : (
-                  <p className="text-[11px] text-[var(--muted)]">暂无更多推荐</p>
+                  <p className="text-[12px] text-[var(--muted)]">暂无更多推荐</p>
                 )}
               </div>
             </section>
 
             {/* 本帖信息 */}
-            <section className="rail-panel sidecard p-4">
-              <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">本帖信息</h3>
-                <span className="text-[10px] text-[var(--muted-light)]">#{post.id}</span>
+            <section className="rail-panel sidecard p-5">
+              <div className="mb-2.5 flex items-end justify-between">
+                <h3 className="sectiontitle font-bold text-[var(--ink)]">本帖信息</h3>
+                <span className="text-[11px] text-[var(--muted-light)]">#{post.id}</span>
               </div>
               <div className="space-y-0">
                 {[
@@ -570,7 +575,7 @@ export default function MessageDetailPage() {
                   { label: '阅读', value: post.readingQuantity ?? 0 },
                   { label: '最后回复', value: comments.length > 0 ? (comments[comments.length - 1]?.timeString ?? '刚刚') : '—' },
                 ].map((item) => (
-                  <div key={item.label} className="ctx-row flex h-[35px] items-center justify-between border-b border-[var(--line)] text-[11px] last:border-0">
+                  <div key={item.label} className="ctx-row flex h-8 items-center justify-between border-b border-[var(--line)] text-[11.5px] last:border-0">
                     <span className="text-[var(--muted)]">{item.label}</span>
                     <span className="text-[var(--ink-soft)]">{item.value}</span>
                   </div>

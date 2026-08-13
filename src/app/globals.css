@@ -2323,7 +2323,194 @@ button:disabled {
   transition: box-shadow 280ms var(--ease-out);
 }
 
+/* ===== 搜索页 Focus Shell 与布局 ===== */
+/* 搜索页独立于社区 Header：顶部只允许一个搜索框。
+ * 整体容器加宽（1320），帖子阅读区单独收窄（1080），不把帖子拉满全宽。
+ * 手机：Shell 自带 16px 左右边距，内层不再重复 padding。 */
+.search-shell {
+  width: min(1320px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.search-shell--narrow {
+  width: min(1080px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .search-shell,
+  .search-shell--narrow {
+    width: min(1320px, calc(100% - 48px));
+  }
+
+  .search-shell--narrow {
+    width: min(1080px, calc(100% - 48px));
+  }
+}
+
+/* 搜索顶部玩具卡：手机竖卡 → 桌面横向媒体卡（图 44% + 信息区）。
+ * 图片区 object-contain + padding，横包装明显变大、竖包装不缩成邮票。 */
+.search-toy-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 180ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.search-toy-card:hover {
+  box-shadow: var(--shadow-float);
+}
+
+.search-toy-card:active {
+  transform: scale(0.995);
+}
+
+.search-toy-media {
+  display: flex;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-subtle);
+  padding: 14px;
+}
+
+.search-toy-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-toy-body {
+  padding: 12px 14px 14px;
+  min-width: 0;
+}
+
+.search-toy-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.search-toy-score {
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.search-toy-score b {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.search-toy-score span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.search-toy-tags {
+  margin-top: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .search-toy-card {
+    grid-template-columns: 44% minmax(0, 1fr);
+    height: 210px;
+  }
+
+  .search-toy-media {
+    aspect-ratio: auto;
+    height: 100%;
+    padding: 16px;
+    border-right: 1px solid var(--line);
+  }
+
+  .search-toy-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px 20px;
+  }
+}
+
+/* 搜索帖子图片：比首页明显放大，按原始比例定宽，最大高度 620 */
+.post-media--search .post-media-single {
+  max-width: min(640px, 88%);
+  max-height: 620px;
+}
+
 /* ===== 帖子详情页专用 ===== */
+
+/* 详情主网格：手机/平板（<1280）单栏收口 860；1280~1535 主栏 820 + 右栏 290；
+ * >=1536 主栏 900 + 右栏 320，杜绝「大空白 + 窄帖子」。
+ * 宽度全部由 grid 自身控制，不用负 margin / translateY 强行对齐。 */
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 820px) 290px;
+    gap: 24px;
+    max-width: 1160px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 900px) 320px;
+    gap: 28px;
+    max-width: 1280px;
+  }
+}
+
+/* 详情右栏：<1024 隐藏；1024~1279 下沉到文章下方（双列卡）；>=1280 回到 sticky 单列 */
+.detail-aside {
+  display: none;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-content: start;
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .detail-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  .detail-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 90px;
+  }
+}
+
 .eyebrow {
   font-size: 8px;
   font-weight: 800;
@@ -2334,7 +2521,7 @@ button:disabled {
 
 .sectiontitle {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 760;
   letter-spacing: -0.01em;
 }

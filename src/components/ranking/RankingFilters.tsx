@@ -28,7 +28,7 @@ interface RankingFiltersProps {
  * 榜单筛选区：
  *  一级为导航式 Tab（active = 黑字 + 底部 accent 线）；
  *  二级为小圆角按钮。
- *  PC 端整条吸顶，移动端随页面滚动。
+ *  PC 端整条吸顶由外层 .filterZone 承担（sticky + 底色挡透），此处不再自带 sticky。
  */
 export default function RankingFilters({
   type,
@@ -37,7 +37,7 @@ export default function RankingFilters({
   onClassifyChange,
 }: RankingFiltersProps) {
   return (
-    <div className="z-20 border-b border-[var(--line)] px-1 xl:sticky xl:top-[76px]">
+    <div className="border-b border-[var(--line)] px-1">
       <div className={styles.typeTabs} role="tablist" aria-label="榜单类型">
         {TYPE_TABS.map((tab) => (
           <button

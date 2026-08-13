@@ -221,19 +221,21 @@ export default function RankingListPage() {
         left={<DesktopSidebar />}
         main={
           <div className="min-w-0">
-            <div className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
+            <header className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
               <h1>玩具榜单</h1>
-            </div>
+            </header>
 
-            {/* 筛选条为高列的直属子元素，sticky 才能整列跟随 */}
-            <RankingFilters
-              type={type}
-              classify={classify}
-              onTypeChange={handleTypeChange}
-              onClassifyChange={handleClassifyChange}
-            />
+            {/* 筛选条：独立 sticky 区（底色挡透），与内容区 z 分层，避免 Top1 滚入重叠 */}
+            <section className={styles.filterZone}>
+              <RankingFilters
+                type={type}
+                classify={classify}
+                onTypeChange={handleTypeChange}
+                onClassifyChange={handleClassifyChange}
+              />
+            </section>
 
-            <div className="mt-5">
+            <section className={styles.contentZone}>
               {filterLoading ? (
                 <RankingSkeleton />
               ) : error ? (
@@ -256,23 +258,23 @@ export default function RankingListPage() {
                   {toys.length > 3 && <RankingList toys={toys.slice(3)} offset={4} />}
                 </div>
               )}
-            </div>
 
-            {/* 无限滚动哨兵 / 底部状态 */}
-            <div ref={sentinelRef} className="py-7 text-center" aria-live="polite">
-              {showList &&
-                (loadingMore ? (
-                  <span className="loading-dots" aria-label="正在加载更多" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                ) : hasMore ? (
-                  <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
-                ) : (
-                  <span className="end-marker">已经到底啦</span>
-                ))}
-            </div>
+              {/* 无限滚动哨兵 / 底部状态 */}
+              <div ref={sentinelRef} className="py-7 text-center" aria-live="polite">
+                {showList &&
+                  (loadingMore ? (
+                    <span className="loading-dots" aria-label="正在加载更多" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  ) : hasMore ? (
+                    <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
+                  ) : (
+                    <span className="end-marker">已经到底啦</span>
+                  ))}
+              </div>
+            </section>
           </div>
         }
         right={<RankingRightRail weeklyTop={weeklyTop} topToyId={toys[0]?.id} />}

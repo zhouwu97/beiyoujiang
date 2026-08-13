@@ -37,14 +37,17 @@ function PlusIcon() {
 }
 
 interface HeaderProps {
-  /** community：默认全站版（含移动端板块导航）；compact：详情页专用（移动端隐藏板块导航 + 返回按钮） */
-  variant?: 'community' | 'compact';
+  /** community：默认全站版（含移动端板块导航）；compact：详情页专用（移动端隐藏板块导航 + 返回按钮）；
+   *  detail：详情页专用，在 compact 基础上桌面端也不显示「发布帖子」浮动按钮（详情页不需要全局发帖入口） */
+  variant?: 'community' | 'compact' | 'detail';
 }
 
 /**
  * 全站页头：桌面端严格采用「品牌 / 搜索 / 操作」三段式，板块入口留给左侧导航。
  * 移动端保留已有的板块快捷导航和底部导航，避免改变小屏使用路径。
  * variant="compact"：详情类页面（帖子/玩具详情），移动端隐藏板块导航并显示返回。
+ * variant="detail"：帖子详情页，在 compact 基础上桌面端隐藏「发布帖子」按钮，
+ * 避免详情阅读流里出现多余的全局发帖入口。
  */
 export default function Header({ variant = 'community' }: HeaderProps) {
   const router = useRouter();
@@ -55,7 +58,8 @@ export default function Header({ variant = 'community' }: HeaderProps) {
   const checked = useMessageStore((state) => state.checked);
   const setHasUnread = useMessageStore((state) => state.setHasUnread);
   const setChecked = useMessageStore((state) => state.setChecked);
-  const isCompact = variant === 'compact';
+  const isDetail = variant === 'detail';
+  const isCompact = variant === 'compact' || isDetail;
 
   // 通知红点：会话内首次挂载查一次未读状态（成功后才置 checked，未登录/失败下次导航重试）。
   useEffect(() => {
@@ -162,10 +166,13 @@ export default function Header({ variant = 'community' }: HeaderProps) {
             {hasUnread && <span className="notification-dot" aria-hidden="true" />}
           </button>
 
-          <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
-            <PlusIcon />
-            <span>发布帖子</span>
-          </button>
+          {/* 详情页不展示全局「发布帖子」入口，避免阅读流被无关 CTA 打断 */}
+          {!isDetail && (
+            <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
+              <PlusIcon />
+              <span>发布帖子</span>
+            </button>
+          )}
 
           <button
             type="button"
