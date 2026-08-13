@@ -19,6 +19,7 @@ export default function SearchPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const pageRef = useRef(1);
   // 请求序号：快速连续搜索时，过期响应直接丢弃（与榜单页 requestVersion 同一模式）
@@ -38,6 +39,10 @@ export default function SearchPage() {
     if (page === 1) {
       setSearched(true);
       setLoading(true);
+      setSearchError(false);
+      // 清空旧结果，避免上一次搜索的内容冒充新查询的结果
+      setToys([]);
+      setPosts([]);
     }
     try {
       const res = await searchToyPost(keyword, page);
@@ -54,7 +59,8 @@ export default function SearchPage() {
       setHasMore(res.pagination.hasMore);
       pageRef.current = page;
     } catch {
-      // ignore（过期请求的报错同样丢弃）
+      // 过期请求的报错同样丢弃；当前请求失败则展示错误态
+      if (version === requestVersionRef.current && page === 1) setSearchError(true);
     } finally {
       if (version === requestVersionRef.current && page === 1) setLoading(false);
     }
@@ -118,7 +124,19 @@ export default function SearchPage() {
         <div className="mx-auto w-full max-w-[1040px] px-3 pb-12 pt-2 lg:px-0 lg:pt-6">
           {loading && <p className="text-center text-[13px] text-[var(--muted)] py-10">搜索中...</p>}
 
-          {!loading && toys.length === 0 && posts.length === 0 && (
+          {!loading && searchError && (
+            <div className="text-center py-10">
+              <p className="text-[13px] text-[var(--muted)] mb-4">搜索失败，请检查网络后重试</p>
+              <button
+                onClick={() => doSearch(query, 1)}
+                className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+              >
+                重试
+              </button>
+            </div>
+          )}
+
+          {!loading && !searchError && toys.length === 0 && posts.length === 0 && (
             <p className="text-center text-[13px] text-[var(--muted)] py-10">
               没有找到与「{query}」相关的内容
             </p>

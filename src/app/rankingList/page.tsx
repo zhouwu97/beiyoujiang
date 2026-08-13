@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Toy } from '@/lib/types';
 import { getAllToy } from '@/lib/api';
 import Header from '@/components/layout/Header';
@@ -60,6 +61,7 @@ export default function RankingListPage() {
   const pageRef = useRef(1);
   const requestVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 拉取第一页：重置列表 + 请求（requestVersion 丢弃过期响应）。
   // 仅由事件处理器调用，避免在 effect 内同步 setState。
@@ -90,10 +92,25 @@ export default function RankingListPage() {
       });
   };
 
-  // 首次进入：拉取综合热榜第一页（仅挂载一次，setState 均在异步回调内）
+  // 首次进入 + URL 恢复：从地址栏读取筛选条件并拉取第一页。
+  // setState 均在异步回调内；同步的 setType/setClassify/setFilterLoading 按代码库惯例禁用该规则。
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlType = params.get('type') ?? '';
+    const urlClassify = params.get('classify') ?? '';
+    requestVersionRef.current += 1;
     const version = requestVersionRef.current;
-    getAllToy('', '', 0, 1, PAGE_SIZE)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setType(urlType);
+    setClassify(urlClassify);
+    setFilterLoading(true);
+    setError(false);
+    setToys([]);
+    setWeeklyTop(null);
+    setHasMore(false);
+    pageRef.current = 1;
+
+    getAllToy(urlType, urlClassify, 0, 1, PAGE_SIZE)
       .then((res) => {
         if (version !== requestVersionRef.current) return;
         setWeeklyTop(res.weeklyTop);
@@ -108,6 +125,21 @@ export default function RankingListPage() {
         if (version === requestVersionRef.current) setFilterLoading(false);
       });
   }, []);
+
+  // 浏览器后退/前进时按地址栏恢复筛选
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlType = params.get('type') ?? '';
+      const urlClassify = params.get('classify') ?? '';
+      if (urlType === type && urlClassify === classify) return;
+      fetchFirstPage(urlType, urlClassify);
+      setType(urlType);
+      setClassify(urlClassify);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [type, classify]);
 
   // 加载更多（与首屏/筛选请求独立加锁）
   const loadMore = useCallback(async () => {
@@ -144,21 +176,33 @@ export default function RankingListPage() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  // 筛选状态写入地址栏（后退/前进可恢复）
+  const syncUrl = (nextType: string, nextClassify: string) => {
+    const params = new URLSearchParams();
+    if (nextType) params.set('type', nextType);
+    if (nextClassify) params.set('classify', nextClassify);
+    const qs = params.toString();
+    router.replace(qs ? `/rankingList?${qs}` : '/rankingList', { scroll: false });
+  };
+
   const handleTypeChange = (value: string) => {
     if (value === type) return;
     setType(value);
+    syncUrl(value, classify);
     fetchFirstPage(value, classify);
   };
 
   const handleClassifyChange = (value: string) => {
     if (value === classify) return;
     setClassify(value);
+    syncUrl(type, value);
     fetchFirstPage(type, value);
   };
 
   const resetFilter = () => {
     setType('');
     setClassify('');
+    syncUrl('', '');
     fetchFirstPage('', '');
   };
 

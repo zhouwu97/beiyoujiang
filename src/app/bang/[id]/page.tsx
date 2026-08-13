@@ -177,7 +177,7 @@ export default function ToyDetailPage() {
   if (loading) {
     return (
       <div className="page-shell min-h-screen">
-        <Header />
+        <Header variant="compact" />
         <div className={styles.page}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
@@ -194,7 +194,7 @@ export default function ToyDetailPage() {
   if (!toy) {
     return (
       <div className="page-shell min-h-screen">
-        <Header />
+        <Header variant="compact" />
         <div className={styles.page}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
@@ -212,7 +212,7 @@ export default function ToyDetailPage() {
 
   return (
     <div className="page-shell min-h-screen">
-      <Header />
+      <Header variant="compact" />
 
       <div className={styles.page}>
         <nav className={styles.breadcrumb} aria-label="面包屑">

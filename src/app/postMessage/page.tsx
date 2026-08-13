@@ -35,12 +35,31 @@ export default function PostMessagePage() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLoginTip, setShowLoginTip] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  /** 是否有未发布内容（标题/正文/图片任一已填写），用于离开确认 */
+  const [dirty, setDirty] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const selectionRef = useRef<Range | null>(null);
   const previewUrlsRef = useRef<string[]>([]);
 
   const me = getUserId();
+
+  // 未发布内容离开确认：取消按钮走 confirm，浏览器关闭/刷新走 beforeunload
+  const handleCancel = () => {
+    if (dirty && !window.confirm('内容尚未发布，确定离开？')) return;
+    router.back();
+  };
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty && !publishing) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty, publishing]);
 
   // 卸载时释放所有 blob URL
   useEffect(() => {
@@ -74,6 +93,7 @@ export default function PostMessagePage() {
     sel?.removeAllRanges();
     sel?.addRange(range);
     editor.focus();
+    setDirty(true);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +107,7 @@ export default function PostMessagePage() {
       return { file, previewUrl };
     });
     setImages((prev) => [...prev, ...previews]);
+    setDirty(true);
     e.target.value = '';
   };
 
@@ -97,6 +118,7 @@ export default function PostMessagePage() {
       URL.revokeObjectURL(target.previewUrl);
     }
     setImages((prev) => prev.filter((_, j) => j !== index));
+    setDirty(true);
   };
 
   const publish = async () => {
@@ -125,6 +147,7 @@ export default function PostMessagePage() {
       images.forEach((img) => fd.append('images', img.file));
 
       const res = await addPost(fd);
+      setDirty(false);
       if (res.reward && res.reward > 0) {
         showReward('发布成功');
       } else {
@@ -145,7 +168,7 @@ export default function PostMessagePage() {
       <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-white">
         <div className="mx-auto flex h-14 w-full max-w-[920px] items-center px-4 sm:px-6 lg:h-[72px] lg:px-0">
           <button
-            onClick={() => router.back()}
+            onClick={handleCancel}
             className="text-[14px] text-[var(--muted)] px-1"
             disabled={publishing}
           >
@@ -169,7 +192,10 @@ export default function PostMessagePage() {
       <div className="px-4 pt-4 lg:px-3">
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setDirty(true);
+          }}
           placeholder="标题（必填）"
           aria-label="帖子标题"
           className="w-full text-[16px] font-medium text-[var(--ink)] outline-none placeholder:text-[var(--muted)] pb-3 border-b border-[var(--line)]"
@@ -184,6 +210,7 @@ export default function PostMessagePage() {
           suppressContentEditableWarning
           onMouseUp={saveSelection}
           onKeyUp={saveSelection}
+          onInput={() => setDirty(true)}
           role="textbox"
           aria-label="帖子正文"
           aria-multiline="true"

@@ -6,6 +6,7 @@ import { getAllMessages, markAllAsRead } from '@/lib/api';
 import type { MessageItem } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
 import { getUserId } from '@/stores/auth';
+import { useMessageStore } from '@/stores/message';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
@@ -19,19 +20,35 @@ export default function MessagePage() {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const me = getUserId();
   const [loading, setLoading] = useState(() => Boolean(me));
+  const setHasUnread = useMessageStore((s) => s.setHasUnread);
 
   useEffect(() => {
     if (!me) {
       return;
     }
+    let cancelled = false;
+    // 拉取消息 → 推导未读 → 全部标记已读 → 本地同步 isRead，红点立即消失。
     getAllMessages(0)
-      .then(setMessages)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-
-    // 进入消息页全部标记已读
-    markAllAsRead(0).catch(() => {});
-  }, [me]);
+      .then((msgs) => {
+        if (cancelled) return;
+        setMessages(msgs);
+        setHasUnread(msgs.some((m) => !m.isRead));
+        return markAllAsRead(0).then(() => {
+          if (cancelled) return;
+          setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+          setHasUnread(false);
+        });
+      })
+      .catch(() => {
+        // 加载失败不影响浏览
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [me, setHasUnread]);
 
   const formatTime = (iso: string) => {
     try {

@@ -23,6 +23,7 @@ import { useForumStore, getCachedPosts } from '@/stores/forum';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
+import Header from '@/components/layout/Header';
 
 /** 帖子图片完整路径 */
 function postImageUrl(img: string): string {
@@ -234,32 +235,22 @@ export default function MessageDetailPage() {
 
   return (
     <div className="page-shell min-h-screen">
-      {/* 顶栏（面包屑导航） */}
-      <header className="site-header">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1200px] items-center gap-4 px-4 sm:px-6 lg:min-h-[68px] lg:px-0">
-          <Link href="/" className="brand-lockup shrink-0">
-            <span className="brand-mark" aria-hidden="true">杯</span>
-            <span className="brand-wordmark"><strong>杯友酱</strong></span>
-          </Link>
-          <div className="flex items-center gap-2 border-l border-[var(--line)] pl-4 text-[11px] text-[var(--muted)]">
-            <span>论坛</span>
-            <span>›</span>
-            <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
-          </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <button onClick={() => router.push('/search')} className="search-trigger desktop-search-trigger hidden xl:inline-flex">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7.5" /><path d="m16.5 16.5 4.5 4.5" /></svg>
-              <span>搜索帖子、用户、话题</span>
-              <span className="search-shortcut">Ctrl K</span>
-            </button>
-            <button onClick={() => router.back()} className="icon-button" aria-label="返回">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header variant="compact" />
 
       <main className="mx-auto w-full max-w-[1200px] px-4 py-5 sm:px-6 lg:py-6">
+        {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
+        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
+          <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            论坛
+          </Link>
+          <span aria-hidden="true">›</span>
+          <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
+        </nav>
+
         <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,824px)_320px] lg:gap-7">
           {/* 左侧主内容 */}
           <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">

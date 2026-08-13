@@ -197,12 +197,15 @@ export default function MyUserPage() {
           posts.map((p) => (
             <div key={p.id} className="relative">
               <PostCard post={p} />
-              <button
-                onClick={() => handleDelete(p.id)}
-                className="absolute top-3 right-3 z-10 text-[11px] text-[#DC2626] bg-white/90 px-2 py-1 rounded-full"
-              >
-                删除
-              </button>
+              {/* 仅「我的帖子」可删除原帖；收藏/足迹没有删除接口，不显示操作 */}
+              {tab === 0 && (
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="absolute top-3 right-3 z-10 text-[11px] text-[#DC2626] bg-white/90 px-2 py-1 rounded-full"
+                >
+                  删除
+                </button>
+              )}
             </div>
           ))}
       </div>
