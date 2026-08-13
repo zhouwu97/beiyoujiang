@@ -52,9 +52,9 @@ export default function RegisterPage() {
       title="加入杯友酱"
       description="注册正式账号，解锁全部功能"
       footer={
-        <p className="text-[13px] text-[#929292]">
+        <p className="text-[13px] text-[var(--muted)]">
           已有账号?
-          <button onClick={() => router.push('/login')} className="ml-1 font-medium text-[#FB7299]">
+          <button onClick={() => router.push('/login')} className="ml-1 font-medium text-[var(--accent)]">
             去登录
           </button>
         </p>
@@ -83,7 +83,7 @@ export default function RegisterPage() {
             placeholder="密码（至少6位）"
             className="auth-input"
           />
-          <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[#929292] transition-colors hover:text-[#FB7299]" aria-label="显示密码">
+          <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]" aria-label="显示密码">
             {showPwd ? '隐藏' : '显示'}
           </button>
         </div>

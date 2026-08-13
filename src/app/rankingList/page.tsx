@@ -173,12 +173,12 @@ export default function RankingListPage() {
       <Header />
 
       <DesktopPageShell
+        variant="ranking"
         left={<DesktopSidebar />}
         main={
           <div className="min-w-0">
             <div className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
               <h1>玩具榜单</h1>
-              <p>排名按站点榜单接口返回顺序</p>
             </div>
 
             {/* 筛选条为高列的直属子元素，sticky 才能整列跟随 */}
@@ -231,15 +231,7 @@ export default function RankingListPage() {
             </div>
           </div>
         }
-        right={
-          <RankingRightRail
-            weeklyTop={weeklyTop}
-            topToyId={toys[0]?.id}
-            type={type}
-            classify={classify}
-            loadedCount={toys.length}
-          />
-        }
+        right={<RankingRightRail weeklyTop={weeklyTop} topToyId={toys[0]?.id} />}
       />
 
       <BottomNav />

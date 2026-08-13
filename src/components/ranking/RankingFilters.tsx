@@ -37,7 +37,7 @@ export default function RankingFilters({
   onClassifyChange,
 }: RankingFiltersProps) {
   return (
-    <div className="z-20 border-b border-[var(--line)] bg-white/95 px-1 backdrop-blur xl:sticky xl:top-[76px]">
+    <div className="z-20 border-b border-[var(--line)] px-1 xl:sticky xl:top-[76px]">
       <div className={styles.typeTabs} role="tablist" aria-label="榜单类型">
         {TYPE_TABS.map((tab) => (
           <button

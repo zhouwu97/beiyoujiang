@@ -6,54 +6,18 @@ import { formatCount } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
 import { stimulationLabel } from '@/lib/toyLabels';
 
-const TYPE_TABS = [
-  { id: '', label: '综合热榜' },
-  { id: 'ENTRY', label: '慢玩入门' },
-  { id: 'ADVANCED', label: '进阶训练' },
-  { id: 'HIGH', label: '超高刺激' },
-  { id: 'EXTREME', label: '榨汁玩具' },
-];
-
-const CLASSIFY_TABS = [
-  { id: '', label: '全部' },
-  { id: 'CUP', label: '杯子' },
-  { id: 'LARGE_MOLD', label: '大型倒模' },
-  { id: 'HALF_BODY', label: '半身' },
-];
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[11px] text-[var(--muted)]">{label}</span>
-      <span className="truncate text-[11px] font-semibold text-[var(--ink-soft)]">{value}</span>
-    </div>
-  );
-}
-
 interface RankingRightRailProps {
   weeklyTop: Toy | null;
   /** 榜单第 1 名 id（若 weeklyTop 已是 Top1 则不重复展示右栏冠军卡） */
   topToyId?: number;
-  type: string;
-  classify: string;
-  /** 当前已加载数量（接口为无限滚动，只能写「已加载」） */
-  loadedCount: number;
 }
 
 /**
- * 榜单右栏：本周冠军（独立） + 当前查看 + 榜单说明。
- * 只展示真实接口数据，不捏造趋势/算法/统计。
+ * 榜单右栏：本周冠军（独立） + 简短榜单规则。
+ * 只展示主列没有的额外信息，不重复筛选状态。
  */
-export default function RankingRightRail({
-  weeklyTop,
-  topToyId,
-  type,
-  classify,
-  loadedCount,
-}: RankingRightRailProps) {
+export default function RankingRightRail({ weeklyTop, topToyId }: RankingRightRailProps) {
   const showWeekly = weeklyTop !== null && weeklyTop.id !== topToyId;
-  const typeLabel = TYPE_TABS.find((t) => t.id === type)?.label ?? '综合热榜';
-  const classifyLabel = CLASSIFY_TABS.find((c) => c.id === classify)?.label ?? '全部';
 
   return (
     <div className="space-y-4">
@@ -90,22 +54,12 @@ export default function RankingRightRail({
       )}
 
       <section className="rail-panel p-4">
-        <div className="rail-kicker">当前查看</div>
-        <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">当前榜单</h2>
-        <div className="mt-3 space-y-2.5">
-          <InfoRow label="榜单" value={typeLabel} />
-          <InfoRow label="分类" value={classifyLabel} />
-          <InfoRow label="数量" value={`已加载 ${loadedCount} 件`} />
-        </div>
-      </section>
-
-      <section className="rail-panel p-4">
-        <div className="rail-kicker">榜单说明</div>
+        <div className="rail-kicker">榜单规则</div>
         <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">说明</h2>
         <p className="mt-2 text-[11px] leading-5 text-[var(--muted)]">
-          排名以站点榜单接口返回顺序为准。
+          榜单按官方站实时数据排序，每周更新。
           <br />
-          评分、测评量及想中数作为商品信息展示。
+          评分、测评量与想中数作为商品信息展示。
         </p>
       </section>
     </div>

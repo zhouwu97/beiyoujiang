@@ -609,6 +609,46 @@ a:focus-visible {
   }
 }
 
+/* ===== 榜单专用网格（DesktopPageShell variant="ranking"）=====
+ * 与 .main-grid 的区别：1024~1279 不显示右栏（榜单右栏价值低）；
+ * 1280/1536 右栏收窄为 260/280px，让主列表更宽。
+ * 移动端/平板行为与默认一致（左栏隐藏、右栏跟随自身媒体规则）。
+ */
+.main-grid--ranking {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main-grid--ranking {
+    max-width: 760px;
+    margin-inline: auto;
+  }
+}
+
+/* 1024~1279：右栏对整个榜单没有增量信息，直接不显示 */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .main-grid--ranking .main-right-col {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .main-grid--ranking {
+    grid-template-columns: 220px minmax(0, 1fr) 260px;
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .main-grid--ranking {
+    grid-template-columns: 236px minmax(0, 1fr) 280px;
+    gap: 28px;
+  }
+}
+
 .rail-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
@@ -1791,7 +1831,7 @@ a:focus-visible {
   right: 16px;
   bottom: calc(82px + env(safe-area-inset-bottom));
   z-index: 40;
-  display: inline-flex;
+  /* display 交给 JSX（inline-flex + lg:hidden），避免覆盖 Tailwind 的隐藏规则 */
   height: 44px;
   align-items: center;
   gap: 6px;

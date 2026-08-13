@@ -64,6 +64,7 @@ export default function DesktopSidebar() {
 
   // 挂载后再切换客户端状态，避免 localStorage 读取导致的 hydration mismatch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -82,10 +83,11 @@ export default function DesktopSidebar() {
 
   useEffect(() => {
     if (!userId) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProfile(null);
+    setLoading(false);
+    return;
+  }
 
     setLoading(true);
     getUserData(userId, 0)

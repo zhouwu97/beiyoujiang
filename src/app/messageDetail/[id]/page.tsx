@@ -131,6 +131,27 @@ export default function MessageDetailPage() {
     catch { showAlert('删除失败'); }
   };
 
+  // 分享：优先系统分享面板，不支持或失败则复制链接
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const title = post?.title ?? '杯友酱的帖子';
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (err) {
+        // 用户主动取消（AbortError）不处理；其余原因降级到剪贴板
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showAlert('链接已复制');
+    } catch {
+      showAlert('复制失败，请手动复制地址');
+    }
+  }, [post?.title, showAlert]);
+
   const submitComment = async () => {
     const content = commentText.trim();
     if (!content) { showAlert('内容不能为空哦'); return; }
@@ -265,9 +286,6 @@ export default function MessageDetailPage() {
                     <span>阅读 {post.readingQuantity ?? 0}</span>
                   </div>
                 </div>
-                <button className="ml-auto h-[30px] rounded-[8px] bg-[var(--accent-soft)] px-3 text-[12px] font-bold text-[var(--accent-ink)] transition-transform active:scale-[0.96]">
-                  关注
-                </button>
               </div>
 
               {/* 标题 */}
@@ -327,7 +345,10 @@ export default function MessageDetailPage() {
                   </svg>
                   {collected ? '已收藏' : '收藏'}
                 </button>
-                <button className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[12px] font-semibold text-[var(--muted)]">
+                <button
+                  onClick={handleShare}
+                  className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[12px] font-semibold text-[var(--muted)]"
+                >
                   分享
                 </button>
                 {me === author?.id && (
@@ -516,9 +537,7 @@ export default function MessageDetailPage() {
                   </div>
                 ))}
               </div>
-              <button className="mt-3 h-[34px] w-full rounded-[9px] bg-[var(--accent)] text-[12px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)]">
-                关注作者
-              </button>
+              {/* 关注作者：官方 API 未提供关注接口（已实测 404），移除假按钮 */}
             </section>
 
             {/* 同类热门 */}

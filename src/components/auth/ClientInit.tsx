@@ -6,50 +6,26 @@ import { addTourist } from '@/lib/api';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import AdultVerifyModal from '@/components/common/AdultVerifyModal';
 
-const TOURIST_INITIALIZATION_TIMEOUT = 3500;
-
-/**
- * 游客接口异常时允许页面继续展示；迟到的接口响应仍会照常更新游客态。
- */
-function registerTouristWithoutBlockingPage(): Promise<void> {
-  return new Promise((resolve) => {
-    const timeoutId = window.setTimeout(resolve, TOURIST_INITIALIZATION_TIMEOUT);
-
-    addTourist()
-      .then((tourist) => setTourist(tourist))
-      .catch(() => {
-        // 游客注册失败不影响浏览模式。
-      })
-      .finally(() => {
-        window.clearTimeout(timeoutId);
-        resolve();
-      });
-  });
-}
-
 /**
  * 客户端初始化：
- * 1. 无用户态时自动注册游客账号（与官方行为一致）
+ * 1. 无用户态时后台注册游客账号（不阻塞首屏，迟到响应仍会更新游客态）
  * 2. 首次访问弹出成人认证弹窗（localStorage 'after_verify' 标记，不再重复弹）
- * 3. 初始化期间显示 LoadingOverlay
+ * 3. LoadingOverlay 仅覆盖首个渲染帧，页面立即显示
  */
 export default function ClientInit() {
   const [initialized, setInitialized] = useState(false);
   const [needVerify, setNeedVerify] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const { currentUser, currentTourist } = useAuthStore.getState();
-        if (!currentUser && !currentTourist) {
-          await registerTouristWithoutBlockingPage();
-        }
-      } finally {
-        setInitialized(true);
-      }
-    };
-
-    init();
+    // 游客注册放到后台执行：页面先渲染，接口响应到了再更新游客态。
+    const { currentUser, currentTourist } = useAuthStore.getState();
+    if (!currentUser && !currentTourist) {
+      addTourist()
+        .then((tourist) => setTourist(tourist))
+        .catch(() => {
+          // 游客注册失败不影响浏览模式。
+        });
+    }
 
     // 成人认证：仅在客户端判断
     try {
@@ -61,6 +37,9 @@ export default function ClientInit() {
     } catch {
       /* ignore */
     }
+
+    // 立即标记初始化完成，页面不再等待游客注册或 3.5s 超时。
+    setInitialized(true);
   }, []);
 
   const handleConfirm = () => {
