@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Toy } from '@/lib/types';
 import { getAllToy } from '@/lib/api';
 import Header from '@/components/layout/Header';
@@ -57,9 +58,12 @@ export default function RankingListPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const rulesRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef(1);
   const requestVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 拉取第一页：重置列表 + 请求（requestVersion 丢弃过期响应）。
   // 仅由事件处理器调用，避免在 effect 内同步 setState。
@@ -90,10 +94,25 @@ export default function RankingListPage() {
       });
   };
 
-  // 首次进入：拉取综合热榜第一页（仅挂载一次，setState 均在异步回调内）
+  // 首次进入 + URL 恢复：从地址栏读取筛选条件并拉取第一页。
+  // setState 均在异步回调内；同步的 setType/setClassify/setFilterLoading 按代码库惯例禁用该规则。
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlType = params.get('type') ?? '';
+    const urlClassify = params.get('classify') ?? '';
+    requestVersionRef.current += 1;
     const version = requestVersionRef.current;
-    getAllToy('', '', 0, 1, PAGE_SIZE)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setType(urlType);
+    setClassify(urlClassify);
+    setFilterLoading(true);
+    setError(false);
+    setToys([]);
+    setWeeklyTop(null);
+    setHasMore(false);
+    pageRef.current = 1;
+
+    getAllToy(urlType, urlClassify, 0, 1, PAGE_SIZE)
       .then((res) => {
         if (version !== requestVersionRef.current) return;
         setWeeklyTop(res.weeklyTop);
@@ -108,6 +127,38 @@ export default function RankingListPage() {
         if (version === requestVersionRef.current) setFilterLoading(false);
       });
   }, []);
+
+  // 浏览器后退/前进时按地址栏恢复筛选
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlType = params.get('type') ?? '';
+      const urlClassify = params.get('classify') ?? '';
+      if (urlType === type && urlClassify === classify) return;
+      fetchFirstPage(urlType, urlClassify);
+      setType(urlType);
+      setClassify(urlClassify);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [type, classify]);
+
+  // 榜单规则 Popover：点外部 / Esc 关闭
+  useEffect(() => {
+    if (!showRules) return;
+    const onDown = (e: MouseEvent) => {
+      if (rulesRef.current && !rulesRef.current.contains(e.target as Node)) setShowRules(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowRules(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [showRules]);
 
   // 加载更多（与首屏/筛选请求独立加锁）
   const loadMore = useCallback(async () => {
@@ -144,21 +195,33 @@ export default function RankingListPage() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  // 筛选状态写入地址栏（后退/前进可恢复）
+  const syncUrl = (nextType: string, nextClassify: string) => {
+    const params = new URLSearchParams();
+    if (nextType) params.set('type', nextType);
+    if (nextClassify) params.set('classify', nextClassify);
+    const qs = params.toString();
+    router.replace(qs ? `/rankingList?${qs}` : '/rankingList', { scroll: false });
+  };
+
   const handleTypeChange = (value: string) => {
     if (value === type) return;
     setType(value);
+    syncUrl(value, classify);
     fetchFirstPage(value, classify);
   };
 
   const handleClassifyChange = (value: string) => {
     if (value === classify) return;
     setClassify(value);
+    syncUrl(type, value);
     fetchFirstPage(type, value);
   };
 
   const resetFilter = () => {
     setType('');
     setClassify('');
+    syncUrl('', '');
     fetchFirstPage('', '');
   };
 
@@ -167,29 +230,54 @@ export default function RankingListPage() {
   };
 
   const showList = !filterLoading && !error && toys.length > 0;
+  // 只有真正存在「本周冠军 ≠ 当前榜首」时右栏才有增量信息，否则整个页面收成两栏
+  const showRankingRail = weeklyTop !== null && weeklyTop.id !== toys[0]?.id;
 
   return (
     <div className="page-shell min-h-screen">
       <Header />
 
       <DesktopPageShell
+        variant="ranking"
         left={<DesktopSidebar />}
         main={
           <div className="min-w-0">
-            <div className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
+            <header className={`${styles.pageTitle} mb-4 pt-3 md:pt-0`}>
               <h1>玩具榜单</h1>
-              <p>排名按站点榜单接口返回顺序</p>
-            </div>
+              <div ref={rulesRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRules((v) => !v)}
+                  aria-expanded={showRules}
+                  aria-haspopup="dialog"
+                  className={styles.rulesButton}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8h.01" />
+                    <path d="M11 12h1v4h1" />
+                  </svg>
+                  榜单规则
+                </button>
+                {showRules && (
+                  <div className={styles.rulesPopover} role="dialog" aria-label="榜单规则">
+                    榜单按官方站实时数据排序，每周更新。评分、测评量与想中数作为商品信息展示。
+                  </div>
+                )}
+              </div>
+            </header>
 
-            {/* 筛选条为高列的直属子元素，sticky 才能整列跟随 */}
-            <RankingFilters
-              type={type}
-              classify={classify}
-              onTypeChange={handleTypeChange}
-              onClassifyChange={handleClassifyChange}
-            />
+            {/* 筛选条：普通文档流（不再 sticky），滚动时不压 Top1 */}
+            <section className={styles.filterZone}>
+              <RankingFilters
+                type={type}
+                classify={classify}
+                onTypeChange={handleTypeChange}
+                onClassifyChange={handleClassifyChange}
+              />
+            </section>
 
-            <div className="mt-5">
+            <section className={styles.contentZone}>
               {filterLoading ? (
                 <RankingSkeleton />
               ) : error ? (
@@ -212,33 +300,27 @@ export default function RankingListPage() {
                   {toys.length > 3 && <RankingList toys={toys.slice(3)} offset={4} />}
                 </div>
               )}
-            </div>
 
-            {/* 无限滚动哨兵 / 底部状态 */}
-            <div ref={sentinelRef} className="py-7 text-center" aria-live="polite">
-              {showList &&
-                (loadingMore ? (
-                  <span className="loading-dots" aria-label="正在加载更多" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                ) : hasMore ? (
-                  <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
-                ) : (
-                  <span className="end-marker">已经到底啦</span>
-                ))}
-            </div>
+              {/* 无限滚动哨兵 / 底部状态 */}
+              <div ref={sentinelRef} className="py-7 text-center" aria-live="polite">
+                {showList &&
+                  (loadingMore ? (
+                    <span className="loading-dots" aria-label="正在加载更多" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  ) : hasMore ? (
+                    <span className="text-[11px] text-[var(--muted-light)]">下拉加载更多</span>
+                  ) : (
+                    <span className="end-marker">已经到底啦</span>
+                  ))}
+              </div>
+            </section>
           </div>
         }
         right={
-          <RankingRightRail
-            weeklyTop={weeklyTop}
-            topToyId={toys[0]?.id}
-            type={type}
-            classify={classify}
-            loadedCount={toys.length}
-          />
+          showRankingRail && weeklyTop ? <RankingRightRail weeklyTop={weeklyTop} /> : undefined
         }
       />
 

@@ -609,6 +609,76 @@ a:focus-visible {
   }
 }
 
+/* ===== 榜单专用网格（DesktopPageShell variant="ranking"）=====
+ * 与 .main-grid 的区别：1024~1279 不显示右栏（榜单右栏价值低）；
+ * 1280/1536 右栏收窄为 260/280px，让主列表更宽。
+ * 移动端/平板行为与默认一致（左栏隐藏、右栏跟随自身媒体规则）。
+ */
+.main-grid--ranking {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .main-grid--ranking {
+    max-width: 760px;
+    margin-inline: auto;
+  }
+}
+
+/* 1024~1279：右栏对整个榜单没有增量信息，直接不显示 */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .main-grid--ranking .main-right-col {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .main-grid--ranking {
+    grid-template-columns: 220px minmax(0, 1fr) 260px;
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .main-grid--ranking {
+    grid-template-columns: 236px minmax(0, 1fr) 280px;
+    gap: 28px;
+  }
+}
+
+/* ===== 无右栏（.main-grid--no-right）=====
+ * 页面不传 right 时自动挂上（见 DesktopPageShell）：删除第三列，
+ * 主内容吃满剩余空间，杜绝「220 | main | 300」里 300px 幽灵右栏。
+ * 定义在所有 main-grid / main-grid--ranking 之后，保证同权重覆盖生效。
+ * 1024~1279 左栏本来就隐藏，收成单列；1280/1536 保留左栏导航。
+ */
+.main-grid--no-right {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .main-grid--no-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .main-grid--no-right {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .main-grid--no-right {
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
 .rail-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
@@ -1791,7 +1861,7 @@ a:focus-visible {
   right: 16px;
   bottom: calc(82px + env(safe-area-inset-bottom));
   z-index: 40;
-  display: inline-flex;
+  /* display 交给 JSX（inline-flex + lg:hidden），避免覆盖 Tailwind 的隐藏规则 */
   height: 44px;
   align-items: center;
   gap: 6px;
@@ -2283,7 +2353,195 @@ button:disabled {
   transition: box-shadow 280ms var(--ease-out);
 }
 
+/* ===== 搜索页 Focus Shell 与布局 ===== */
+/* 搜索页独立于社区 Header：顶部只允许一个搜索框。
+ * 整体容器继续加宽（桌面 1440），帖子阅读区单独收窄（1220），
+ * 1920 下玩具区约 1400、帖子约 1220，仍保留阅读留白但不再两侧大空。
+ * 手机：Shell 自带 16px 左右边距，内层不再重复 padding。 */
+.search-shell {
+  width: min(1440px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.search-shell--narrow {
+  width: min(1220px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .search-shell,
+  .search-shell--narrow {
+    width: min(1440px, calc(100% - 48px));
+  }
+
+  .search-shell--narrow {
+    width: min(1220px, calc(100% - 48px));
+  }
+}
+
+/* 搜索顶部玩具卡：手机竖卡 → 桌面横向媒体卡（图 44% + 信息区）。
+ * 图片区 object-contain + padding，横包装明显变大、竖包装不缩成邮票。 */
+.search-toy-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 180ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.search-toy-card:hover {
+  box-shadow: var(--shadow-float);
+}
+
+.search-toy-card:active {
+  transform: scale(0.995);
+}
+
+.search-toy-media {
+  display: flex;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-subtle);
+  padding: 10px;
+}
+
+.search-toy-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-toy-body {
+  padding: 12px 14px 14px;
+  min-width: 0;
+}
+
+.search-toy-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.search-toy-score {
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.search-toy-score b {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.search-toy-score span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.search-toy-tags {
+  margin-top: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .search-toy-card {
+    grid-template-columns: 50% minmax(0, 1fr);
+    height: 220px;
+  }
+
+  .search-toy-media {
+    aspect-ratio: auto;
+    height: 100%;
+    padding: 8px;
+    border-right: 1px solid var(--line);
+  }
+
+  .search-toy-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px 20px;
+  }
+}
+
+/* 搜索帖子图片：比首页明显放大，按原始比例定宽，最大高度 620 */
+.post-media--search .post-media-single {
+  max-width: min(640px, 88%);
+  max-height: 620px;
+}
+
 /* ===== 帖子详情页专用 ===== */
+
+/* 详情主网格：手机/平板（<1280）单栏收口 860；1280~1535 主栏 820 + 右栏 290；
+ * >=1536 主栏 900 + 右栏 320，杜绝「大空白 + 窄帖子」。
+ * 宽度全部由 grid 自身控制，不用负 margin / translateY 强行对齐。 */
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 820px) 290px;
+    gap: 24px;
+    max-width: 1160px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 900px) 320px;
+    gap: 28px;
+    max-width: 1280px;
+  }
+}
+
+/* 详情右栏：<1024 隐藏；1024~1279 下沉到文章下方（双列卡）；>=1280 回到 sticky 单列 */
+.detail-aside {
+  display: none;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-content: start;
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .detail-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  .detail-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 90px;
+  }
+}
+
 .eyebrow {
   font-size: 8px;
   font-weight: 800;
@@ -2294,7 +2552,7 @@ button:disabled {
 
 .sectiontitle {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 760;
   letter-spacing: -0.01em;
 }
@@ -2365,6 +2623,23 @@ button:disabled {
   height: 25px;
   object-fit: contain;
   margin: 0 2px;
+}
+
+/* 消息深链定位到的评论：淡粉色高亮 1.8s 后淡出 */
+.comment-target {
+  animation: comment-target 1.8s var(--ease-out);
+}
+
+@keyframes comment-target {
+  0% {
+    background: var(--accent-soft);
+    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 /* ===== 排行榜样式已迁移至 src/components/ranking/ranking.module.css ===== */

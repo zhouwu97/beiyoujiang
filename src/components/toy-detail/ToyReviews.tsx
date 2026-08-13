@@ -10,12 +10,14 @@ interface ToyReviewsProps {
   sortBy: 'latest' | 'useful';
   onSortChange: (sort: 'latest' | 'useful') => void;
   onLike: (review: ToyReview) => void;
+  /** 点击测评图片 → 打开大图查看器 */
+  onPreview?: (url: string) => void;
 }
 
 /**
  * 社区测评列表：排序与点赞状态由页面管理，这里只做展示。
  */
-export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLike }: ToyReviewsProps) {
+export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLike, onPreview }: ToyReviewsProps) {
   return (
     <section className={styles.reviews} aria-label="社区测评">
       <div className={styles.sectionHead}>
@@ -50,7 +52,7 @@ export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLik
         </div>
       ) : (
         reviews.map((review) => (
-          <ToyReviewItem key={review.id} review={review} onLike={onLike} />
+          <ToyReviewItem key={review.id} review={review} onLike={onLike} onPreview={onPreview} />
         ))
       )}
     </section>

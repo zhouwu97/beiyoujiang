@@ -2,6 +2,7 @@
 
 /* 页面标题 */
 .pageTitle {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: 10px;
@@ -19,6 +20,58 @@
   margin: 0;
   color: var(--muted);
   font-size: 11px;
+}
+
+/* 榜单规则按钮 + Popover（不再占用右栏空间） */
+.rulesButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 160ms var(--ease-out), border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+}
+
+.rulesButton:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-subtle);
+  color: var(--ink-soft);
+}
+
+.rulesPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: 300px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  padding: 12px 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ===== 筛选区：普通文档流 =====
+ * 不再 sticky / 不设 z 分层：滚动时 Top1 正常从筛选栏下方滚过，
+ * 不会再有「筛选栏悬浮压在 Top1 上」的重叠观感。
+ */
+.filterZone {
+  position: relative;
+}
+
+/* 榜单内容区：正常文档流 20px 间距 */
+.contentZone {
+  margin-top: 20px;
 }
 
 /* ===== 一级筛选 Tab（导航式：active = 黑字 + 底部 accent 线） ===== */
@@ -103,12 +156,72 @@
   color: var(--accent-ink);
 }
 
+/* ===== 榜首主卡：同色系光影分层，装饰不参与交互 ===== */
+.topFeature {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.28), transparent 38%),
+    linear-gradient(135deg, var(--panel-pink), var(--panel-pink-deep));
+  box-shadow:
+    0 18px 40px rgba(201, 79, 134, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(126, 36, 76, 0.14);
+}
+
+.topFeature::before,
+.topFeature::after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  content: '';
+}
+
+.topFeature::before {
+  top: -88px;
+  right: -48px;
+  width: 230px;
+  height: 230px;
+  border: 44px solid rgba(255, 255, 255, 0.1);
+}
+
+.topFeature::after {
+  bottom: -95px;
+  left: 36%;
+  width: 210px;
+  height: 150px;
+  background: rgba(126, 36, 76, 0.1);
+  filter: blur(30px);
+}
+
+.topFeature:hover {
+  box-shadow:
+    0 22px 48px rgba(201, 79, 134, 0.27),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(126, 36, 76, 0.16);
+}
+
+.topFeatureContent {
+  position: relative;
+  z-index: 1;
+}
+
+.topFeatureImage {
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  box-shadow:
+    0 14px 28px rgba(126, 36, 76, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
 /* ===== 第 4 名以后列表行 ===== */
 .row {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 88px;
+  min-height: 96px;
   padding: 10px 14px;
   border-radius: 14px;
   transition: background-color 180ms var(--ease-out);
@@ -139,8 +252,8 @@
 
 .rowStage {
   display: flex;
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;

@@ -61,6 +61,8 @@ export default function ToyDetailPage() {
   const [sortBy, setSortBy] = useState<'latest' | 'useful'>('latest');
   const [loading, setLoading] = useState(true);
   const [showLoginTip, setShowLoginTip] = useState(false);
+  /** 测评大图查看器 */
+  const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +179,7 @@ export default function ToyDetailPage() {
   if (loading) {
     return (
       <div className="page-shell min-h-screen">
-        <Header />
+        <Header variant="detail" />
         <div className={styles.page}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
@@ -194,7 +196,7 @@ export default function ToyDetailPage() {
   if (!toy) {
     return (
       <div className="page-shell min-h-screen">
-        <Header />
+        <Header variant="detail" />
         <div className={styles.page}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
@@ -212,7 +214,7 @@ export default function ToyDetailPage() {
 
   return (
     <div className="page-shell min-h-screen">
-      <Header />
+      <Header variant="detail" />
 
       <div className={styles.page}>
         <nav className={styles.breadcrumb} aria-label="面包屑">
@@ -254,6 +256,7 @@ export default function ToyDetailPage() {
             sortBy={sortBy}
             onSortChange={setSortBy}
             onLike={handleReviewLike}
+            onPreview={setPreview}
           />
           <aside className={styles.side}>
             <SimilarToys toys={similar} />
@@ -261,6 +264,19 @@ export default function ToyDetailPage() {
           </aside>
         </div>
       </div>
+
+      {/* 测评大图查看器 */}
+      {preview && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+          onClick={() => setPreview(null)}
+        >
+          <img src={preview} alt="" className="max-h-[90vh] max-w-[90vw] rounded-[12px] object-contain shadow-2xl" />
+          <button className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[22px] text-white backdrop-blur transition-colors hover:bg-white/20" aria-label="关闭">
+            ×
+          </button>
+        </div>
+      )}
 
       <LoginTipModal open={showLoginTip} onClose={() => setShowLoginTip(false)} />
     </div>

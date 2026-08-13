@@ -23,6 +23,7 @@ import { useForumStore, getCachedPosts } from '@/stores/forum';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
+import Header from '@/components/layout/Header';
 
 /** 帖子图片完整路径 */
 function postImageUrl(img: string): string {
@@ -66,6 +67,7 @@ export default function MessageDetailPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrolledToHashRef = useRef<string | null>(null);
   const me = getUserId();
 
   const post = detail?.post;
@@ -95,6 +97,28 @@ export default function MessageDetailPage() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
+
+  // 从消息列表深链进来（#comment-{id} 或 #comments）：评论渲染完成后定位 + 高亮。
+  // 找不到目标评论时兜底到评论区；不做第一轮猜测式 getMoreComments 拉取。
+  useEffect(() => {
+    if (loading) return;
+    const hash = window.location.hash;
+    if (!hash || hash === '#') return;
+    if (scrolledToHashRef.current === hash) return;
+
+    requestAnimationFrame(() => {
+      const el = document.querySelector(hash);
+      const target = el ?? document.getElementById('comments');
+      if (!target) return;
+
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) {
+        target.classList.add('comment-target');
+        window.setTimeout(() => target.classList.remove('comment-target'), 2000);
+      }
+      scrolledToHashRef.current = hash;
+    });
+  }, [loading, comments]);
 
   const handleLike = useCallback(async () => {
     if (!me) { setShowLoginTip(true); return; }
@@ -130,6 +154,27 @@ export default function MessageDetailPage() {
     try { await deletePost(postId); showAlert('删除成功'); router.push('/'); }
     catch { showAlert('删除失败'); }
   };
+
+  // 分享：优先系统分享面板，不支持或失败则复制链接
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const title = post?.title ?? '杯友酱的帖子';
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (err) {
+        // 用户主动取消（AbortError）不处理；其余原因降级到剪贴板
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showAlert('链接已复制');
+    } catch {
+      showAlert('复制失败，请手动复制地址');
+    }
+  }, [post?.title, showAlert]);
 
   const submitComment = async () => {
     const content = commentText.trim();
@@ -202,7 +247,7 @@ export default function MessageDetailPage() {
   const author = post.author;
 
   // 右侧推荐：从缓存取同板块帖子
-  const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id).slice(0, 5);
+  const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id && p.plate === post.plate).slice(0, 5);
 
   // 作者统计数据
   const authorStats = [
@@ -213,33 +258,23 @@ export default function MessageDetailPage() {
 
   return (
     <div className="page-shell min-h-screen">
-      {/* 顶栏（面包屑导航） */}
-      <header className="site-header">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1200px] items-center gap-4 px-4 sm:px-6 lg:min-h-[68px] lg:px-0">
-          <Link href="/" className="brand-lockup shrink-0">
-            <span className="brand-mark" aria-hidden="true">杯</span>
-            <span className="brand-wordmark"><strong>杯友酱</strong></span>
-          </Link>
-          <div className="flex items-center gap-2 border-l border-[var(--line)] pl-4 text-[11px] text-[var(--muted)]">
-            <span>论坛</span>
-            <span>›</span>
-            <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
-          </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <button onClick={() => router.push('/search')} className="search-trigger desktop-search-trigger hidden xl:inline-flex">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7.5" /><path d="m16.5 16.5 4.5 4.5" /></svg>
-              <span>搜索帖子、用户、话题</span>
-              <span className="search-shortcut">Ctrl K</span>
-            </button>
-            <button onClick={() => router.back()} className="icon-button" aria-label="返回">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header variant="detail" />
 
-      <main className="mx-auto w-full max-w-[1200px] px-4 py-5 sm:px-6 lg:py-6">
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,824px)_320px] lg:gap-7">
+      <main className="mx-auto w-full max-w-[1328px] px-4 py-5 sm:px-6 lg:py-6">
+        {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
+        <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
+          <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            论坛
+          </Link>
+          <span aria-hidden="true">›</span>
+          <strong className="font-semibold text-[var(--ink-soft)]">帖子详情</strong>
+        </nav>
+
+        <div className="detail-grid">
           {/* 左侧主内容 */}
           <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
             <article className="px-5 pt-5 sm:px-7 sm:pt-6">
@@ -265,9 +300,6 @@ export default function MessageDetailPage() {
                     <span>阅读 {post.readingQuantity ?? 0}</span>
                   </div>
                 </div>
-                <button className="ml-auto h-[30px] rounded-[8px] bg-[var(--accent-soft)] px-3 text-[12px] font-bold text-[var(--accent-ink)] transition-transform active:scale-[0.96]">
-                  关注
-                </button>
               </div>
 
               {/* 标题 */}
@@ -275,9 +307,9 @@ export default function MessageDetailPage() {
                 {post.title}
               </h1>
 
-              {/* 正文 */}
+              {/* 正文：仅文本限制阅读宽度，图片/操作栏/评论保持主区全宽 */}
               <div
-                className="mt-2 max-w-[68ch] text-[14px] leading-[1.82] text-[var(--ink-soft)]"
+                className="mt-2 max-w-[72ch] text-[14px] leading-[1.82] text-[var(--ink-soft)]"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
               />
 
@@ -327,7 +359,10 @@ export default function MessageDetailPage() {
                   </svg>
                   {collected ? '已收藏' : '收藏'}
                 </button>
-                <button className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[12px] font-semibold text-[var(--muted)]">
+                <button
+                  onClick={handleShare}
+                  className="pill-btn interactive-press flex h-8 items-center gap-1.5 rounded-[9px] bg-[var(--surface-subtle)] px-3 text-[12px] font-semibold text-[var(--muted)]"
+                >
                   分享
                 </button>
                 {me === author?.id && (
@@ -345,7 +380,7 @@ export default function MessageDetailPage() {
             </article>
 
             {/* 评论区 */}
-            <section className="border-t border-[var(--line)] px-5 py-5 sm:px-7">
+            <section id="comments" className="scroll-mt-[96px] border-t border-[var(--line)] px-5 py-5 sm:px-7">
               <h2 className="mb-1 text-[16px] font-bold text-[var(--ink)]">
                 全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
@@ -356,7 +391,12 @@ export default function MessageDetailPage() {
 
               <div className="space-y-0">
                 {comments.map((c) => (
-                  <div key={c.id} className="border-b border-[var(--line)] py-3.5 last:border-0">
+                  <div
+                    key={c.id}
+                    id={`comment-${c.id}`}
+                    data-comment-id={c.id}
+                    className="comment-item scroll-mt-[96px] border-b border-[var(--line)] py-3.5 last:border-0"
+                  >
                     {/* 评论头 */}
                     <div className="flex items-center gap-2">
                       <img
@@ -423,15 +463,22 @@ export default function MessageDetailPage() {
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
                     />
 
-                    {/* 评论图片 */}
+                    {/* 评论图片：完整比例展示（禁止固定正方形 cover）；单图放大，多图缩略网格，点击看大图 */}
                     {c.imageUrlsArray?.length > 0 && (
-                      <div className="ml-[38px] mt-2 flex flex-wrap gap-1.5">
+                      <div className="ml-[38px] mt-2 flex flex-wrap gap-2">
                         {c.imageUrlsArray.map((img, i) => (
                           <img
                             key={i}
                             src={postImageUrl(img)}
                             alt=""
-                            className="h-16 w-16 cursor-zoom-in rounded-[8px] border border-[var(--line)] object-cover"
+                            className="h-auto w-auto cursor-zoom-in rounded-[10px] border border-[var(--line)] object-contain"
+                            style={
+                              c.imageUrlsArray.length === 1
+                                ? { maxWidth: '360px', maxHeight: '480px' }
+                                : c.imageUrlsArray.length === 2
+                                  ? { maxWidth: '260px', maxHeight: '340px' }
+                                  : { maxWidth: '200px', maxHeight: '260px' }
+                            }
                             onClick={() => setPreviewImage(postImageUrl(img))}
                           />
                         ))}
@@ -442,7 +489,7 @@ export default function MessageDetailPage() {
                     {c.replies && c.replies.length > 0 && (
                       <div className="ml-[38px] mt-2 space-y-1 rounded-[9px] bg-[var(--surface-subtle)] p-2.5">
                         {c.replies.map((r) => (
-                          <div key={r.id} className="text-[12px]">
+                          <div key={r.id} id={`comment-${r.id}`} className="scroll-mt-[96px] text-[12px]">
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
                             <span
@@ -487,71 +534,69 @@ export default function MessageDetailPage() {
           </div>
 
             {/* 右侧边栏 */}
-          <aside className="sticky top-[90px] hidden space-y-3.5 lg:flex lg:flex-col">
+          <aside className="detail-aside">
             {/* 作者卡片 */}
-            <section className="rail-panel sidecard p-4">
-              <div className="eyebrow mb-2">POST AUTHOR</div>
-              <div className="flex items-center gap-2.5">
+            <section className="rail-panel sidecard max-xl:col-span-2 p-5">
+              <div className="eyebrow mb-3">POST AUTHOR</div>
+              <div className="flex items-center gap-3">
                 <img
                   src={resolveAvatar(author?.photo)}
                   alt=""
-                  className="h-[42px] w-[42px] rounded-[11px] border border-[var(--line)] object-cover ring-2 ring-white"
+                  className="h-12 w-12 rounded-[13px] border border-[var(--line)] object-cover ring-2 ring-white"
                   loading="lazy"
                 />
                 <div>
-                  <span className="block text-[13px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
-                  <span className="block text-[10px] text-[var(--muted)]">
-                    Lv.{author?.level ?? 1} · {author?.introduction ? '杯友' : '杯友'}
+                  <span className="block text-[15px] font-semibold text-[var(--ink)]">{author?.username ?? '杯友'}</span>
+                  <span className="mt-1 block text-[11px] text-[var(--muted)]">
+                    Lv.{author?.level ?? 1} · 杯友
                   </span>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] leading-[1.7] text-[var(--muted)]">
+              <p className="mt-3 text-[12px] leading-[1.7] text-[var(--muted)]">
                 {author?.introduction || '这位杯友还没有写简介~'}
               </p>
-              <div className="mt-3 grid grid-cols-3 border-t border-[var(--line)] pt-3">
+              <div className="mt-4 grid grid-cols-3 border-t border-[var(--line)] pt-3.5">
                 {authorStats.map((s) => (
                   <div key={s.label} className="text-center">
-                    <span className="block text-[13px] font-bold text-[var(--ink)]">{s.value}</span>
-                    <span className="block text-[10px] text-[var(--muted)]">{s.label}</span>
+                    <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
+                    <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
                   </div>
                 ))}
               </div>
-              <button className="mt-3 h-[34px] w-full rounded-[9px] bg-[var(--accent)] text-[12px] font-bold text-white transition-colors hover:bg-[var(--accent-strong)]">
-                关注作者
-              </button>
+              {/* 关注作者：官方 API 未提供关注接口（已实测 404），移除假按钮 */}
             </section>
 
             {/* 同类热门 */}
-            <section className="rail-panel sidecard p-4">
+            <section className="rail-panel sidecard p-5">
               <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">同类热门</h3>
-                <span className="text-[10px] text-[var(--muted-light)]">更多推荐</span>
+                <h3 className="sectiontitle font-bold text-[var(--ink)]">同类热门</h3>
+                <span className="text-[11px] text-[var(--muted-light)]">更多推荐</span>
               </div>
-              <div className="space-y-0">
+              <div className="space-y-1">
                 {cachedPosts.length > 0 ? cachedPosts.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => router.push(`/messageDetail/${p.id}`)}
-                    className="rel-btn group w-full rounded-[8px] px-2 py-2 text-left transition-colors hover:bg-[var(--surface-subtle)]"
+                    className="group w-full rounded-[10px] px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--surface-subtle)]"
                   >
-                    <span className="block truncate text-[12px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--ink-soft)] transition-colors group-hover:text-[var(--accent-ink)]">
                       {p.title}
                     </span>
-                    <span className="mt-1 block text-[10px] text-[var(--muted)]">
+                    <span className="mt-1.5 block text-[11px] text-[var(--muted)]">
                       {p.commentCount ?? 0} 条回复 · {p.timeAgo ?? '刚刚'}
                     </span>
                   </button>
                 )) : (
-                  <p className="text-[11px] text-[var(--muted)]">暂无更多推荐</p>
+                  <p className="text-[12px] text-[var(--muted)]">暂无更多推荐</p>
                 )}
               </div>
             </section>
 
             {/* 本帖信息 */}
-            <section className="rail-panel sidecard p-4">
-              <div className="mb-3 flex items-end justify-between">
-                <h3 className="sectiontitle text-[14px] font-bold text-[var(--ink)]">本帖信息</h3>
-                <span className="text-[10px] text-[var(--muted-light)]">#{post.id}</span>
+            <section className="rail-panel sidecard p-5">
+              <div className="mb-2.5 flex items-end justify-between">
+                <h3 className="sectiontitle font-bold text-[var(--ink)]">本帖信息</h3>
+                <span className="text-[11px] text-[var(--muted-light)]">#{post.id}</span>
               </div>
               <div className="space-y-0">
                 {[
@@ -560,7 +605,7 @@ export default function MessageDetailPage() {
                   { label: '阅读', value: post.readingQuantity ?? 0 },
                   { label: '最后回复', value: comments.length > 0 ? (comments[comments.length - 1]?.timeString ?? '刚刚') : '—' },
                 ].map((item) => (
-                  <div key={item.label} className="ctx-row flex h-[35px] items-center justify-between border-b border-[var(--line)] text-[11px] last:border-0">
+                  <div key={item.label} className="ctx-row flex h-8 items-center justify-between border-b border-[var(--line)] text-[11.5px] last:border-0">
                     <span className="text-[var(--muted)]">{item.label}</span>
                     <span className="text-[var(--ink-soft)]">{item.value}</span>
                   </div>

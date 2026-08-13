@@ -78,8 +78,8 @@ export default function ResetPasswordPage() {
       title="找回密码"
       description="通过邮箱验证码重置密码"
       footer={
-        <button onClick={() => router.push('/login')} className="text-[13px] text-[#929292]">
-          想起密码了? <span className="text-[#FB7299]">去登录</span>
+        <button onClick={() => router.push('/login')} className="text-[13px] text-[var(--muted)]">
+          想起密码了? <span className="text-[var(--accent)]">去登录</span>
         </button>
       }
     >
@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
             type="button"
             onClick={handleSendCode}
             disabled={sending || countdown > 0}
-            className="whitespace-nowrap text-[12px] font-medium text-[#FB7299] transition-colors hover:text-[#e55680] disabled:text-[#929292]"
+            className="whitespace-nowrap text-[12px] font-medium text-[var(--accent)] transition-colors hover:text-[#e55680] disabled:text-[var(--muted)]"
           >
             {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '获取验证码'}
           </button>

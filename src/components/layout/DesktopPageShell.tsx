@@ -7,6 +7,12 @@ interface DesktopPageShellProps {
   main: ReactNode;
   /** 右栏，>=900px 显示 */
   right?: ReactNode;
+  /**
+   * 布局变体：
+   *  default：首页/社区（1024 起显示右栏，1280/1536 为 300/320px）
+   *  ranking：榜单专用（1024~1279 不显示右栏；1280/1536 为 260/280px）
+   */
+  variant?: 'default' | 'ranking';
 }
 
 /**
@@ -19,6 +25,10 @@ interface DesktopPageShellProps {
  *  1280~1535   220px | Feed | 300px，gap 24
  *  >=1536      236px | Feed | 320px，gap 28
  *
+ * 不传 right 时（个人中心 / 消息 / 无额外信息的榜单）自动挂 main-grid--no-right，
+ * 第三列在 CSS 层被删除，主内容吃满剩余空间，避免留下「幽灵右栏」空白。
+ * 所有 main-grid-* 变体（含 --ranking）都可与 --no-right 组合。
+ *
  * 整体宽度跟随 .shell-width：<1280 保持原样（不动移动端），
  * 1280~1535 为 min(1400px, calc(100% - 32px))，>=1536 为 min(1440px, calc(100% - 40px))。
  *
@@ -28,10 +38,13 @@ interface DesktopPageShellProps {
  * （整栏跟着页面滚走）。右栏可能超过一屏：.main-right-col 自身限高并内部滚动
  * （滚动条隐藏）。
  */
-export default function DesktopPageShell({ left, main, right }: DesktopPageShellProps) {
+export default function DesktopPageShell({ left, main, right, variant = 'default' }: DesktopPageShellProps) {
+  const hasRight = Boolean(right);
+  const base = variant === 'ranking' ? 'main-grid main-grid--ranking' : 'main-grid';
+  const gridClass = hasRight ? base : `${base} main-grid--no-right`;
   return (
     <div className="shell-width pt-6 pb-[72px] max-md:pt-0">
-      <div className="main-grid">
+      <div className={gridClass}>
         {left ? <div className="main-left-col">{left}</div> : null}
         <div className="min-w-0">{main}</div>
         {right ? <div className="main-right-col">{right}</div> : null}

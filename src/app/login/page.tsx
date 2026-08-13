@@ -42,9 +42,9 @@ export default function LoginPage() {
       title="欢迎回到杯友酱"
       description="登录后继续参与社区交流"
       footer={
-        <p className="text-[13px] text-[#929292]">
+        <p className="text-[13px] text-[var(--muted)]">
           还没有账号?
-          <button onClick={() => router.push('/register')} className="ml-1 font-medium text-[#FB7299]">
+          <button onClick={() => router.push('/register')} className="ml-1 font-medium text-[var(--accent)]">
             立即注册
           </button>
         </p>
@@ -58,7 +58,7 @@ export default function LoginPage() {
         className="space-y-4"
       >
         <div className="auth-field">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#929292" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
             <polyline points="22,6 12,13 2,6" />
           </svg>
@@ -72,7 +72,7 @@ export default function LoginPage() {
         </div>
 
         <div className="auth-field">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#929292" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <rect x="3" y="11" width="18" height="11" rx="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
@@ -83,7 +83,7 @@ export default function LoginPage() {
             placeholder="密码"
             className="auth-input"
           />
-          <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[#929292] transition-colors hover:text-[#FB7299]" aria-label="显示密码">
+          <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]" aria-label="显示密码">
             {showPwd ? '隐藏' : '显示'}
           </button>
         </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => router.push('/resetPassword')}
-            className="text-[12px] text-[#929292] transition-colors hover:text-[#FB7299]"
+            className="text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]"
           >
             忘记密码?
           </button>

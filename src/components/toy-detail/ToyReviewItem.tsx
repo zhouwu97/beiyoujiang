@@ -1,7 +1,7 @@
 'use client';
 
 import type { ToyReview } from '@/lib/types';
-import { resolveAvatar, sanitizeHtml } from '@/lib/utils';
+import { resolveAvatar, resolveToyImage, sanitizeHtml } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
 import styles from './toy-detail.module.css';
 
@@ -29,12 +29,23 @@ function HeartRating({ score }: { score: number }) {
 interface ToyReviewItemProps {
   review: ToyReview;
   onLike: (review: ToyReview) => void;
+  /** 点击测评图片 → 打开大图查看器（页面持有预览状态） */
+  onPreview?: (url: string) => void;
+}
+
+/** 按图片数量决定布局：1 张大图 / 2 张并排 / 3~4 张缩略网格 */
+function reviewImagesLayout(count: number): string {
+  if (count === 1) return styles.single;
+  if (count === 2) return styles.pair;
+  return styles.thumb;
 }
 
 /**
  * 单条测评：状态（点赞）提升到页面，组件只负责展示与回调。
  */
-export default function ToyReviewItem({ review, onLike }: ToyReviewItemProps) {
+export default function ToyReviewItem({ review, onLike, onPreview }: ToyReviewItemProps) {
+  const images = review.images ?? [];
+
   return (
     <article className={styles.review}>
       <div className={styles.reviewHead}>
@@ -51,10 +62,18 @@ export default function ToyReviewItem({ review, onLike }: ToyReviewItemProps) {
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(review.content) }}
       />
 
-      {review.images && review.images.length > 0 && (
-        <div className={styles.reviewImgs}>
-          {review.images.map((img, i) => (
-            <ToyImage key={i} src={img} alt="" className={styles.reviewImg} />
+      {images.length > 0 && (
+        <div className={`${styles.reviewImgs} ${reviewImagesLayout(images.length)}`}>
+          {images.map((img, i) => (
+            <button
+              key={i}
+              type="button"
+              className={styles.reviewImgBtn}
+              onClick={() => onPreview?.(resolveToyImage(img))}
+              aria-label="查看大图"
+            >
+              <ToyImage src={img} alt="" className={styles.reviewImg} />
+            </button>
           ))}
         </div>
       )}

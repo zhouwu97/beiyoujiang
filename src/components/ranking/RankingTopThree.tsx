@@ -5,6 +5,7 @@ import type { Toy } from '@/lib/types';
 import { formatCount } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
 import { categoryLabel, stimulationLabel } from '@/lib/toyLabels';
+import styles from './ranking.module.css';
 
 function ChampionBadge() {
   return (
@@ -39,10 +40,10 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
       {/* Top 1 */}
       <Link
         href={`/bang/${top.id}`}
-        className="group block rounded-[22px] bg-[#252123] p-5 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(37,27,31,0.2)] sm:p-6 lg:p-7"
+        className={`group block rounded-[22px] p-5 transition-transform duration-200 hover:-translate-y-0.5 sm:p-6 lg:p-7 ${styles.topFeature}`}
       >
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
-          <div className="flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#f3f1ef] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44">
+        <div className={`flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7 ${styles.topFeatureContent}`}>
+          <div className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#f3f1ef] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44 ${styles.topFeatureImage}`}>
             <ToyImage src={top.coverUrl?.[0]} alt={top.name} className="h-full w-full object-contain" />
           </div>
 
@@ -61,26 +62,35 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
                   {categoryLabel(top.category)} · {stimulationLabel(top.stimulation)}
                 </p>
               </div>
-              <span className="text-4xl font-black tracking-tight text-[rgba(255,180,92,0.32)] sm:text-5xl" aria-hidden="true">
+              <span
+                className={`text-4xl font-black tracking-tight sm:text-5xl ${
+                  isWeeklyChampion ? 'text-[rgba(255,180,92,0.32)]' : 'text-white/18'
+                }`}
+                aria-hidden="true"
+              >
                 01
               </span>
             </div>
 
             <div className="mt-4 flex items-center gap-6 border-t border-white/10 pt-3.5">
               <div>
-                <div className="text-xl font-black leading-none text-[#ffb45c] sm:text-2xl">
+                <div
+                  className={`text-xl font-black leading-none sm:text-2xl ${
+                    isWeeklyChampion ? 'text-[#ffb45c]' : 'text-white'
+                  }`}
+                >
                   {top.rating ?? '-'}
                 </div>
                 <div className="mt-1.5 text-[10px] text-white/45">评分</div>
               </div>
               <div>
-                <div className="text-[15px] font-bold leading-none text-white">
+                <div className="text-[15px] font-bold leading-none text-white/70">
                   {formatCount(top.reviewCount ?? 0)}
                 </div>
                 <div className="mt-1.5 text-[10px] text-white/45">测评</div>
               </div>
               <div>
-                <div className="text-[15px] font-bold leading-none text-white">
+                <div className="text-[15px] font-bold leading-none text-white/70">
                   {formatCount(top.wantCount ?? 0)}
                 </div>
                 <div className="mt-1.5 text-[10px] text-white/45">想中</div>
@@ -100,27 +110,30 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
               <Link
                 key={toy.id}
                 href={`/bang/${toy.id}`}
-                className="group flex items-center gap-4 rounded-[18px] border border-[var(--line)] bg-white p-4 transition-[box-shadow,border-color] duration-200 hover:border-[rgba(26,24,28,0.14)] hover:shadow-[0_14px_36px_rgba(37,27,31,0.07)]"
+                className="group flex min-h-[116px] items-center gap-4 rounded-[18px] border border-[var(--line)] bg-white p-4 transition-[box-shadow,border-color] duration-200 hover:border-[rgba(26,24,28,0.14)] hover:shadow-[0_14px_36px_rgba(37,27,31,0.07)]"
               >
                 <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black ${
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] text-[15px] font-black ${
                     isSecond ? 'bg-[#ececea] text-[#8a8487]' : 'bg-[#f2e7d8] text-[#8a6f4f]'
                   }`}
                   aria-hidden="true"
                 >
                   {String(rank).padStart(2, '0')}
                 </span>
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#f4f2f0] p-1.5">
+                <span className="flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#f4f2f0] p-2 xl:h-[92px] xl:w-[92px]">
                   <ToyImage src={toy.coverUrl?.[0]} alt={toy.name} className="h-full w-full object-contain" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-bold text-[var(--ink)]">{toy.name}</span>
-                  <span className="mt-1 block truncate text-[10px] text-[var(--muted)]">{toy.merchant}</span>
-                  <span className="mt-1.5 block">
-                    <span className="text-[13px] font-black leading-none text-[var(--ink)]">{toy.rating ?? '-'}</span>
-                    <span className="ml-1.5 text-[10px] font-semibold text-[var(--muted-light)]">
-                      {formatCount(toy.reviewCount ?? 0)} 测评
-                    </span>
+                  <span className="block truncate text-[15px] font-bold text-[var(--ink)]">{toy.name}</span>
+                  <span className="mt-1 block truncate text-[11px] text-[var(--muted)]">{toy.merchant}</span>
+                  <span className="mt-1 block truncate text-[10px] text-[var(--muted-light)]">
+                    {categoryLabel(toy.category)} · {stimulationLabel(toy.stimulation)}
+                  </span>
+                </span>
+                <span className="flex shrink-0 flex-col items-end">
+                  <span className="text-[19px] font-black leading-none text-[var(--ink)]">{toy.rating ?? '-'}</span>
+                  <span className="mt-1.5 text-[10px] font-semibold text-[var(--muted-light)]">
+                    {formatCount(toy.reviewCount ?? 0)} 测评
                   </span>
                 </span>
               </Link>

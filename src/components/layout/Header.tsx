@@ -7,7 +7,9 @@ import { PLATES } from '@/lib/types';
 import type { Plate } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth';
+import { useMessageStore } from '@/stores/message';
 import { reset, setPlate, useForumStore } from '@/stores/forum';
+import { getAllMessages } from '@/lib/api';
 
 function SearchIcon() {
   return (
@@ -34,15 +36,48 @@ function PlusIcon() {
   );
 }
 
+interface HeaderProps {
+  /** community：默认全站版（含移动端板块导航）；compact：详情页专用（移动端隐藏板块导航 + 返回按钮）；
+   *  detail：详情页专用，在 compact 基础上桌面端也不显示「发布帖子」浮动按钮（详情页不需要全局发帖入口） */
+  variant?: 'community' | 'compact' | 'detail';
+}
+
 /**
  * 全站页头：桌面端严格采用「品牌 / 搜索 / 操作」三段式，板块入口留给左侧导航。
  * 移动端保留已有的板块快捷导航和底部导航，避免改变小屏使用路径。
+ * variant="compact"：详情类页面（帖子/玩具详情），移动端隐藏板块导航并显示返回。
+ * variant="detail"：帖子详情页，在 compact 基础上桌面端隐藏「发布帖子」按钮，
+ * 避免详情阅读流里出现多余的全局发帖入口。
  */
-export default function Header() {
+export default function Header({ variant = 'community' }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const currentPlate = useForumStore((state) => state.plate);
   const currentUser = useAuthStore((state) => state.currentUser);
+  const hasUnread = useMessageStore((state) => state.hasUnread);
+  const checked = useMessageStore((state) => state.checked);
+  const setHasUnread = useMessageStore((state) => state.setHasUnread);
+  const setChecked = useMessageStore((state) => state.setChecked);
+  const isDetail = variant === 'detail';
+  const isCompact = variant === 'compact' || isDetail;
+
+  // 通知红点：会话内首次挂载查一次未读状态（成功后才置 checked，未登录/失败下次导航重试）。
+  useEffect(() => {
+    if (checked) return;
+    let cancelled = false;
+    getAllMessages(0)
+      .then((msgs) => {
+        if (cancelled) return;
+        setHasUnread(msgs.some((m) => !m.isRead));
+        setChecked();
+      })
+      .catch(() => {
+        // 未登录/网络失败：保持未检查状态，等下次挂载再试
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [checked, setHasUnread, setChecked]);
 
   const handlePlateClick = useCallback(
     (plate: Plate) => {
@@ -88,6 +123,15 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="desktop-header-inner">
+        {isCompact && (
+          <button onClick={() => router.back()} className="icon-button xl:hidden" aria-label="返回">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        )}
+
         <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
           <span className="desktop-header-brand-mark" aria-hidden="true">
             <img src="/images/load.gif" alt="" />
@@ -119,13 +163,16 @@ export default function Header() {
 
           <button type="button" onClick={() => router.push('/message')} className="desktop-header-icon-button" aria-label="消息">
             <MessageIcon />
-            <span className="notification-dot" aria-hidden="true" />
+            {hasUnread && <span className="notification-dot" aria-hidden="true" />}
           </button>
 
-          <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
-            <PlusIcon />
-            <span>发布帖子</span>
-          </button>
+          {/* 详情页不展示全局「发布帖子」入口，避免阅读流被无关 CTA 打断 */}
+          {!isDetail && (
+            <button type="button" onClick={() => router.push('/postMessage')} className="desktop-header-compose">
+              <PlusIcon />
+              <span>发布帖子</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -138,23 +185,25 @@ export default function Header() {
         </div>
       </div>
 
-      <nav className="flex min-w-0 items-stretch border-t border-[var(--line)] px-1 xl:hidden" aria-label="论坛板块">
-        {PLATES.map((plateInfo) => {
-          const isActive = currentPlate === plateInfo.id;
-          return (
-            <button
-              key={plateInfo.id}
-              type="button"
-              onClick={() => handlePlateClick(plateInfo.id)}
-              aria-current={isActive ? 'page' : undefined}
-              className="header-section-link flex-1 justify-center"
-              data-active={isActive}
-            >
-              {plateInfo.name}
-            </button>
-          );
-        })}
-      </nav>
+      {!isCompact && (
+        <nav className="flex min-w-0 items-stretch border-t border-[var(--line)] px-1 xl:hidden" aria-label="论坛板块">
+          {PLATES.map((plateInfo) => {
+            const isActive = currentPlate === plateInfo.id;
+            return (
+              <button
+                key={plateInfo.id}
+                type="button"
+                onClick={() => handlePlateClick(plateInfo.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className="header-section-link flex-1 justify-center"
+                data-active={isActive}
+              >
+                {plateInfo.name}
+              </button>
+            );
+          })}
+        </nav>
+      )}
     </header>
   );
 }
