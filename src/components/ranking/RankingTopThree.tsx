@@ -43,7 +43,7 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
         className={`group block rounded-[22px] p-5 transition-transform duration-200 hover:-translate-y-0.5 sm:p-6 lg:p-7 ${styles.topFeature}`}
       >
         <div className={`flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7 ${styles.topFeatureContent}`}>
-          <div className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[#f3f1ef] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44 ${styles.topFeatureImage}`}>
+          <div className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-[var(--surface-subtle)] p-3 sm:h-40 sm:w-40 lg:h-44 lg:w-44 ${styles.topFeatureImage}`}>
             <ToyImage src={top.coverUrl?.[0]} alt={top.name} className="h-full w-full object-contain" />
           </div>
 
@@ -120,7 +120,7 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
                 >
                   {String(rank).padStart(2, '0')}
                 </span>
-                <span className="flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[#f4f2f0] p-2 xl:h-[92px] xl:w-[92px]">
+                <span className="flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-[var(--surface-subtle)] p-2 xl:h-[92px] xl:w-[92px]">
                   <ToyImage src={toy.coverUrl?.[0]} alt={toy.name} className="h-full w-full object-contain" />
                 </span>
                 <span className="min-w-0 flex-1">

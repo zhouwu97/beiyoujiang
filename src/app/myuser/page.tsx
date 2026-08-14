@@ -145,12 +145,12 @@ export default function MyUserPage() {
               <p className="text-[16px] font-bold text-[var(--ink)]">{data?.fans ?? 0}</p>
               <p className="text-[11px] text-[var(--muted)]">粉丝</p>
             </div>
-            <div className="w-px h-8 bg-[#FFD6DE]" />
+            <div className="w-px h-8 bg-[var(--accent-soft)]" />
             <div className="text-center">
               <p className="text-[16px] font-bold text-[var(--ink)]">{data?.followersNumber ?? 0}</p>
               <p className="text-[11px] text-[var(--muted)]">关注</p>
             </div>
-            <div className="w-px h-8 bg-[#FFD6DE]" />
+            <div className="w-px h-8 bg-[var(--accent-soft)]" />
             <div className="text-center">
               <p className="text-[16px] font-bold text-[var(--ink)]">{data?.invitationNumber ?? 0}</p>
               <p className="text-[11px] text-[var(--muted)]">帖子</p>
