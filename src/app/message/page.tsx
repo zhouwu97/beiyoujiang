@@ -172,7 +172,7 @@ export default function MessagePage() {
             </>
           );
           return href ? (
-            <Link key={m.id} href={href} className={`${baseCls} group cursor-pointer transition-colors hover:bg-[#fcfbfb]`}>
+            <Link key={m.id} href={href} className={`${baseCls} group cursor-pointer transition-colors hover:bg-[var(--surface-subtle)]`}>
               {inner}
             </Link>
           ) : (

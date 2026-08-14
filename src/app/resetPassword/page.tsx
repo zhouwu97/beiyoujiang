@@ -102,7 +102,7 @@ export default function ResetPasswordPage() {
             type="button"
             onClick={handleSendCode}
             disabled={sending || countdown > 0}
-            className="whitespace-nowrap text-[12px] font-medium text-[var(--accent)] transition-colors hover:text-[#e55680] disabled:text-[var(--muted)]"
+            className="whitespace-nowrap text-[12px] font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)] disabled:text-[var(--muted)]"
           >
             {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '获取验证码'}
           </button>
