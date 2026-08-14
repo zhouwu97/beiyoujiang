@@ -18,7 +18,7 @@ export default function AuthFrame({ title, description, children, footer }: Auth
         <div className="mx-auto flex h-16 w-full max-w-[1080px] items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-baseline gap-2">
             <span className="text-[20px] font-bold tracking-[-0.06em] text-[#202024]">杯友酱</span>
-            <span className="text-[10px] font-medium tracking-[0.12em] text-[#a1a1aa]">社区</span>
+            <span className="text-[11px] font-medium tracking-[0.12em] text-[#a1a1aa]">社区</span>
           </Link>
           <Link href="/" className="text-[13px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]">
             返回首页

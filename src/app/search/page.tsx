@@ -21,6 +21,9 @@ export default function SearchPage() {
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [keywordsError, setKeywordsError] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const pageRef = useRef(1);
   // 请求序号：快速连续搜索时，过期响应直接丢弃（与榜单页 requestVersion 同一模式）
   const requestVersionRef = useRef(0);
@@ -29,7 +32,7 @@ export default function SearchPage() {
   useEffect(() => {
     getAllKeywords()
       .then(setKeywords)
-      .catch(() => {});
+      .catch(() => setKeywordsError(true));
   }, []);
 
   const doSearch = async (keyword: string, page = 1) => {
@@ -40,9 +43,13 @@ export default function SearchPage() {
       setSearched(true);
       setLoading(true);
       setSearchError(false);
+      setLoadMoreError(false);
       // 清空旧结果，避免上一次搜索的内容冒充新查询的结果
       setToys([]);
       setPosts([]);
+    } else {
+      setLoadMoreLoading(true);
+      setLoadMoreError(false);
     }
     try {
       const res = await searchToyPost(keyword, page);
@@ -60,9 +67,15 @@ export default function SearchPage() {
       pageRef.current = page;
     } catch {
       // 过期请求的报错同样丢弃；当前请求失败则展示错误态
-      if (version === requestVersionRef.current && page === 1) setSearchError(true);
+      if (version === requestVersionRef.current) {
+        if (page === 1) setSearchError(true);
+        else setLoadMoreError(true);
+      }
     } finally {
-      if (version === requestVersionRef.current && page === 1) setLoading(false);
+      if (version === requestVersionRef.current) {
+        if (page === 1) setLoading(false);
+        else setLoadMoreLoading(false);
+      }
     }
   };
 
@@ -71,6 +84,7 @@ export default function SearchPage() {
   };
 
   const handleLoadMore = () => {
+    if (loading) return;
     doSearch(query, pageRef.current + 1);
   };
 
@@ -115,20 +129,26 @@ export default function SearchPage() {
       {!searched && (
         <section className="search-shell pt-4 lg:pt-8">
           <h3 className="mb-3 text-[13px] text-[var(--muted)]">大家都在搜</h3>
-          <div className="flex flex-wrap gap-2">
-            {keywords.map((k) => (
-              <button
-                key={k.id}
-                onClick={() => {
-                  setQuery(k.keyword);
-                  doSearch(k.keyword, 1);
-                }}
-                className="rounded-full bg-[var(--background)] px-3 py-1.5 text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--surface-tint)]"
-              >
-                {k.keyword}
-              </button>
-            ))}
-          </div>
+          {keywordsError ? (
+            <p className="text-[13px] text-[var(--muted)]">热词加载失败</p>
+          ) : keywords.length === 0 ? (
+            <p className="text-[13px] text-[var(--muted)]">暂无热门搜索</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {keywords.map((k) => (
+                <button
+                  key={k.id}
+                  onClick={() => {
+                    setQuery(k.keyword);
+                    doSearch(k.keyword, 1);
+                  }}
+                  className="rounded-full bg-[var(--background)] px-3 py-1.5 text-[13px] text-[var(--ink)] transition-colors hover:bg-[var(--surface-tint)]"
+                >
+                  {k.keyword}
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -191,12 +211,25 @@ export default function SearchPage() {
 
           {hasMore && (
             <div className="search-shell--narrow">
-              <button
-                onClick={handleLoadMore}
-                className="w-full py-3 text-center text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]"
-              >
-                加载更多
-              </button>
+              {loadMoreError ? (
+                <div className="py-3 text-center">
+                  <p className="mb-2 text-[13px] text-[var(--muted)]">加载更多失败</p>
+                  <button
+                    onClick={handleLoadMore}
+                    className="text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]"
+                  >
+                    重新加载
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadMoreLoading}
+                  className="w-full py-3 text-center text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)] disabled:opacity-50"
+                >
+                  {loadMoreLoading ? '加载中…' : '加载更多'}
+                </button>
+              )}
             </div>
           )}
         </div>

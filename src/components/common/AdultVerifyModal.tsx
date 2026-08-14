@@ -19,7 +19,7 @@ export default function AdultVerifyModal({ open, onConfirm }: AdultVerifyModalPr
             </h2>
             <p className="mt-2 text-[12px] leading-5 text-[var(--muted)]">一个认真分享体验、尊重彼此边界的社区。</p>
           </div>
-          <span className="pt-1 text-[10px] font-bold tracking-[0.16em] text-[var(--muted-light)]">WELCOME</span>
+          <span className="pt-1 text-[11px] font-bold tracking-[0.16em] text-[var(--muted-light)]">WELCOME</span>
         </div>
 
         <div className="mt-6 rounded-[15px] border border-[var(--line)] bg-[var(--surface-subtle)] p-4">

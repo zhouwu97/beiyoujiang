@@ -9,7 +9,7 @@ import styles from './ranking.module.css';
 
 function ChampionBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#ffb45c] px-2.5 py-1 text-[10px] font-bold text-[#3a2a12]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#ffb45c] px-2.5 py-1 text-[11px] font-bold text-[#3a2a12]">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
@@ -51,7 +51,7 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 {isWeeklyChampion && <ChampionBadge />}
-                <div className={`${isWeeklyChampion ? 'mt-3' : 'mt-0'} text-[10px] font-bold tracking-[0.18em] text-white/35`}>
+                <div className={`${isWeeklyChampion ? 'mt-3' : 'mt-0'} text-[11px] font-bold tracking-[0.18em] text-white/35`}>
                   PRODUCT RANKING
                 </div>
                 <h2 className="mt-1.5 truncate text-xl font-bold tracking-[-0.03em] text-white sm:text-2xl">
@@ -81,19 +81,19 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
                 >
                   {top.rating ?? '-'}
                 </div>
-                <div className="mt-1.5 text-[10px] text-white/45">评分</div>
+                <div className="mt-1.5 text-[11px] text-white/45">评分</div>
               </div>
               <div>
                 <div className="text-[15px] font-bold leading-none text-white/70">
                   {formatCount(top.reviewCount ?? 0)}
                 </div>
-                <div className="mt-1.5 text-[10px] text-white/45">测评</div>
+                <div className="mt-1.5 text-[11px] text-white/45">测评</div>
               </div>
               <div>
                 <div className="text-[15px] font-bold leading-none text-white/70">
                   {formatCount(top.wantCount ?? 0)}
                 </div>
-                <div className="mt-1.5 text-[10px] text-white/45">想中</div>
+                <div className="mt-1.5 text-[11px] text-white/45">想中</div>
               </div>
             </div>
           </div>
@@ -126,13 +126,13 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-bold text-[var(--ink)]">{toy.name}</span>
                   <span className="mt-1 block truncate text-[11px] text-[var(--muted)]">{toy.merchant}</span>
-                  <span className="mt-1 block truncate text-[10px] text-[var(--muted-light)]">
+                  <span className="mt-1 block truncate text-[11px] text-[var(--muted-light)]">
                     {categoryLabel(toy.category)} · {stimulationLabel(toy.stimulation)}
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-col items-end">
                   <span className="text-[19px] font-black leading-none text-[var(--ink)]">{toy.rating ?? '-'}</span>
-                  <span className="mt-1.5 text-[10px] font-semibold text-[var(--muted-light)]">
+                  <span className="mt-1.5 text-[11px] font-semibold text-[var(--muted-light)]">
                     {formatCount(toy.reviewCount ?? 0)} 测评
                   </span>
                 </span>

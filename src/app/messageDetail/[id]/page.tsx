@@ -42,7 +42,7 @@ function ImageMeta({ src }: { src: string }) {
   }, [src]);
   if (!size) return null;
   return (
-    <span className="mt-1.5 block text-[9px] text-[var(--muted-light)]">
+    <span className="mt-1.5 block text-[10px] text-[var(--muted-light)]">
       {size} · 点击查看原图 · 完整比例展示
     </span>
   );
@@ -445,21 +445,21 @@ export default function MessageDetailPage() {
                             {c.author?.username ?? '杯友'}
                           </span>
                           {c.isPostAuthor && (
-                            <span className="rounded bg-blue-50 px-1 py-[1px] text-[10px] font-medium text-blue-500">
+                            <span className="rounded bg-blue-50 px-1.5 py-[2px] text-[11px] font-medium text-blue-500">
                               楼主
                             </span>
                           )}
-                          <span className="text-[10px] text-[var(--muted-light)]">{c.floor}楼</span>
+                          <span className="text-[11px] text-[var(--muted-light)]">{c.floor}楼</span>
                         </div>
-                        <span className="block text-[10px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
+                        <span className="block text-[11px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-[var(--muted)]">
+                      <div className="flex items-center gap-2 text-[13px] text-[var(--muted)]">
                         {me === c.author?.id && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="transition-colors hover:text-red-400">
+                          <button onClick={() => handleDeleteComment(c.id)} className="min-w-[40px] min-h-[40px] flex items-center justify-center transition-colors hover:text-red-400">
                             删除
                           </button>
                         )}
-                        <button onClick={() => focusReply(c)} className="transition-colors hover:text-[var(--ink-soft)]">
+                        <button onClick={() => focusReply(c)} className="min-w-[40px] min-h-[40px] flex items-center justify-center transition-colors hover:text-[var(--ink-soft)]">
                           回复
                         </button>
                         <button

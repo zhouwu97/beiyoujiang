@@ -88,7 +88,7 @@ function PostCard({ post, variant = 'default' }: PostCardProps) {
               </strong>
               {plateName && <span className="topic">{plateName}</span>}
             </div>
-            <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[10px]">
+            <div className="post-author-meta mt-0.5 text-[11px] text-[var(--muted)] max-md:text-[11px]">
               {post.timeAgo ?? '刚刚'} · #{String(post.id).padStart(4, '0')}
             </div>
           </div>

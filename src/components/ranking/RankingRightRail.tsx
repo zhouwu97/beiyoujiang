@@ -29,7 +29,7 @@ export default function RankingRightRail({ weeklyTop }: RankingRightRailProps) {
         </div>
         <div className="mt-2.5">
           <p className="truncate text-[13px] font-bold text-[var(--ink)]">{weeklyTop.name}</p>
-          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">
+          <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
             {weeklyTop.merchant} · {stimulationLabel(weeklyTop.stimulation)}
           </p>
           <p className="mt-1.5 flex items-center gap-2 text-[11px]">
