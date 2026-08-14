@@ -68,11 +68,11 @@ export default function RegisterPage() {
         className="space-y-4"
       >
         <div className="auth-field">
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="邮箱" className="auth-input" />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="邮箱" aria-label="邮箱" className="auth-input" />
         </div>
 
         <div className="auth-field">
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="昵称（展示给杯友）" className="auth-input" />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="昵称（展示给杯友）" aria-label="昵称" className="auth-input" />
         </div>
 
         <div className="auth-field">
@@ -81,6 +81,7 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             type={showPwd ? 'text' : 'password'}
             placeholder="密码（至少6位）"
+            aria-label="密码"
             className="auth-input"
           />
           <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]" aria-label="显示密码">
@@ -94,6 +95,7 @@ export default function RegisterPage() {
             onChange={(e) => setConfirm(e.target.value)}
             type={showPwd ? 'text' : 'password'}
             placeholder="确认密码"
+            aria-label="确认密码"
             className="auth-input"
           />
         </div>

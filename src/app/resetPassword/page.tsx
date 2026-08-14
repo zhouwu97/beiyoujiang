@@ -96,6 +96,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder="注册邮箱"
+            aria-label="注册邮箱"
             className="auth-input"
           />
           <button
@@ -109,7 +110,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="auth-field">
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="验证码" className="auth-input" />
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="验证码" aria-label="验证码" className="auth-input" />
         </div>
 
         <div className="auth-field">
@@ -118,6 +119,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             placeholder="新密码（至少6位）"
+            aria-label="新密码"
             className="auth-input"
           />
         </div>
@@ -128,6 +130,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             type="password"
             placeholder="确认新密码"
+            aria-label="确认新密码"
             className="auth-input"
           />
         </div>
