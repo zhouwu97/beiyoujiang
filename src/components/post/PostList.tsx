@@ -106,6 +106,13 @@ export default function PostList() {
             <span className="loading-dots" aria-hidden="true"><span /><span /><span /></span>
             正在加载新的分享
           </div>
+        ) : error ? (
+          <div className="end-marker">
+            <span className="text-[13px] text-[var(--muted)]">加载失败，</span>
+            <button onClick={() => fetchNextPage()} className="text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]">
+              重试
+            </button>
+          </div>
         ) : exhausted ? (
           <div className="end-marker">已经到底啦</div>
         ) : null}
