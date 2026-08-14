@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type { ToyDetail, ToyReview, Toy } from '@/lib/types';
@@ -154,11 +154,17 @@ export default function ToyDetailPage() {
     }
   };
 
+  /** 测评点赞 mutation lock：同一测评在请求进行中时忽略重复点击 */
+  const pendingReviewLikeRef = useRef<Set<number>>(new Set());
+
   const handleReviewLike = async (review: ToyReview) => {
     if (!me) {
       setShowLoginTip(true);
       return;
     }
+    // mutation lock：防止连点发多个请求
+    if (pendingReviewLikeRef.current.has(review.id)) return;
+    pendingReviewLikeRef.current.add(review.id);
     const next = !review.isLiked;
     setReviews((prev) =>
       prev.map((r) =>
@@ -178,6 +184,8 @@ export default function ToyDetailPage() {
         )
       );
       showAlert('操作失败');
+    } finally {
+      pendingReviewLikeRef.current.delete(review.id);
     }
   };
 

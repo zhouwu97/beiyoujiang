@@ -69,6 +69,8 @@ export default function MessageDetailPage() {
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrolledToHashRef = useRef<string | null>(null);
+  /** 评论点赞 mutation lock：同一评论在请求进行中时忽略重复点击 */
+  const pendingCommentLikeRef = useRef<Set<number>>(new Set());
   const me = getUserId();
 
   const post = detail?.post;
@@ -465,6 +467,9 @@ export default function MessageDetailPage() {
                         <button
                           onClick={async () => {
                             if (!me) { setShowLoginTip(true); return; }
+                            // mutation lock：防止连点发多个请求
+                            if (pendingCommentLikeRef.current.has(c.id)) return;
+                            pendingCommentLikeRef.current.add(c.id);
                             try {
                               const { likeComment } = await import('@/lib/api');
                               if (c.isLiked) {
@@ -482,6 +487,8 @@ export default function MessageDetailPage() {
                               );
                             } catch {
                               showAlert('操作失败');
+                            } finally {
+                              pendingCommentLikeRef.current.delete(c.id);
                             }
                           }}
                           className={`flex items-center gap-0.5 transition-colors ${c.isLiked ? 'text-[var(--accent)]' : ''}`}
