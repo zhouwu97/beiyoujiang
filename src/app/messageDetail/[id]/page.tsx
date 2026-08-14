@@ -237,10 +237,13 @@ export default function MessageDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-shell flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="loading-mark mx-auto">杯</div>
-          <p className="mt-3 text-[13px] text-[var(--muted)]">杯酱正在装填弹药…</p>
+      <div className="page-shell flex min-h-screen flex-col">
+        <Header variant="detail" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="loading-mark mx-auto">杯</div>
+            <p className="mt-3 text-[13px] text-[var(--muted)]">杯酱正在装填弹药…</p>
+          </div>
         </div>
       </div>
     );
@@ -248,12 +251,15 @@ export default function MessageDetailPage() {
 
   if (!post) {
     return (
-      <div className="page-shell flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-[14px] text-[var(--muted)]">帖子不存在或已删除</p>
-          <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
-            返回首页
-          </button>
+      <div className="page-shell min-h-screen">
+        <Header variant="detail" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <p className="text-[14px] text-[var(--muted)]">帖子不存在或已删除</p>
+            <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
+              返回首页
+            </button>
+          </div>
         </div>
       </div>
     );

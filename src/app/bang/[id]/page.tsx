@@ -69,16 +69,17 @@ export default function ToyDetailPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const [t, r] = await Promise.all([
-          getToy(toyId),
-          getToyAllReview(toyId),
-        ]);
-        if (cancelled) return;
+      // 玩具与测评独立处理错误：玩具接口失败不把「测评失败」也吞成「玩具不存在」
+      const [tResult, rResult] = await Promise.allSettled([
+        getToy(toyId),
+        getToyAllReview(toyId),
+      ]);
+      if (cancelled) return;
+
+      if (tResult.status === 'fulfilled') {
+        const t = tResult.value;
         setToy(t);
-        setReviews(r);
         setToyError(false);
-        setReviewError(false);
         if (t) {
           getAllToy('', t.category || '', 0, 1, 8)
             .then((res) => {
@@ -88,14 +89,18 @@ export default function ToyDetailPage() {
               if (!cancelled) setSimilar([]);
             });
         }
-      } catch {
-        if (!cancelled) {
-          setToyError(true);
-          setReviewError(true);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      } else {
+        setToyError(true);
       }
+
+      if (rResult.status === 'fulfilled') {
+        setReviews(rResult.value);
+        setReviewError(false);
+      } else {
+        setReviewError(true);
+      }
+
+      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
