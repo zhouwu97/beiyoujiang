@@ -566,6 +566,7 @@ export default function MessageDetailPage() {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder={replyingTo ? '写下你的回复…' : '说点什么吧…'}
+                  aria-label={replyingTo ? '回复评论' : '发表评论'}
                   rows={1}
                   className="w-full min-h-[38px] resize-none rounded-[10px] border border-[var(--line)] bg-[var(--surface-subtle)] px-3 py-2 text-[12px] outline-none transition-colors focus:border-[var(--accent)] focus:bg-white"
                 />
