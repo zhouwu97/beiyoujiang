@@ -306,7 +306,7 @@ export default function MessageDetailPage() {
                   </span>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--muted)]">
                     {plateName && (
-                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[10px] font-bold text-[var(--accent-ink)]">
+                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[11px] font-bold text-[var(--accent-ink)]">
                         {plateName}
                       </span>
                     )}
@@ -594,7 +594,7 @@ export default function MessageDetailPage() {
                   {authorStats.map((s) => (
                     <div key={s.label} className="text-center">
                       <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
-                      <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--muted)]">{s.label}</span>
                     </div>
                   ))}
                 </div>
