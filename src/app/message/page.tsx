@@ -36,10 +36,10 @@ export default function MessagePage() {
 
   useEffect(() => {
     if (!me) {
-      setLoading(false);
       return;
     }
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(false);
     getAllMessages(0)
