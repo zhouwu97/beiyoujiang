@@ -92,8 +92,11 @@ export default function MessagePage() {
 
       {!me && (
         <div className="flex flex-col items-center py-20">
-          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
-            🔒
+          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-[var(--muted)]">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
           </div>
           <p className="text-[14px] text-[var(--muted)] mb-4">登录后查看回复与通知</p>
           <Link href="/login" className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]">
@@ -106,8 +109,12 @@ export default function MessagePage() {
 
       {me && !loading && error && (
         <div className="flex flex-col items-center py-20">
-          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
-            ⚠️
+          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-[var(--muted)]">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+            </svg>
           </div>
           <p className="text-[14px] text-[var(--muted)] mb-4">加载失败，请检查网络后重试</p>
           <button
@@ -121,8 +128,11 @@ export default function MessagePage() {
 
       {me && !loading && !error && messages.length === 0 && (
         <div className="flex flex-col items-center py-20">
-          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center text-[28px] mb-4">
-            🔔
+          <div className="w-16 h-16 rounded-full bg-[var(--surface-subtle)] flex items-center justify-center mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-[var(--muted)]">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+            </svg>
           </div>
           <p className="text-[14px] text-[var(--muted)]">暂无消息</p>
         </div>

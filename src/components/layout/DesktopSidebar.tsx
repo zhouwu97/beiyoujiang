@@ -138,7 +138,13 @@ export default function DesktopSidebar() {
         {isLoggedIn ? (
           error ? (
             <div className="profile-top">
-              <span className="profile-avatar" aria-hidden="true">⚠️</span>
+              <span className="profile-avatar" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--muted)]">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
+              </span>
               <div className="min-w-0">
                 <div className="profile-name truncate">加载失败</div>
                 <div className="profile-meta truncate">请检查网络后重试</div>

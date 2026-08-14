@@ -239,7 +239,7 @@ export default function PostMessagePage() {
               />
               <button
                 onClick={() => removeImage(i)}
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[12px] leading-5"
+                className="absolute -top-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white text-[14px] leading-none transition-colors hover:bg-black/80"
                 aria-label="删除图片"
               >
                 ×
