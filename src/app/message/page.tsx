@@ -47,11 +47,14 @@ export default function MessagePage() {
         if (cancelled) return;
         setMessages(msgs);
         setHasUnread(msgs.some((m) => !m.isRead));
-        return markAllAsRead(0).then(() => {
-          if (cancelled) return;
-          setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
-          setHasUnread(false);
-        });
+        // markAllAsRead 失败不影响消息列表展示（列表已加载成功），红点保留待下次导航重试
+        markAllAsRead(0)
+          .then(() => {
+            if (cancelled) return;
+            setMessages((prev) => prev.map((m) => ({ ...m, isRead: true })));
+            setHasUnread(false);
+          })
+          .catch(() => {});
       })
       .catch(() => {
         if (!cancelled) setError(true);
