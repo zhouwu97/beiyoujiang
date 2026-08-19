@@ -86,6 +86,26 @@ export default function GlobalSearch({
   const requestVersionRef = useRef(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 组件卸载清理 debounce timer 与版本
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      requestVersionRef.current += 1;
+    };
+  }, []);
+
+  // 移动端 Overlay 打开时锁定 body 滚动
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
+
   // 加载热词
   const loadKeywords = useCallback(() => {
     if (keywordsLoaded) return;
@@ -100,7 +120,7 @@ export default function GlobalSearch({
       });
   }, [keywordsLoaded]);
 
-  // 执行搜索
+  // 执行搜索（由 debounce 触发）
   const doSearch = useCallback(async (keyword: string) => {
     const trimmed = keyword.trim();
     if (!trimmed) {
@@ -137,7 +157,7 @@ export default function GlobalSearch({
     }
   }, []);
 
-  // 输入变化 + 防抖
+  // 输入变化 + 立即清空旧结果 + 防抖触发
   const handleInputChange = (val: string) => {
     setQuery(val);
     setIsOpen(true);
@@ -145,20 +165,25 @@ export default function GlobalSearch({
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
+    // 立即失效上一个正在请求/挂起的请求
+    requestVersionRef.current += 1;
+
+    // 立即清空旧搜索结果与选中项，显示 skeleton，杜绝旧结果冒充新输入
+    setToys([]);
+    setPosts([]);
+    setSelectedIndex(-1);
+    setSearchError(false);
 
     if (!val.trim()) {
-      requestVersionRef.current += 1;
       setSearched(false);
-      setToys([]);
-      setPosts([]);
       setLoading(false);
-      setSearchError(false);
-      setSelectedIndex(-1);
       loadKeywords();
       return;
     }
 
     setLoading(true);
+    setSearched(true);
+
     debounceTimerRef.current = setTimeout(() => {
       doSearch(val);
     }, 250);
@@ -172,6 +197,11 @@ export default function GlobalSearch({
   };
 
   const handleClear = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    requestVersionRef.current += 1;
+
     setQuery('');
     setSearched(false);
     setToys([]);
@@ -184,6 +214,11 @@ export default function GlobalSearch({
   };
 
   const handleSelectToy = (toy: Toy) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    requestVersionRef.current += 1;
+
     setIsOpen(false);
     onMobileClose?.();
     setQuery('');
@@ -196,6 +231,11 @@ export default function GlobalSearch({
   };
 
   const handleSelectPost = (post: Post) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    requestVersionRef.current += 1;
+
     setIsOpen(false);
     onMobileClose?.();
     setQuery('');
@@ -208,8 +248,15 @@ export default function GlobalSearch({
   };
 
   const handleKeywordClick = (kw: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    requestVersionRef.current += 1;
+
     setQuery(kw);
     setIsOpen(true);
+    setToys([]);
+    setPosts([]);
     doSearch(kw);
   };
 
@@ -222,19 +269,23 @@ export default function GlobalSearch({
     ];
   }, [searched, loading, searchError, toys, posts]);
 
-  // 键盘操作
+  // 键盘操作（优先处理 Escape，同时支持桌面 Popover 与移动 Overlay）
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') {
-        setIsOpen(true);
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (mobileOpen) {
+        onMobileClose?.();
+        mobileInputRef.current?.blur();
       }
+      setIsOpen(false);
+      inputRef.current?.blur();
       return;
     }
 
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setIsOpen(false);
-      inputRef.current?.blur();
+    if (!isOpen && !mobileOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setIsOpen(true);
+      }
       return;
     }
 
@@ -310,7 +361,7 @@ export default function GlobalSearch({
     }
   }, [mobileOpen, loadKeywords]);
 
-  // 渲染 Popover 内容
+  // 渲染 Popover / Overlay 内容
   const renderPopoverContent = () => {
     // 1. 空 Query 状态：展示“大家都在搜”
     if (!query.trim()) {
@@ -339,10 +390,10 @@ export default function GlobalSearch({
       );
     }
 
-    // 2. 加载中 Skeleton
+    // 2. 加载中 Skeleton（旧结果已被清空，立即展示）
     if (loading && toys.length === 0 && posts.length === 0) {
       return (
-        <div className="global-search-loading">
+        <div className="global-search-loading" data-testid="search-loading">
           <div className="global-search-skeleton-row" />
           <div className="global-search-skeleton-row" />
           <div className="global-search-skeleton-row" />
@@ -377,8 +428,6 @@ export default function GlobalSearch({
     }
 
     // 5. 搜索结果（玩具最多 3 个在上，帖子最多 5 个在下）
-    let itemOffset = 0;
-
     return (
       <div className="global-search-results">
         {/* 玩具 Section */}
@@ -387,7 +436,7 @@ export default function GlobalSearch({
             <div className="global-search-section-title">玩具</div>
             <div className="global-search-list">
               {toys.map((toy, idx) => {
-                const currentIdx = itemOffset + idx;
+                const currentIdx = idx;
                 const isSelected = selectedIndex === currentIdx;
                 return (
                   <button
