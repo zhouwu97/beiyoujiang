@@ -17,9 +17,9 @@ import {
   deletePost,
   deleteComment,
 } from '@/lib/api';
-import { resolveAvatar, resolveImage, resolvePostImage, sanitizeHtml } from '@/lib/utils';
+import { resolveAvatar, resolvePostImage, sanitizeHtml } from '@/lib/utils';
 import { getUserId } from '@/stores/auth';
-import { useForumStore, getCachedPosts } from '@/stores/forum';
+import { getCachedPosts } from '@/stores/forum';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
@@ -282,7 +282,7 @@ export default function MessageDetailPage() {
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <main className="mx-auto w-full max-w-[1328px] px-4 py-5 sm:px-6 lg:py-6">
+      <main className="shell-width py-5 lg:py-6">
         {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
           <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">

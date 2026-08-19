@@ -3,6 +3,7 @@
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import Banner from '@/components/home/Banner';
+import HomeHotTopics from '@/components/home/HomeHotTopics';
 import PostList from '@/components/post/PostList';
 import PlateFilterDropdown from '@/components/post/PlateFilterDropdown';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
@@ -38,7 +39,12 @@ export default function HomePage() {
         main={
           <section className="feed-surface">
             <div className="hero">
-              <Banner />
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,68fr)_minmax(0,32fr)] xl:items-stretch">
+                <Banner />
+                <div className="hidden xl:block">
+                  <HomeHotTopics />
+                </div>
+              </div>
             </div>
 
             <div className="feed-toolbar">

@@ -16,26 +16,29 @@
   --line-strong: #ddd6d8;
   --accent: #df5d91;
   --accent-strong: #cf4e84;
+  --accent-hover: #cf4e84;
   --accent-soft: #fcecf3;
   --accent-ink: #bd3f72;
   --accent-rgb: 223, 93, 145;
+  --accent-gradient-start: #f8b5d9;
+  --accent-gradient-end: #df5d91;
   /* 2026-08-12 11:53 颜色记录：深玫粉版块渐变。 */
   --panel-pink: #e878ad;
   --panel-pink-deep: #c94f86;
   --panel-pink-hover: #ef8fbe;
   --panel-pink-hover-deep: #d45a91;
-  --shadow-soft: 0 16px 44px rgba(45, 35, 38, 0.055);
-  --shadow-float: 0 20px 48px rgba(37, 27, 31, 0.10);
-  --radius-panel: 18px;
-  --radius-card: 20px;
-  --radius-control: 12px;
-  /* 圆角等级：Hero 30 / 社区容器 28 / 模块 18~24 / 控件 12~18 */
-  --radius-xs: 10px;
-  --radius-sm: 14px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
-  --radius-xl: 28px;
-  --radius-2xl: 30px;
+  --shadow-soft: 0 14px 36px rgba(45, 35, 38, 0.05);
+  --shadow-float: 0 18px 42px rgba(37, 27, 31, 0.09);
+  --radius-panel: 16px;
+  --radius-card: 18px;
+  --radius-control: 10px;
+  /* 圆角等级：Hero 22 / 社区容器 18 / 模块 16 / 控件 10~12 */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
   /* 阴影等级：主 Hero / 社区容器 shadow-sm，商品大图 shadow-md，小卡默认无 */
   --shadow-xs: 0 4px 14px rgba(37, 27, 31, 0.035);
   --shadow-sm: 0 12px 30px rgba(37, 27, 31, 0.045);
@@ -115,7 +118,7 @@ select:focus-visible,
 
 /* 与 Header 同宽的容器。桌面段：>=1536 min(1440px,100%-40px)；1280~1535 min(1400px,100%-32px)。<1280 保持原样（不动移动端）。 */
 .shell-width {
-  width: min(1380px, calc(100% - 48px));
+  width: min(1380px, calc(100% - 32px));
   margin-inline: auto;
 }
 
@@ -142,8 +145,8 @@ select:focus-visible,
 /* ===== 参考稿桌面 Header：品牌 / 搜索 / 操作三段式 ===== */
 .desktop-header-inner {
   display: flex;
-  width: min(1380px, calc(100% - 48px));
-  min-height: 64px;
+  width: min(1380px, calc(100% - 32px));
+  min-height: 60px;
   align-items: center;
   gap: 12px;
   margin-inline: auto;
@@ -196,7 +199,7 @@ select:focus-visible,
   display: none;
   align-items: center;
   gap: 10px;
-  height: 39px;
+  height: 38px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #f8f7f6;
@@ -267,65 +270,13 @@ select:focus-visible,
   transform: scale(0.97);
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .site-header {
-    height: 66px;
-  }
-
-  .desktop-header-mobile-search.icon-button {
-    display: none;
-  }
-
-  .desktop-header-inner {
-    display: grid;
-    width: min(1400px, calc(100% - 32px));
-    min-height: 0;
-    height: 100%;
-    grid-template-columns: 220px minmax(420px, 1fr) 300px;
-    gap: 24px;
-  }
-
-  .desktop-header-search {
-    display: flex;
-    justify-self: center;
-    width: min(520px, 100%);
-  }
-
-  .desktop-header-actions {
-    justify-content: flex-end;
-    margin-left: 0;
-  }
-
-  .desktop-header-icon-button,
-  .desktop-header-avatar {
-    display: grid;
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-  }
-
-  .desktop-header-compose {
-    display: inline-flex;
-    height: 38px;
-    align-items: center;
-    gap: 8px;
-    border: 0;
-    border-radius: 12px;
-    background: #f8b5d9;
-    box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.2);
-    padding: 0 16px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 750;
-    transition: transform 140ms var(--ease-out), background-color 140ms ease, box-shadow 180ms ease;
-  }
-
-  .desktop-header-compose:hover {
-    background: var(--accent-strong);
-    box-shadow: 0 10px 22px rgba(var(--accent-rgb), 0.26);
+    height: 64px;
   }
 
   .desktop-header-avatar {
+    display: grid;
     overflow: hidden;
     border-color: var(--line);
     background: linear-gradient(135deg, #f7d8e0, #eadde8);
@@ -336,14 +287,82 @@ select:focus-visible,
     height: 100%;
     object-fit: cover;
   }
+
+  .desktop-header-mobile-search.icon-button {
+    display: none;
+  }
+
+  .desktop-header-search {
+    display: flex;
+    justify-self: center;
+    width: min(480px, 100%);
+  }
+
+  /* 1024~1279 无左侧 Sidebar，Header 发帖按钮为主要入口 */
+  .desktop-header-compose {
+    display: inline-flex;
+    height: 36px;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--accent);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.2);
+    padding: 0 14px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    transition: transform 140ms var(--ease-out), background-color 140ms ease, box-shadow 180ms ease;
+  }
+
+  .desktop-header-compose:hover {
+    background: var(--accent-strong);
+    box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.28);
+  }
 }
 
-/* >=1536：Header 与 Shell 同步到 1440 宽、236|Feed|320 三栏（Logo 左缘≈Sidebar，Avatar 右缘≈RightRail） */
+@media (min-width: 1280px) {
+  .site-header {
+    height: 66px;
+  }
+
+  .desktop-header-inner {
+    display: grid;
+    width: min(1400px, calc(100% - 32px));
+    min-height: 0;
+    height: 100%;
+    grid-template-columns: 220px minmax(0, 1fr) 290px;
+    gap: 22px;
+  }
+
+  .desktop-header-search {
+    width: min(520px, 100%);
+  }
+
+  .desktop-header-actions {
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+
+  .desktop-header-icon-button,
+  .desktop-header-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  /* >=1280 左侧 Sidebar 已经有主发帖按钮，此处隐藏避免重复强 CTA */
+  .desktop-header-compose {
+    display: none;
+  }
+}
+
+/* >=1536：Header 与 Shell 同步到 1440 宽、236|Feed|310 三栏（与 main-grid 精确对齐） */
 @media (min-width: 1536px) {
   .desktop-header-inner {
     width: min(1440px, calc(100% - 40px));
-    grid-template-columns: 236px minmax(420px, 1fr) 320px;
-    gap: 28px;
+    grid-template-columns: 236px minmax(0, 1fr) 310px;
+    gap: 26px;
   }
 }
 
@@ -539,8 +558,8 @@ select:focus-visible,
 }
 
 /* ===== 三栏 Shell 网格 =====
- * 断点：<768 单栏满宽（手机）；768~1023 单栏居中 max-width 760；1024~1279 Feed+右栏；
- * 1280~1535 220|Feed|300，gap 24；>=1536 236|Feed|320，gap 28。
+ * 断点：<768 单栏满宽（手机）；768~1023 单栏居中 max-width 740；1024~1279 Feed+右栏；
+ * 1280~1535 220|Feed|290，gap 22；>=1536 236|Feed|310，gap 26。
  * 列宽刻意左右不对称：左栏只放导航，右栏要放榜单/标题，右栏稍宽。
  */
 .main-grid {
@@ -553,7 +572,7 @@ select:focus-visible,
 /* 平板 768~1023：单主栏居中收口，不让 Feed 横跨整个 iPad */
 @media (min-width: 768px) and (max-width: 1023px) {
   .main-grid {
-    max-width: 760px;
+    max-width: 740px;
     margin-inline: auto;
   }
 }
@@ -561,20 +580,21 @@ select:focus-visible,
 @media (min-width: 1024px) {
   .main-grid {
     grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
   }
 }
 
 @media (min-width: 1280px) {
   .main-grid {
-    grid-template-columns: 220px minmax(0, 1fr) 300px;
-    gap: 24px;
+    grid-template-columns: 220px minmax(0, 1fr) 290px;
+    gap: 22px;
   }
 }
 
 @media (min-width: 1536px) {
   .main-grid {
-    grid-template-columns: 236px minmax(0, 1fr) 320px;
-    gap: 28px;
+    grid-template-columns: 236px minmax(0, 1fr) 310px;
+    gap: 26px;
   }
 }
 
@@ -586,12 +606,12 @@ select:focus-visible,
   display: none;
   min-width: 0;
   position: sticky;
-  top: 90px;
+  top: 86px;
   align-self: start;
 }
 
 .main-right-col {
-  max-height: calc(100vh - 110px);
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -627,7 +647,7 @@ select:focus-visible,
 
 @media (min-width: 768px) and (max-width: 1023px) {
   .main-grid--ranking {
-    max-width: 760px;
+    max-width: 740px;
     margin-inline: auto;
   }
 }
@@ -642,14 +662,14 @@ select:focus-visible,
 @media (min-width: 1280px) and (max-width: 1535px) {
   .main-grid--ranking {
     grid-template-columns: 220px minmax(0, 1fr) 260px;
-    gap: 24px;
+    gap: 22px;
   }
 }
 
 @media (min-width: 1536px) {
   .main-grid--ranking {
     grid-template-columns: 236px minmax(0, 1fr) 280px;
-    gap: 28px;
+    gap: 26px;
   }
 }
 
@@ -672,14 +692,14 @@ select:focus-visible,
 @media (min-width: 1280px) {
   .main-grid--no-right {
     grid-template-columns: 220px minmax(0, 1fr);
-    gap: 24px;
+    gap: 22px;
   }
 }
 
 @media (min-width: 1536px) {
   .main-grid--no-right {
     grid-template-columns: 236px minmax(0, 1fr);
-    gap: 28px;
+    gap: 26px;
   }
 }
 
@@ -1092,7 +1112,7 @@ select:focus-visible,
 
 /* ---- 帖子行（贴吧式纵向内容流，无独立卡片） ---- */
 .post-row {
-  padding: 22px;
+  padding: 20px 22px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
   transition: background-color 160ms ease;
@@ -1108,8 +1128,8 @@ select:focus-visible,
 }
 
 .post-title {
-  margin: 12px 0 5px;
-  font-size: 16px;
+  margin: 10px 0 4px;
+  font-size: 17.5px;
   font-weight: 780;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -1117,9 +1137,9 @@ select:focus-visible,
 }
 
 .post-desc {
-  max-width: 800px;
-  color: #756c70;
-  font-size: 13px;
+  max-width: 74ch;
+  color: #635b5f;
+  font-size: 13.5px;
   line-height: 1.75;
   display: -webkit-box;
   -webkit-line-clamp: 2;

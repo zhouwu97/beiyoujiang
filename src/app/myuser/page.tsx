@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserData, deletePost } from '@/lib/api';
-import type { Post, UserData } from '@/lib/types';
+import type { UserData } from '@/lib/types';
 import { getUserId, useAuthStore } from '@/stores/auth';
 import { resolveAvatar, resolveImage } from '@/lib/utils';
 import { useCustomAlert } from '@/components/common/CustomAlert';
@@ -21,7 +21,10 @@ const TABS = [
 ];
 
 /**
- * 个人中心：资料 + U酱币 + 经验条 + 我的帖子
+ * 个人中心：
+ * 采用全站统一桌面宽度，去除限制内部收窄的 max-w-[1100px]；
+ * Hero 区域在桌面端采用横向充分展开布局（左侧基础资料与经验条，右侧统计与U酱币）；
+ * 帖子列表复用原比例 PostMedia，删除按钮采用轻量文字操作。
  */
 export default function MyUserPage() {
   const router = useRouter();
@@ -36,16 +39,12 @@ export default function MyUserPage() {
   const [showLoginTip, setShowLoginTip] = useState(() => !me);
 
   useEffect(() => {
-    if (!me) {
-      return;
-    }
-    // 切换个人中心 Tab 时，先给用户明确的加载反馈。
+    if (!me) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     getUserData(me, tab)
       .then((d) => {
         setData(d);
-        // 同步最新 token
         if (d.token && currentUser) {
           useAuthStore.setState({ currentUser: { ...currentUser, token: d.token } });
         }
@@ -73,8 +72,6 @@ export default function MyUserPage() {
     }
   };
 
-  // getUserData 已按当前 tab 作为 type（0=帖子/1=收藏/2=足迹）请求，
-  // 三种 tab 的数据都落在同一 post 字段，直接渲染即可。
   const posts = data?.post ?? [];
 
   return (
@@ -84,135 +81,140 @@ export default function MyUserPage() {
       <DesktopPageShell
         left={<DesktopSidebar />}
         main={
-          <div className="min-w-0 max-w-[1100px]">
-      {/* 用户卡片：完整 Profile Hero（幽灵右栏已由 --no-right 删除） */}
-      <section className="px-4 pt-5 lg:px-0 lg:pt-0">
-        <div className="rounded-[20px] bg-gradient-to-br from-[#FFF0F3] to-[#FFE8EC] p-6 sm:p-7">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-4">
-            <img
-              src={resolveAvatar(displayPhoto)}
-              alt=""
-              className="h-[68px] w-[68px] rounded-full border-2 border-white object-cover shadow sm:h-20 sm:w-20"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[18px] font-bold text-[var(--ink)]">{displayName}</span>
-                <img
-                  src={resolveImage(`/images/level/leve${level}.png`)}
-                  alt={`Lv.${level}`}
-                  className="h-5 w-5"
-                />
+          <div className="min-w-0">
+            {/* 用户卡片：桌面端左右充分展开 */}
+            <section className="rounded-[20px] border border-[var(--line)] bg-gradient-to-br from-[#FFF0F3] to-[#FFE8EC] p-6 shadow-[var(--shadow-soft)] sm:p-7">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                {/* 左侧：头像 + 用户名 + 等级 + 经验 */}
+                <div className="flex min-w-0 flex-1 items-start gap-4">
+                  <img
+                    src={resolveAvatar(displayPhoto)}
+                    alt=""
+                    className="h-16 w-16 flex-none rounded-full border-2 border-white object-cover shadow-sm sm:h-20 sm:w-20"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[19px] font-bold text-[var(--ink)]">{displayName}</span>
+                      <img
+                        src={resolveImage(`/images/level/leve${level}.png`)}
+                        alt={`Lv.${level}`}
+                        className="h-5 w-5"
+                      />
+                      {isGuest && (
+                        <button
+                          onClick={() => router.push('/login')}
+                          className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent)] transition-colors hover:bg-white"
+                        >
+                          登录正式账号
+                        </button>
+                      )}
+                    </div>
+
+                    <p className="mt-1 truncate text-[12.5px] text-[var(--muted)]">
+                      {data?.introduction ?? '快来写你的简介吧'}
+                    </p>
+
+                    {/* 经验条 */}
+                    <div className="mt-3 flex max-w-sm items-center gap-3">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/70">
+                        <div
+                          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-[#FFAFBD] to-[var(--accent)] transition-transform duration-200"
+                          style={{ transform: `scaleX(${Math.min(100, experience % 100) / 100})` }}
+                        />
+                      </div>
+                      <span className="whitespace-nowrap text-[11px] font-medium text-[var(--muted)]">
+                        经验 {experience}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右侧：统计与U酱币 */}
+                <div className="flex flex-wrap items-center gap-3 rounded-[16px] bg-white/70 p-3 lg:shrink-0 sm:gap-6 sm:px-6 sm:py-3.5">
+                  <div className="text-center">
+                    <p className="text-[16px] font-bold text-[var(--ink)]">{data?.fans ?? 0}</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--muted)]">粉丝</p>
+                  </div>
+                  <div className="h-7 w-px bg-[var(--line)]" />
+                  <div className="text-center">
+                    <p className="text-[16px] font-bold text-[var(--ink)]">{data?.followersNumber ?? 0}</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--muted)]">关注</p>
+                  </div>
+                  <div className="h-7 w-px bg-[var(--line)]" />
+                  <div className="text-center">
+                    <p className="text-[16px] font-bold text-[var(--ink)]">{data?.invitationNumber ?? 0}</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--muted)]">帖子</p>
+                  </div>
+                  <div className="h-7 w-px bg-[var(--line)]" />
+                  <div className="flex items-center gap-2 pl-1">
+                    <img src={resolveImage('/images/u.webp')} alt="U酱币" className="h-5 w-5" />
+                    <div>
+                      <span className="text-[16px] font-bold text-[#FF9800]">{data?.USauceBean ?? 0}</span>
+                      <p className="text-[10px] text-[var(--muted)]">U酱币</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              {isGuest && (
+            </section>
+
+            {/* Tab 切换 */}
+            <div className="mt-6 flex items-center border-b border-[var(--line)]">
+              {TABS.map((t) => (
                 <button
-                  onClick={() => router.push('/login')}
-                  className="mt-1 text-[12px] text-[var(--accent)] font-medium"
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`relative px-5 py-3 text-[14px] font-semibold transition-colors ${
+                    tab === t.id ? 'text-[var(--ink)]' : 'text-[var(--muted)] hover:text-[var(--ink-soft)]'
+                  }`}
                 >
-                  登录正式账号
+                  {t.label}
+                  {tab === t.id && (
+                    <span className="absolute bottom-0 left-5 right-5 h-0.5 rounded-full bg-[var(--accent)]" />
+                  )}
                 </button>
+              ))}
+            </div>
+
+            {/* 帖子列表容器 */}
+            <div className="mt-4 overflow-hidden rounded-[18px] border border-[var(--line)] bg-white shadow-[var(--shadow-soft)]">
+              {loading && <p className="py-12 text-center text-[13px] text-[var(--muted)]">加载中...</p>}
+
+              {!loading && posts.length === 0 && (
+                <div className="py-16 text-center">
+                  <p className="mb-2 text-[14px] text-[var(--muted)]">
+                    {tab === 0 ? '还没有发过帖子' : tab === 1 ? '还没有收藏' : '还没有足迹'}
+                  </p>
+                  {tab === 0 && (
+                    <button
+                      onClick={() => router.push('/postMessage')}
+                      className="interactive-press mt-2 rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+                    >
+                      去发帖
+                    </button>
+                  )}
+                </div>
               )}
-              <p className="mt-1 truncate text-[12px] text-[var(--muted)]">
-                {data?.introduction ?? '快来写你的简介吧'}
-              </p>
-            </div>
 
-            {/* U酱币：右侧 */}
-            <div className="flex items-center gap-2">
-              <img src={resolveImage('/images/u.webp')} alt="U酱币" className="h-5 w-5" />
-              <span className="text-[17px] font-bold text-[#FF9800]">
-                {data?.USauceBean ?? 0}
-              </span>
-              <span className="text-[11px] text-[var(--muted)]">U酱币</span>
+              {!loading &&
+                posts.map((p) => (
+                  <div key={p.id} className="relative group border-b border-[var(--line)] last:border-0">
+                    <PostCard post={p} />
+                    {/* 仅「我的帖子」可删除原帖；采用轻量文字操作，不破坏内容视觉 */}
+                    {tab === 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(p.id);
+                        }}
+                        className="absolute right-5 top-5 z-10 rounded-[6px] px-2 py-1 text-[12px] font-medium text-[var(--muted-light)] transition-colors hover:bg-red-50 hover:text-[#DC2626]"
+                        aria-label="删除帖子"
+                      >
+                        删除
+                      </button>
+                    )}
+                  </div>
+                ))}
             </div>
-          </div>
-
-          {/* 经验条 */}
-          <div className="mt-5 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/70">
-              <div
-                className="h-full w-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-[#FFAFBD] to-[var(--accent)] transition-transform duration-200"
-                style={{ transform: `scaleX(${Math.min(100, experience % 100) / 100})` }}
-              />
-            </div>
-            <span className="whitespace-nowrap text-[11px] text-[var(--muted)]">
-              经验 {experience}
-            </span>
-          </div>
-
-          {/* 统计 */}
-          <div className="mt-5 flex items-center justify-around rounded-[14px] bg-white/60 py-3.5">
-            <div className="text-center">
-              <p className="text-[16px] font-bold text-[var(--ink)]">{data?.fans ?? 0}</p>
-              <p className="text-[11px] text-[var(--muted)]">粉丝</p>
-            </div>
-            <div className="w-px h-8 bg-[var(--accent-soft)]" />
-            <div className="text-center">
-              <p className="text-[16px] font-bold text-[var(--ink)]">{data?.followersNumber ?? 0}</p>
-              <p className="text-[11px] text-[var(--muted)]">关注</p>
-            </div>
-            <div className="w-px h-8 bg-[var(--accent-soft)]" />
-            <div className="text-center">
-              <p className="text-[16px] font-bold text-[var(--ink)]">{data?.invitationNumber ?? 0}</p>
-              <p className="text-[11px] text-[var(--muted)]">帖子</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Tab 切换 */}
-      <div className="flex items-center justify-around px-4 mt-5 border-b border-[var(--line)] lg:px-0">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`py-3 text-[14px] relative ${
-              tab === t.id ? 'text-[var(--ink)] font-semibold' : 'text-[var(--muted)]'
-            }`}
-          >
-            {t.label}
-            {tab === t.id && (
-              <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-6 h-0.5 rounded-full bg-[var(--accent)]" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* 帖子列表 */}
-      <div className="px-3 pt-3 lg:px-0">
-        {loading && <p className="text-center text-[13px] text-[var(--muted)] py-10">加载中...</p>}
-
-        {!loading && posts.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-[14px] text-[var(--muted)] mb-1">
-              {tab === 0 ? '还没有发过帖子' : tab === 1 ? '还没有收藏' : '还没有足迹'}
-            </p>
-            {tab === 0 && (
-              <button
-                onClick={() => router.push('/postMessage')}
-                className="interactive-press mt-3 rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[var(--accent-strong)]"
-              >
-                去发帖
-              </button>
-            )}
-          </div>
-        )}
-
-        {!loading &&
-          posts.map((p) => (
-            <div key={p.id} className="relative">
-              <PostCard post={p} />
-              {/* 仅「我的帖子」可删除原帖；收藏/足迹没有删除接口，不显示操作 */}
-              {tab === 0 && (
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="absolute top-3 right-3 z-10 text-[11px] text-[#DC2626] bg-white/90 px-2 py-1 rounded-full"
-                >
-                  删除
-                </button>
-              )}
-            </div>
-          ))}
-      </div>
           </div>
         }
       />

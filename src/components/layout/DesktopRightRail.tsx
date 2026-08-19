@@ -4,14 +4,6 @@ import { useRouter } from 'next/navigation';
 import HomeRankingPreview from '@/components/home/HomeRankingPreview';
 import { useForumStore } from '@/stores/forum';
 
-/** 发布 CTA 小图标（分享/编辑） */
-function ShareIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M13.5 5.5 18.5 10.5M5 19l3.5-.8L19.2 7.5a2.1 2.1 0 0 0-3-3L5.8 14.9z" />
-    </svg>
-  );
-}
 
 /**
  * 首页右栏：三段式「刚刚更新 / 本周玩具榜 / 轻量发布 CTA」。
@@ -58,15 +50,6 @@ export default function DesktopRightRail() {
       </section>
 
       <HomeRankingPreview />
-
-      <section className="notice">
-        <div className="notice-head">
-          <ShareIcon />
-          <h3>分享真实体验</h3>
-        </div>
-        <p>问题、踩坑、长期使用感受都可以留在这里。</p>
-        <button type="button" onClick={() => router.push('/postMessage')}>发布新帖</button>
-      </section>
     </aside>
   );
 }

@@ -110,11 +110,15 @@ export default function RankingTopThree({ toys, weeklyTop }: RankingTopThreeProp
               <Link
                 key={toy.id}
                 href={`/bang/${toy.id}`}
-                className="group flex min-h-[116px] items-center gap-4 rounded-[18px] border border-[var(--line)] bg-white p-4 transition-[box-shadow,border-color] duration-200 hover:border-[rgba(26,24,28,0.14)] hover:shadow-[0_14px_36px_rgba(37,27,31,0.07)]"
+                className={`group flex min-h-[116px] items-center gap-4 rounded-[18px] border p-4 transition-[box-shadow,border-color] duration-200 hover:shadow-[0_14px_36px_rgba(37,27,31,0.07)] ${
+                  isSecond
+                    ? 'border-[var(--line)] bg-white hover:border-[rgba(26,24,28,0.18)]'
+                    : 'border-[#ebdcd0] bg-[#fdfbf9] hover:border-[#dbc5b3]'
+                }`}
               >
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] text-[15px] font-black ${
-                    isSecond ? 'bg-[#ececea] text-[#8a8487]' : 'bg-[#f2e7d8] text-[#8a6f4f]'
+                    isSecond ? 'bg-[#ececea] text-[#716b6e]' : 'bg-[#f4ebe1] text-[#8a6a48]'
                   }`}
                   aria-hidden="true"
                 >

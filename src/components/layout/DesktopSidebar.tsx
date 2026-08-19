@@ -183,7 +183,7 @@ export default function DesktopSidebar() {
       </section>
 
       <nav className="side-section" aria-label="社区导航">
-        <div className="side-label">Community</div>
+        <div className="side-label">社区</div>
         <button
           type="button"
           onClick={handleCommunityHome}
@@ -214,7 +214,7 @@ export default function DesktopSidebar() {
       </nav>
 
       <nav className="side-section" aria-label="发现入口">
-        <div className="side-label">Discover</div>
+        <div className="side-label">发现</div>
         <button type="button" onClick={() => router.push('/rankingList')} className="side-link" data-active={pathname.startsWith('/rankingList')}>
           <SidebarIcon name="rank" />
           <span>玩具榜单</span>
