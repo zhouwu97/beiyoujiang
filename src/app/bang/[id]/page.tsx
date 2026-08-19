@@ -199,7 +199,7 @@ export default function ToyDetailPage() {
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
-        <div className={styles.page}>
+        <div className={`${styles.page} detail-shell-width`}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
             <span className={styles.crumbSep}>›</span>
@@ -216,7 +216,7 @@ export default function ToyDetailPage() {
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
-        <div className={styles.page}>
+        <div className={`${styles.page} detail-shell-width`}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
           </nav>
@@ -239,7 +239,7 @@ export default function ToyDetailPage() {
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
-        <div className={styles.page}>
+        <div className={`${styles.page} detail-shell-width`}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
           </nav>
@@ -258,7 +258,7 @@ export default function ToyDetailPage() {
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <div className={styles.page}>
+      <div className={`${styles.page} detail-shell-width`}>
         <nav className={styles.breadcrumb} aria-label="面包屑">
           <Link href="/rankingList">玩具榜单</Link>
           <span className={styles.crumbSep}>›</span>

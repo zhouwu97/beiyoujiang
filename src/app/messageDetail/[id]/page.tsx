@@ -282,7 +282,7 @@ export default function MessageDetailPage() {
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <main className="shell-width py-5 lg:py-6">
+      <main className="detail-shell-width py-5 lg:py-6">
         {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
           <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
@@ -299,7 +299,7 @@ export default function MessageDetailPage() {
         <div className="detail-grid">
           {/* 左侧主内容 */}
           <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
-            <article className="px-5 pt-5 sm:px-7 sm:pt-6">
+            <article className="px-5 pt-5 sm:px-7 sm:pt-6 lg:p-8">
               {/* 作者行 */}
               <div className="flex items-center gap-2.5">
                 <img
@@ -325,7 +325,7 @@ export default function MessageDetailPage() {
               </div>
 
               {/* 标题 */}
-              <h1 className="mt-4 text-[22px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
+              <h1 className="mt-4 max-w-[960px] text-[22px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
                 {post.title}
               </h1>
 
@@ -506,7 +506,7 @@ export default function MessageDetailPage() {
 
                     {/* 评论内容（兼容旧站表情 HTML，须走 sanitize 后渲染） */}
                     <div
-                      className="comment-content ml-[38px] mt-2 text-[13px] leading-[1.7] text-[var(--ink-soft)]"
+                      className="comment-content ml-[38px] mt-2 max-w-[82ch] text-[13px] leading-[1.7] text-[var(--ink-soft)]"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
                     />
 
@@ -540,7 +540,7 @@ export default function MessageDetailPage() {
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
                             <span
-                              className="comment-content text-[var(--ink-soft)]"
+                              className="comment-content max-w-[82ch] text-[var(--ink-soft)]"
                               dangerouslySetInnerHTML={{ __html: sanitizeHtml(r.content) }}
                             />
                           </div>

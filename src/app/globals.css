@@ -142,6 +142,44 @@ select:focus-visible,
   }
 }
 
+/* ===== 详情页专用宽度体系 (Detail Shell Width) =====
+ * 帖子详情 / 玩具详情专用，不影响首页已有的 .shell-width / 三栏布局
+ */
+.detail-shell-width {
+  width: 100%;
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .detail-shell-width {
+    width: min(860px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .detail-shell-width {
+    width: min(1180px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .detail-shell-width {
+    width: min(1480px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1919px) {
+  .detail-shell-width {
+    width: min(1600px, calc(100% - 40px));
+  }
+}
+
+@media (min-width: 1920px) {
+  .detail-shell-width {
+    width: min(1680px, calc(100% - 48px));
+  }
+}
+
 /* ===== 参考稿桌面 Header：品牌 / 搜索 / 操作三段式 ===== */
 .desktop-header-inner {
   display: flex;
@@ -357,12 +395,110 @@ select:focus-visible,
   }
 }
 
-/* >=1536：Header 与 Shell 同步到 1440 宽、236|Feed|310 三栏（与 main-grid 精确对齐） */
+/* >=1536：Community Header 与 Shell 同步到 1440 宽、236|Feed|310 三栏（与 main-grid 精确对齐） */
 @media (min-width: 1536px) {
   .desktop-header-inner {
     width: min(1440px, calc(100% - 40px));
     grid-template-columns: 236px minmax(0, 1fr) 310px;
     gap: 26px;
+  }
+}
+
+/* ===== Detail 专用 Header 布局（无左 Sidebar，品牌+返回紧凑靠左，搜索框居中） ===== */
+.desktop-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.desktop-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.desktop-header-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.desktop-header-inner--detail {
+  width: 100%;
+  margin-inline: auto;
+}
+
+@media (min-width: 1024px) {
+  .desktop-header-inner--detail {
+    width: min(1180px, calc(100% - 32px));
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .desktop-header-inner--detail {
+    width: min(1480px, calc(100% - 32px));
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(360px, 520px) minmax(240px, 1fr);
+    gap: 20px;
+    align-items: center;
+  }
+
+  .desktop-header-inner--detail .desktop-header-search {
+    display: flex;
+    width: 100%;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  /* 在 detail 模式下，PC 也显示返回按钮，且与 brand 紧挨着 */
+  .desktop-header-inner--detail .desktop-header-back {
+    display: inline-flex !important;
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1919px) {
+  .desktop-header-inner--detail {
+    width: min(1600px, calc(100% - 40px));
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(380px, 540px) minmax(280px, 1fr);
+    gap: 24px;
+    align-items: center;
+  }
+
+  .desktop-header-inner--detail .desktop-header-search {
+    display: flex;
+    width: 100%;
+    max-width: 540px;
+    margin-inline: auto;
+  }
+
+  .desktop-header-inner--detail .desktop-header-back {
+    display: inline-flex !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  .desktop-header-inner--detail {
+    width: min(1680px, calc(100% - 48px));
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(400px, 560px) minmax(300px, 1fr);
+    gap: 28px;
+    align-items: center;
+  }
+
+  .desktop-header-inner--detail .desktop-header-search {
+    display: flex;
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  .desktop-header-inner--detail .desktop-header-back {
+    display: inline-flex !important;
   }
 }
 
@@ -2514,34 +2650,47 @@ button:disabled {
 
 /* ===== 帖子详情页专用 ===== */
 
-/* 详情主网格：手机/平板（<1280）单栏收口 860；1280~1535 主栏 820 + 右栏 290；
- * >=1536 主栏 900 + 右栏 320，杜绝「大空白 + 窄帖子」。
- * 宽度全部由 grid 自身控制，不用负 margin / translateY 强行对齐。 */
+/* 详情主网格：Shell 控制页面宽度，Grid 负责主内容吃满剩余宽度 + 固定上下文栏，消除二次 max-width 缩窄。
+ * 显式声明 align-items: start，防止 grid item 默认拉伸破坏 sticky 计算。 */
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
-  max-width: 860px;
-  margin-inline: auto;
+  align-items: start;
 }
 
 @media (min-width: 1280px) and (max-width: 1535px) {
   .detail-grid {
-    grid-template-columns: minmax(0, 820px) 290px;
-    gap: 24px;
-    max-width: 1160px;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 22px;
+    max-width: none;
+    margin-inline: 0;
+    align-items: start;
   }
 }
 
-@media (min-width: 1536px) {
+@media (min-width: 1536px) and (max-width: 1919px) {
   .detail-grid {
-    grid-template-columns: minmax(0, 900px) 320px;
-    gap: 28px;
-    max-width: 1280px;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    max-width: none;
+    margin-inline: 0;
+    align-items: start;
   }
 }
 
-/* 详情右栏：<1024 隐藏；1024~1279 下沉到文章下方（双列卡）；>=1280 回到 sticky 单列 */
+@media (min-width: 1920px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 26px;
+    max-width: none;
+    margin-inline: 0;
+    align-items: start;
+  }
+}
+
+/* 详情右栏：<1024 隐藏；1024~1279 下沉到文章下方（双列卡）；>=1280 sticky 独立单列。
+ * 必须设置 align-self: start，防止被主栏高度拉伸导致滚走后右侧变白。 */
 .detail-aside {
   display: none;
   grid-template-columns: 1fr;
@@ -2563,6 +2712,15 @@ button:disabled {
     gap: 16px;
     position: sticky;
     top: 90px;
+    align-self: start;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .detail-aside::-webkit-scrollbar {
+    display: none;
   }
 }
 

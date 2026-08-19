@@ -122,38 +122,49 @@ export default function Header({ variant = 'community' }: HeaderProps) {
 
   return (
     <header className="site-header">
-      <div className="desktop-header-inner">
-        {isCompact && (
-          <button onClick={() => router.back()} className="icon-button xl:hidden" aria-label="返回">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
+      <div
+        className={`desktop-header-inner ${isDetail ? 'desktop-header-inner--detail' : ''}`}
+        data-variant={variant}
+      >
+        <div className="desktop-header-left">
+          {isCompact && (
+            <button
+              onClick={() => router.back()}
+              className={`icon-button desktop-header-back ${!isDetail ? 'xl:hidden' : ''}`}
+              aria-label="返回"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+          )}
+
+          <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
+            <span className="desktop-header-brand-mark" aria-hidden="true">
+              {/* TODO: 替换为品牌静态图（原 load.gif 2.8MB 过大），当前为占位 SVG */}
+              <svg viewBox="0 0 34 34" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
+                <rect width="34" height="34" rx="11" fill="#1f1b1d" />
+                <circle cx="27" cy="7" r="3" fill="#df5d91" />
+              </svg>
+            </span>
+            <span className="desktop-header-brand-text">杯友酱</span>
+            <span className="desktop-header-brand-dot" aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="desktop-header-center">
+          <button
+            type="button"
+            onClick={() => router.push('/search')}
+            className="desktop-header-search"
+            aria-label="搜索玩具、帖子、用户"
+          >
+            <SearchIcon />
+            <span>搜索玩具、帖子、用户</span>
+            <kbd>Ctrl K</kbd>
           </button>
-        )}
-
-        <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
-          <span className="desktop-header-brand-mark" aria-hidden="true">
-            {/* TODO: 替换为品牌静态图（原 load.gif 2.8MB 过大），当前为占位 SVG */}
-            <svg viewBox="0 0 34 34" width="34" height="34" xmlns="http://www.w3.org/2000/svg">
-              <rect width="34" height="34" rx="11" fill="#1f1b1d" />
-              <circle cx="27" cy="7" r="3" fill="#df5d91" />
-            </svg>
-          </span>
-          <span className="desktop-header-brand-text">杯友酱</span>
-          <span className="desktop-header-brand-dot" aria-hidden="true" />
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => router.push('/search')}
-          className="desktop-header-search"
-          aria-label="搜索玩具、帖子、用户"
-        >
-          <SearchIcon />
-          <span>搜索玩具、帖子、用户</span>
-          <kbd>Ctrl K</kbd>
-        </button>
+        </div>
 
         <div className="desktop-header-actions">
           <button
