@@ -10,9 +10,9 @@ export const metadata: Metadata = {
     "欢迎来到杯友酱！这里是杯友的真实分享聚集地，也是全网活跃飞机杯友用户最多的倒模名器与玩具交流论坛。",
   keywords: "飞机杯,倒模,名器,杯友酱,交流论坛,测评,体验报告",
   icons: {
-    icon: "/images/logo.svg",
-    shortcut: "/images/logo.svg",
-    apple: "/images/logo.svg",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
 };
 

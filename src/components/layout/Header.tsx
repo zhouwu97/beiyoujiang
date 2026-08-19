@@ -142,7 +142,7 @@ export default function Header({ variant = 'community' }: HeaderProps) {
 
           <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
             <span className="desktop-header-brand-mark" aria-hidden="true">
-              <img src="/images/load.gif" alt="" />
+              <img src="/icon.png" alt="杯友酱" />
             </span>
             <span className="desktop-header-brand-text">杯友酱</span>
             <span className="desktop-header-brand-dot" aria-hidden="true" />
