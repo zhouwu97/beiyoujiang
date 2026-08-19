@@ -67,6 +67,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder="邮箱"
+            aria-label="邮箱"
             className="auth-input"
           />
         </div>
@@ -81,6 +82,7 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             type={showPwd ? 'text' : 'password'}
             placeholder="密码"
+            aria-label="密码"
             className="auth-input"
           />
           <button type="button" onClick={() => setShowPwd((v) => !v)} className="text-[12px] text-[var(--muted)] transition-colors hover:text-[var(--accent)]" aria-label="显示密码">

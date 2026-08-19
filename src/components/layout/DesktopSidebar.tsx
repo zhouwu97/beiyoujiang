@@ -59,6 +59,7 @@ export default function DesktopSidebar() {
   const [activePlateParam, setActivePlateParam] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [mounted, setMounted] = useState(false);
   const isCommunityHomeActive = pathname === '/' && !activePlateParam;
 
@@ -83,16 +84,18 @@ export default function DesktopSidebar() {
 
   useEffect(() => {
     if (!userId) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProfile(null);
-    setLoading(false);
-    return;
-  }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProfile(null);
+      setLoading(false);
+      setError(false);
+      return;
+    }
 
     setLoading(true);
+    setError(false);
     getUserData(userId, 0)
       .then((data) => setProfile(data))
-      .catch(() => setProfile(null))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [userId]);
 
@@ -133,23 +136,39 @@ export default function DesktopSidebar() {
     <aside className="desktop-sidebar">
       <section className="profile-card">
         {isLoggedIn ? (
-          <>
+          error ? (
             <div className="profile-top">
               <span className="profile-avatar" aria-hidden="true">
-                <img src={resolveAvatar(photo)} alt="" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--muted)]">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
               </span>
               <div className="min-w-0">
-                <div className="profile-name truncate">晚上好，{name}</div>
-                <div className="profile-meta truncate">Lv.{level}</div>
+                <div className="profile-name truncate">加载失败</div>
+                <div className="profile-meta truncate">请检查网络后重试</div>
               </div>
             </div>
+          ) : (
+            <>
+              <div className="profile-top">
+                <span className="profile-avatar" aria-hidden="true">
+                  <img src={resolveAvatar(photo)} alt="" />
+                </span>
+                <div className="min-w-0">
+                  <div className="profile-name truncate">晚上好，{name}</div>
+                  <div className="profile-meta truncate">Lv.{level}</div>
+                </div>
+              </div>
 
-            <div className="profile-stats" aria-label="个人统计">
-              <div><strong>{loading ? '—' : (posts ?? '—')}</strong><span>帖子</span></div>
-              <div><strong>{loading ? '—' : (likes ?? '—')}</strong><span>获赞</span></div>
-              <div><strong>{loading ? '—' : (collections ?? '—')}</strong><span>收藏</span></div>
-            </div>
-          </>
+              <div className="profile-stats" aria-label="个人统计">
+                <div><strong>{loading ? '—' : (posts ?? '—')}</strong><span>帖子</span></div>
+                <div><strong>{loading ? '—' : (likes ?? '—')}</strong><span>获赞</span></div>
+                <div><strong>{loading ? '—' : (collections ?? '—')}</strong><span>收藏</span></div>
+              </div>
+            </>
+          )
         ) : (
           <div className="profile-top">
             <span className="profile-avatar" aria-hidden="true">
@@ -164,7 +183,7 @@ export default function DesktopSidebar() {
       </section>
 
       <nav className="side-section" aria-label="社区导航">
-        <div className="side-label">Community</div>
+        <div className="side-label">社区</div>
         <button
           type="button"
           onClick={handleCommunityHome}
@@ -195,7 +214,7 @@ export default function DesktopSidebar() {
       </nav>
 
       <nav className="side-section" aria-label="发现入口">
-        <div className="side-label">Discover</div>
+        <div className="side-label">发现</div>
         <button type="button" onClick={() => router.push('/rankingList')} className="side-link" data-active={pathname.startsWith('/rankingList')}>
           <SidebarIcon name="rank" />
           <span>玩具榜单</span>

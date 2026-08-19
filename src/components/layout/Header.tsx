@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { PLATES } from '@/lib/types';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useMessageStore } from '@/stores/message';
 import { reset, setPlate, useForumStore } from '@/stores/forum';
 import { getAllMessages } from '@/lib/api';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 function SearchIcon() {
   return (
@@ -52,6 +53,7 @@ interface HeaderProps {
 export default function Header({ variant = 'community' }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const currentPlate = useForumStore((state) => state.plate);
   const currentUser = useAuthStore((state) => state.currentUser);
   const hasUnread = useMessageStore((state) => state.hasUnread);
@@ -108,54 +110,48 @@ export default function Header({ variant = 'community' }: HeaderProps) {
     }
   }, []);
 
-  useEffect(() => {
-    const handleSearchShortcut = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        router.push('/search');
-      }
-    };
-
-    window.addEventListener('keydown', handleSearchShortcut);
-    return () => window.removeEventListener('keydown', handleSearchShortcut);
-  }, [router]);
-
   return (
     <header className="site-header">
-      <div className="desktop-header-inner">
-        {isCompact && (
-          <button onClick={() => router.back()} className="icon-button xl:hidden" aria-label="返回">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
-        )}
+      <div
+        className={`desktop-header-inner ${isDetail ? 'desktop-header-inner--detail' : ''}`}
+        data-variant={variant}
+      >
+        <div className="desktop-header-left">
+          {isCompact && (
+            <button
+              onClick={() => router.back()}
+              className={`icon-button desktop-header-back ${!isDetail ? 'xl:hidden' : ''}`}
+              aria-label="返回"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+          )}
 
-        <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
-          <span className="desktop-header-brand-mark" aria-hidden="true">
-            <img src="/images/load.gif" alt="" />
-          </span>
-          <span className="desktop-header-brand-text">杯友酱</span>
-          <span className="desktop-header-brand-dot" aria-hidden="true" />
-        </Link>
+          <Link href="/" className="desktop-header-brand" aria-label="杯友酱首页">
+            <span className="desktop-header-brand-mark" aria-hidden="true">
+              <img src="/images/load.gif" alt="杯友酱" />
+            </span>
+            <span className="desktop-header-brand-text">杯友酱</span>
+            <span className="desktop-header-brand-dot" aria-hidden="true" />
+          </Link>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => router.push('/search')}
-          className="desktop-header-search"
-          aria-label="搜索玩具、帖子、用户"
-        >
-          <SearchIcon />
-          <span>搜索玩具、帖子、用户</span>
-          <kbd>Ctrl K</kbd>
-        </button>
+        <div className="desktop-header-center">
+          <GlobalSearch
+            mobileOpen={mobileSearchOpen}
+            onMobileClose={() => setMobileSearchOpen(false)}
+            onMobileOpen={() => setMobileSearchOpen(true)}
+          />
+        </div>
 
         <div className="desktop-header-actions">
           <button
             type="button"
-            onClick={() => router.push('/search')}
-            className="desktop-header-mobile-search icon-button xl:hidden"
+            onClick={() => setMobileSearchOpen(true)}
+            className="desktop-header-mobile-search icon-button lg:hidden"
             aria-label="搜索"
           >
             <SearchIcon />

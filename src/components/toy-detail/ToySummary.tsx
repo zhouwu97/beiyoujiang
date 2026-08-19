@@ -17,7 +17,7 @@ export default function ToySummary({ toy }: ToySummaryProps) {
   return (
     <>
       <div className={styles.topline}>
-        <span>{toy.merchant || 'BEIYOUJIANG'} · PRODUCT DETAIL</span>
+        <span>{toy.merchant ? `${toy.merchant} · ` : ''}PRODUCT DETAIL</span>
         <span className={styles.communityMark}>
           <i />
           社区收录
@@ -25,10 +25,12 @@ export default function ToySummary({ toy }: ToySummaryProps) {
       </div>
 
       <h1 className={styles.name}>{toy.name}</h1>
-      <p className={styles.merchant}>
-        {toy.merchant}
-        {toy.releaseYear ? ` · ${toy.releaseYear}` : ''}
-      </p>
+      {(toy.merchant || toy.releaseYear) && (
+        <p className={styles.merchant}>
+          {toy.merchant}
+          {toy.releaseYear ? ` · ${toy.releaseYear}` : ''}
+        </p>
+      )}
 
       {tags.length > 0 && (
         <div className={styles.tags}>

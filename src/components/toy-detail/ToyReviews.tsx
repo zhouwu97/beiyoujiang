@@ -10,6 +10,8 @@ interface ToyReviewsProps {
   sortBy: 'latest' | 'useful';
   onSortChange: (sort: 'latest' | 'useful') => void;
   onLike: (review: ToyReview) => void;
+  /** 测评加载失败（API 挂了 / 网络异常） */
+  error?: boolean;
   /** 点击测评图片 → 打开大图查看器 */
   onPreview?: (url: string) => void;
 }
@@ -17,7 +19,7 @@ interface ToyReviewsProps {
 /**
  * 社区测评列表：排序与点赞状态由页面管理，这里只做展示。
  */
-export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLike, onPreview }: ToyReviewsProps) {
+export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLike, error, onPreview }: ToyReviewsProps) {
   return (
     <section className={styles.reviews} aria-label="社区测评">
       <div className={styles.sectionHead}>
@@ -46,9 +48,13 @@ export default function ToyReviews({ reviews, total, sortBy, onSortChange, onLik
         </div>
       </div>
 
-      {reviews.length === 0 ? (
+      {error ? (
         <div className={styles.empty}>
-          <p>还没有公开测评，来做第一个分享体验的人吧~</p>
+          <p>测评加载失败，请检查网络后重试</p>
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className={styles.empty}>
+          <p>暂无公开测评</p>
         </div>
       ) : (
         reviews.map((review) => (

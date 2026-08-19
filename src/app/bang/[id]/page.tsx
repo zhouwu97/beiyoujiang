@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type { ToyDetail, ToyReview, Toy } from '@/lib/types';
@@ -60,6 +60,8 @@ export default function ToyDetailPage() {
   const [similar, setSimilar] = useState<Toy[]>([]);
   const [sortBy, setSortBy] = useState<'latest' | 'useful'>('latest');
   const [loading, setLoading] = useState(true);
+  const [toyError, setToyError] = useState(false);
+  const [reviewError, setReviewError] = useState(false);
   const [showLoginTip, setShowLoginTip] = useState(false);
   /** 测评大图查看器 */
   const [preview, setPreview] = useState<string | null>(null);
@@ -67,15 +69,18 @@ export default function ToyDetailPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const [t, r] = await Promise.all([
-          getToy(toyId).catch(() => null),
-          getToyAllReview(toyId).catch(() => []),
-        ]);
-        if (cancelled) return;
+      // 玩具与测评独立处理错误：玩具接口失败不把「测评失败」也吞成「玩具不存在」
+      const [tResult, rResult] = await Promise.allSettled([
+        getToy(toyId),
+        getToyAllReview(toyId),
+      ]);
+      if (cancelled) return;
+
+      if (tResult.status === 'fulfilled') {
+        const t = tResult.value;
+        setToy(t);
+        setToyError(false);
         if (t) {
-          setToy(t);
-          // 同类热卖（侧边栏相似条目）
           getAllToy('', t.category || '', 0, 1, 8)
             .then((res) => {
               if (!cancelled) setSimilar(res.list.filter((x) => x.id !== toyId).slice(0, 3));
@@ -84,29 +89,23 @@ export default function ToyDetailPage() {
               if (!cancelled) setSimilar([]);
             });
         }
-        setReviews(r);
-      } catch {
-        if (!cancelled) showAlert('加载失败，请重试');
-      } finally {
-        if (!cancelled) setLoading(false);
+      } else {
+        setToyError(true);
       }
+
+      if (rResult.status === 'fulfilled') {
+        setReviews(rResult.value);
+        setReviewError(false);
+      } else {
+        setReviewError(true);
+      }
+
+      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [toyId, showAlert]);
-
-  // Ctrl+K 搜索快捷键
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        router.push('/search');
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [router]);
 
   const galleryImages = useMemo(() => collectGalleryImages(toy), [toy]);
   const sortedReviews = useMemo(() => {
@@ -148,11 +147,17 @@ export default function ToyDetailPage() {
     }
   };
 
+  /** 测评点赞 mutation lock：同一测评在请求进行中时忽略重复点击 */
+  const pendingReviewLikeRef = useRef<Set<number>>(new Set());
+
   const handleReviewLike = async (review: ToyReview) => {
     if (!me) {
       setShowLoginTip(true);
       return;
     }
+    // mutation lock：防止连点发多个请求
+    if (pendingReviewLikeRef.current.has(review.id)) return;
+    pendingReviewLikeRef.current.add(review.id);
     const next = !review.isLiked;
     setReviews((prev) =>
       prev.map((r) =>
@@ -172,6 +177,8 @@ export default function ToyDetailPage() {
         )
       );
       showAlert('操作失败');
+    } finally {
+      pendingReviewLikeRef.current.delete(review.id);
     }
   };
 
@@ -180,7 +187,7 @@ export default function ToyDetailPage() {
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
-        <div className={styles.page}>
+        <div className={`${styles.page} detail-shell-width`}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
             <span className={styles.crumbSep}>›</span>
@@ -192,12 +199,35 @@ export default function ToyDetailPage() {
     );
   }
 
-  // 不存在 / 下架（保留统一 Header）
+  // 加载失败（API 挂了 / 网络异常）
+  if (toyError) {
+    return (
+      <div className="page-shell min-h-screen">
+        <Header variant="detail" />
+        <div className={`${styles.page} detail-shell-width`}>
+          <nav className={styles.breadcrumb} aria-label="面包屑">
+            <Link href="/rankingList">玩具榜单</Link>
+          </nav>
+          <div className={styles.notFound}>
+            <p>加载失败，请检查网络后重试</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="interactive-press btn-gradient inline-flex px-5 py-2.5 text-[12px]"
+            >
+              重新加载
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 不存在 / 下架（API 成功但无数据）
   if (!toy) {
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
-        <div className={styles.page}>
+        <div className={`${styles.page} detail-shell-width`}>
           <nav className={styles.breadcrumb} aria-label="面包屑">
             <Link href="/rankingList">玩具榜单</Link>
           </nav>
@@ -216,7 +246,7 @@ export default function ToyDetailPage() {
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <div className={styles.page}>
+      <div className={`${styles.page} detail-shell-width`}>
         <nav className={styles.breadcrumb} aria-label="面包屑">
           <Link href="/rankingList">玩具榜单</Link>
           <span className={styles.crumbSep}>›</span>
@@ -256,6 +286,7 @@ export default function ToyDetailPage() {
             sortBy={sortBy}
             onSortChange={setSortBy}
             onLike={handleReviewLike}
+            error={reviewError}
             onPreview={setPreview}
           />
           <aside className={styles.side}>

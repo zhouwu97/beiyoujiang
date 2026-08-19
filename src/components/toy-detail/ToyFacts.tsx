@@ -20,14 +20,18 @@ export default function ToyFacts({ toy }: ToyFactsProps) {
       </div>
 
       <div className={styles.factGrid}>
-        <div className={styles.fact}>
-          <span>品牌</span>
-          <b>{toy.merchant || '—'}</b>
-        </div>
-        <div className={styles.fact}>
-          <span>年份</span>
-          <b>{toy.releaseYear || '—'}</b>
-        </div>
+        {toy.merchant && (
+          <div className={styles.fact}>
+            <span>品牌</span>
+            <b>{toy.merchant}</b>
+          </div>
+        )}
+        {toy.releaseYear && (
+          <div className={styles.fact}>
+            <span>年份</span>
+            <b>{toy.releaseYear}</b>
+          </div>
+        )}
         <div className={styles.fact}>
           <span>类别</span>
           <b>{categoryLabel(toy.category)}</b>

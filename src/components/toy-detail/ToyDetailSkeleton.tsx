@@ -10,7 +10,7 @@ export default function ToyDetailSkeleton() {
       {/* Hero */}
       <div className="grid overflow-hidden rounded-[30px] border border-[var(--line)] bg-white shadow-[var(--shadow-sm)] lg:grid-cols-[minmax(0,1.35fr)_minmax(390px,0.65fr)]">
         {/* Gallery */}
-        <div className="min-h-[520px] bg-[#f0eeec] p-6">
+        <div className="min-h-[520px] bg-[var(--surface-subtle)] p-6">
           <div className="flex items-center justify-between">
             <div className="skeleton h-3 w-28 rounded-full" />
             <div className="skeleton h-3 w-10 rounded-full" />
@@ -62,7 +62,7 @@ export default function ToyDetailSkeleton() {
             ))}
           </div>
         </div>
-        <div className="hidden border-l border-[var(--line)] bg-[#fbfaf9] p-5 lg:block">
+        <div className="hidden border-l border-[var(--line)] bg-[var(--surface-subtle)] p-5 lg:block">
           <div className="skeleton h-4 w-20 rounded-full" />
           <div className="mt-4 space-y-3">
             {[0, 1, 2].map((i) => (

@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # next.js
 /.next/
@@ -50,3 +54,6 @@ dev.err.log
 *.png
 !public/images/banners/banner-pink.png
 !public/images/banners/banner-warm.png
+!public/icon.png
+!public/images/logo.png
+!src/app/icon.png

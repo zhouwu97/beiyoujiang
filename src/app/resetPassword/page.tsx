@@ -96,20 +96,21 @@ export default function ResetPasswordPage() {
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder="注册邮箱"
+            aria-label="注册邮箱"
             className="auth-input"
           />
           <button
             type="button"
             onClick={handleSendCode}
             disabled={sending || countdown > 0}
-            className="whitespace-nowrap text-[12px] font-medium text-[var(--accent)] transition-colors hover:text-[#e55680] disabled:text-[var(--muted)]"
+            className="whitespace-nowrap text-[12px] font-medium text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)] disabled:text-[var(--muted)]"
           >
             {countdown > 0 ? `${countdown}s` : sending ? '发送中' : '获取验证码'}
           </button>
         </div>
 
         <div className="auth-field">
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="验证码" className="auth-input" />
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="验证码" aria-label="验证码" className="auth-input" />
         </div>
 
         <div className="auth-field">
@@ -118,6 +119,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             placeholder="新密码（至少6位）"
+            aria-label="新密码"
             className="auth-input"
           />
         </div>
@@ -128,6 +130,7 @@ export default function ResetPasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             type="password"
             placeholder="确认新密码"
+            aria-label="确认新密码"
             className="auth-input"
           />
         </div>

@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/images/load.gif",
     shortcut: "/images/load.gif",
+    apple: "/icon.png",
   },
 };
 

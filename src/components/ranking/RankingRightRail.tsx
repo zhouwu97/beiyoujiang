@@ -22,14 +22,14 @@ export default function RankingRightRail({ weeklyTop }: RankingRightRailProps) {
       <h2 className="mt-1.5 text-[14px] font-bold text-[var(--ink)]">本周冠军</h2>
       <Link
         href={`/bang/${weeklyTop.id}`}
-        className="group mt-3 block rounded-[14px] border border-[var(--line)] bg-[#f4f2f0] p-3 transition-colors duration-200 hover:border-[rgba(26,24,28,0.16)]"
+        className="group mt-3 block rounded-[14px] border border-[var(--line)] bg-[var(--surface-subtle)] p-3 transition-colors duration-200 hover:border-[rgba(26,24,28,0.16)]"
       >
         <div className="flex h-28 items-center justify-center overflow-hidden rounded-[10px] bg-white p-2">
           <ToyImage src={weeklyTop.coverUrl?.[0]} alt={weeklyTop.name} className="h-full w-full object-contain" />
         </div>
         <div className="mt-2.5">
           <p className="truncate text-[13px] font-bold text-[var(--ink)]">{weeklyTop.name}</p>
-          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">
+          <p className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
             {weeklyTop.merchant} · {stimulationLabel(weeklyTop.stimulation)}
           </p>
           <p className="mt-1.5 flex items-center gap-2 text-[11px]">

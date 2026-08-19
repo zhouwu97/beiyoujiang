@@ -17,9 +17,9 @@ import {
   deletePost,
   deleteComment,
 } from '@/lib/api';
-import { resolveAvatar, resolveImage, resolvePostImage, sanitizeHtml } from '@/lib/utils';
+import { resolveAvatar, resolvePostImage, sanitizeHtml } from '@/lib/utils';
 import { getUserId } from '@/stores/auth';
-import { useForumStore, getCachedPosts } from '@/stores/forum';
+import { getCachedPosts } from '@/stores/forum';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
@@ -42,7 +42,7 @@ function ImageMeta({ src }: { src: string }) {
   }, [src]);
   if (!size) return null;
   return (
-    <span className="mt-1.5 block text-[9px] text-[var(--muted-light)]">
+    <span className="mt-1.5 block text-[10px] text-[var(--muted-light)]">
       {size} · 点击查看原图 · 完整比例展示
     </span>
   );
@@ -57,6 +57,7 @@ export default function MessageDetailPage() {
 
   const [detail, setDetail] = useState<PostDetailData | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsError, setCommentsError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -68,6 +69,8 @@ export default function MessageDetailPage() {
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrolledToHashRef = useRef<string | null>(null);
+  /** 评论点赞 mutation lock：同一评论在请求进行中时忽略重复点击 */
+  const pendingCommentLikeRef = useRef<Set<number>>(new Set());
   const me = getUserId();
 
   const post = detail?.post;
@@ -77,16 +80,22 @@ export default function MessageDetailPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [d, c] = await Promise.all([
-          getPost(postId),
-          getPostComments(postId).catch(() => []),
-        ]);
+        const d = await getPost(postId);
         if (cancelled) return;
         setDetail(d);
         setLiked(d.isLiked);
         setLikeCount(d.post.likeCount ?? 0);
         setCollected(d.isCollection);
-        setComments(c);
+
+        try {
+          const c = await getPostComments(postId);
+          if (!cancelled) {
+            setComments(c);
+            setCommentsError(false);
+          }
+        } catch {
+          if (!cancelled) setCommentsError(true);
+        }
       } catch {
         if (!cancelled) showAlert('帖子加载失败');
       } finally {
@@ -191,8 +200,12 @@ export default function MessageDetailPage() {
       await addComment(fd);
       setCommentText('');
       setReplyingTo(null);
-      const c = await getPostComments(postId).catch(() => []);
-      setComments(c);
+      try {
+        const c = await getPostComments(postId);
+        setComments(c);
+      } catch {
+        // 刷新评论列表失败，不覆盖已有评论
+      }
       showReward('评论成功');
     } catch {
       showAlert('评论失败，请重试');
@@ -205,8 +218,12 @@ export default function MessageDetailPage() {
     if (!window.confirm('确定删除这条评论吗？')) return;
     try {
       await deleteComment(commentId);
-      const c = await getPostComments(postId).catch(() => []);
-      setComments(c);
+      try {
+        const c = await getPostComments(postId);
+        setComments(c);
+      } catch {
+        // 刷新评论列表失败，不覆盖已有评论
+      }
       showAlert('删除成功');
     } catch {
       showAlert('删除失败');
@@ -220,10 +237,13 @@ export default function MessageDetailPage() {
 
   if (loading) {
     return (
-      <div className="page-shell flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="loading-mark mx-auto">杯</div>
-          <p className="mt-3 text-[13px] text-[var(--muted)]">杯酱正在装填弹药…</p>
+      <div className="page-shell flex min-h-screen flex-col">
+        <Header variant="detail" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <img src="/images/load.gif" alt="加载中" className="mx-auto h-20 w-20 object-contain" />
+            <p className="mt-3 text-[13px] text-[var(--muted)]">杯酱正在装填弹药…</p>
+          </div>
         </div>
       </div>
     );
@@ -231,12 +251,15 @@ export default function MessageDetailPage() {
 
   if (!post) {
     return (
-      <div className="page-shell flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-[14px] text-[var(--muted)]">帖子不存在或已删除</p>
-          <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
-            返回首页
-          </button>
+      <div className="page-shell min-h-screen">
+        <Header variant="detail" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <p className="text-[14px] text-[var(--muted)]">帖子不存在或已删除</p>
+            <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
+              返回首页
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -249,18 +272,17 @@ export default function MessageDetailPage() {
   // 右侧推荐：从缓存取同板块帖子
   const cachedPosts = getCachedPosts().filter((p) => p.id !== post.id && p.plate === post.plate).slice(0, 5);
 
-  // 作者统计数据
+  // 作者统计数据（只显示后端真实返回的字段，不要硬编码'—'填充）
   const authorStats = [
-    { label: '帖子', value: '—' },
-    { label: '获赞', value: author?.likeNumber ?? 0 },
-    { label: '关注者', value: author?.followersNumber ?? 0 },
+    ...(typeof author?.likeNumber === 'number' ? [{ label: '获赞', value: author.likeNumber }] : []),
+    ...(typeof author?.followersNumber === 'number' ? [{ label: '关注者', value: author.followersNumber }] : []),
   ];
 
   return (
     <div className="page-shell min-h-screen">
       <Header variant="detail" />
 
-      <main className="mx-auto w-full max-w-[1328px] px-4 py-5 sm:px-6 lg:py-6">
+      <main className="detail-shell-width py-5 lg:py-6">
         {/* 面包屑（Detail 页上下文导航，同时提供移动端返回入口） */}
         <nav className="mb-4 flex items-center gap-1.5 text-[12px] text-[var(--muted)]" aria-label="面包屑">
           <Link href="/" className="flex items-center gap-1 font-semibold text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]">
@@ -277,7 +299,7 @@ export default function MessageDetailPage() {
         <div className="detail-grid">
           {/* 左侧主内容 */}
           <div className="rail-panel min-w-0 overflow-hidden lg:rounded-[16px]">
-            <article className="px-5 pt-5 sm:px-7 sm:pt-6">
+            <article className="px-5 pt-5 sm:px-7 sm:pt-6 lg:p-8">
               {/* 作者行 */}
               <div className="flex items-center gap-2.5">
                 <img
@@ -292,7 +314,7 @@ export default function MessageDetailPage() {
                   </span>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--muted)]">
                     {plateName && (
-                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[10px] font-bold text-[var(--accent-ink)]">
+                      <span className="rounded-[5px] bg-[var(--accent-soft)] px-1.5 py-[3px] text-[11px] font-bold text-[var(--accent-ink)]">
                         {plateName}
                       </span>
                     )}
@@ -303,7 +325,7 @@ export default function MessageDetailPage() {
               </div>
 
               {/* 标题 */}
-              <h1 className="mt-4 text-[22px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
+              <h1 className="mt-4 max-w-[960px] text-[22px] font-bold leading-[1.45] tracking-[-0.025em] text-[var(--ink)]">
                 {post.title}
               </h1>
 
@@ -385,7 +407,27 @@ export default function MessageDetailPage() {
                 全部评论 <span className="text-[12px] font-normal text-[var(--muted)]">{post.commentCount ?? comments.length}</span>
               </h2>
 
-              {comments.length === 0 && (
+              {commentsError && (
+                <div className="flex flex-col items-center py-6 text-center">
+                  <p className="mb-3 text-[14px] text-[var(--muted)]">评论加载失败，请检查网络后重试</p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const c = await getPostComments(postId);
+                        setComments(c);
+                        setCommentsError(false);
+                      } catch {
+                        setCommentsError(true);
+                      }
+                    }}
+                    className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[12px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
+                  >
+                    重试
+                  </button>
+                </div>
+              )}
+
+              {!commentsError && comments.length === 0 && (
                 <p className="py-6 text-center text-[14px] text-[var(--muted)]">还没有评论，抢个沙发~</p>
               )}
 
@@ -411,26 +453,29 @@ export default function MessageDetailPage() {
                             {c.author?.username ?? '杯友'}
                           </span>
                           {c.isPostAuthor && (
-                            <span className="rounded bg-blue-50 px-1 py-[1px] text-[10px] font-medium text-blue-500">
+                            <span className="rounded bg-blue-50 px-1.5 py-[2px] text-[11px] font-medium text-blue-500">
                               楼主
                             </span>
                           )}
-                          <span className="text-[10px] text-[var(--muted-light)]">{c.floor}楼</span>
+                          <span className="text-[11px] text-[var(--muted-light)]">{c.floor}楼</span>
                         </div>
-                        <span className="block text-[10px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
+                        <span className="block text-[11px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-[var(--muted)]">
+                      <div className="flex items-center gap-2 text-[13px] text-[var(--muted)]">
                         {me === c.author?.id && (
-                          <button onClick={() => handleDeleteComment(c.id)} className="transition-colors hover:text-red-400">
+                          <button onClick={() => handleDeleteComment(c.id)} className="min-w-[40px] min-h-[40px] flex items-center justify-center transition-colors hover:text-red-400">
                             删除
                           </button>
                         )}
-                        <button onClick={() => focusReply(c)} className="transition-colors hover:text-[var(--ink-soft)]">
+                        <button onClick={() => focusReply(c)} className="min-w-[40px] min-h-[40px] flex items-center justify-center transition-colors hover:text-[var(--ink-soft)]">
                           回复
                         </button>
                         <button
                           onClick={async () => {
                             if (!me) { setShowLoginTip(true); return; }
+                            // mutation lock：防止连点发多个请求
+                            if (pendingCommentLikeRef.current.has(c.id)) return;
+                            pendingCommentLikeRef.current.add(c.id);
                             try {
                               const { likeComment } = await import('@/lib/api');
                               if (c.isLiked) {
@@ -448,6 +493,8 @@ export default function MessageDetailPage() {
                               );
                             } catch {
                               showAlert('操作失败');
+                            } finally {
+                              pendingCommentLikeRef.current.delete(c.id);
                             }
                           }}
                           className={`flex items-center gap-0.5 transition-colors ${c.isLiked ? 'text-[var(--accent)]' : ''}`}
@@ -459,7 +506,7 @@ export default function MessageDetailPage() {
 
                     {/* 评论内容（兼容旧站表情 HTML，须走 sanitize 后渲染） */}
                     <div
-                      className="comment-content ml-[38px] mt-2 text-[13px] leading-[1.7] text-[var(--ink-soft)]"
+                      className="comment-content ml-[38px] mt-2 max-w-[82ch] text-[13px] leading-[1.7] text-[var(--ink-soft)]"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(c.content) }}
                     />
 
@@ -493,7 +540,7 @@ export default function MessageDetailPage() {
                             <span className="font-semibold text-[var(--ink)]">{r.author?.username ?? '杯友'}</span>
                             <span className="text-[var(--muted-light)]">：</span>
                             <span
-                              className="comment-content text-[var(--ink-soft)]"
+                              className="comment-content max-w-[82ch] text-[var(--ink-soft)]"
                               dangerouslySetInnerHTML={{ __html: sanitizeHtml(r.content) }}
                             />
                           </div>
@@ -519,6 +566,7 @@ export default function MessageDetailPage() {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder={replyingTo ? '写下你的回复…' : '说点什么吧…'}
+                  aria-label={replyingTo ? '回复评论' : '发表评论'}
                   rows={1}
                   className="w-full min-h-[38px] resize-none rounded-[10px] border border-[var(--line)] bg-[var(--surface-subtle)] px-3 py-2 text-[12px] outline-none transition-colors focus:border-[var(--accent)] focus:bg-white"
                 />
@@ -555,14 +603,16 @@ export default function MessageDetailPage() {
               <p className="mt-3 text-[12px] leading-[1.7] text-[var(--muted)]">
                 {author?.introduction || '这位杯友还没有写简介~'}
               </p>
-              <div className="mt-4 grid grid-cols-3 border-t border-[var(--line)] pt-3.5">
-                {authorStats.map((s) => (
-                  <div key={s.label} className="text-center">
-                    <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
-                    <span className="mt-0.5 block text-[10px] text-[var(--muted)]">{s.label}</span>
-                  </div>
-                ))}
-              </div>
+              {authorStats.length > 0 && (
+                <div className={`mt-4 grid border-t border-[var(--line)] pt-3.5 ${authorStats.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {authorStats.map((s) => (
+                    <div key={s.label} className="text-center">
+                      <span className="block text-[16px] font-bold text-[var(--ink)]">{s.value}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--muted)]">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {/* 关注作者：官方 API 未提供关注接口（已实测 404），移除假按钮 */}
             </section>
 
