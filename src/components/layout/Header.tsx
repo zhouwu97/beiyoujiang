@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { PLATES } from '@/lib/types';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useMessageStore } from '@/stores/message';
 import { reset, setPlate, useForumStore } from '@/stores/forum';
 import { getAllMessages } from '@/lib/api';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 function SearchIcon() {
   return (
@@ -52,6 +53,7 @@ interface HeaderProps {
 export default function Header({ variant = 'community' }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const currentPlate = useForumStore((state) => state.plate);
   const currentUser = useAuthStore((state) => state.currentUser);
   const hasUnread = useMessageStore((state) => state.hasUnread);
@@ -108,18 +110,6 @@ export default function Header({ variant = 'community' }: HeaderProps) {
     }
   }, []);
 
-  useEffect(() => {
-    const handleSearchShortcut = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        router.push('/search');
-      }
-    };
-
-    window.addEventListener('keydown', handleSearchShortcut);
-    return () => window.removeEventListener('keydown', handleSearchShortcut);
-  }, [router]);
-
   return (
     <header className="site-header">
       <div
@@ -150,23 +140,18 @@ export default function Header({ variant = 'community' }: HeaderProps) {
         </div>
 
         <div className="desktop-header-center">
-          <button
-            type="button"
-            onClick={() => router.push('/search')}
-            className="desktop-header-search"
-            aria-label="搜索玩具、帖子、用户"
-          >
-            <SearchIcon />
-            <span>搜索玩具、帖子、用户</span>
-            <kbd>Ctrl K</kbd>
-          </button>
+          <GlobalSearch
+            mobileOpen={mobileSearchOpen}
+            onMobileClose={() => setMobileSearchOpen(false)}
+            onMobileOpen={() => setMobileSearchOpen(true)}
+          />
         </div>
 
         <div className="desktop-header-actions">
           <button
             type="button"
-            onClick={() => router.push('/search')}
-            className="desktop-header-mobile-search icon-button xl:hidden"
+            onClick={() => setMobileSearchOpen(true)}
+            className="desktop-header-mobile-search icon-button lg:hidden"
             aria-label="搜索"
           >
             <SearchIcon />

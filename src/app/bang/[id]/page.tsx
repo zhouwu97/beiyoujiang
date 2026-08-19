@@ -107,18 +107,6 @@ export default function ToyDetailPage() {
     };
   }, [toyId, showAlert]);
 
-  // Ctrl+K 搜索快捷键
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        router.push('/search');
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [router]);
-
   const galleryImages = useMemo(() => collectGalleryImages(toy), [toy]);
   const sortedReviews = useMemo(() => {
     if (sortBy === 'useful') {

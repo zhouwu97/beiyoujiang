@@ -11,11 +11,11 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('after_verify', '1'));
 });
 
-test('首页可访问，Header 与搜索入口渲染', async ({ page }) => {
+test('首页可访问，Header 与全局搜索入口渲染', async ({ page }) => {
   await page.goto('/');
-  // Header 品牌 + 搜索框
+  // Header 品牌 + 全局搜索框
   await expect(page.getByRole('link', { name: /杯友酱/ }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /搜索玩具、帖子、用户/ })).toBeVisible();
+  await expect(page.getByLabel('全局搜索')).toBeVisible();
 });
 
 test('搜索页可访问，搜索框可输入', async ({ page }) => {
