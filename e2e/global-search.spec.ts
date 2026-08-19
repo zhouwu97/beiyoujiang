@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('after_verify', '1'));
 });
 
-test.describe('GlobalSearch 全局浮层搜索与交互', () => {
+test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）', () => {
   test('A. Ctrl+K 快捷键可聚焦全局搜索输入框', async ({ page }) => {
     await page.goto('/');
     const searchInput = page.getByLabel('全局搜索');
@@ -12,7 +12,7 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
     await expect(searchInput).toBeFocused();
   });
 
-  test('B. 空搜索框聚焦时展示「大家都在搜」真实热词', async ({ page }) => {
+  test('B. 空搜索框聚焦时展示「大家都在搜」，点击热词直达 /search?q=xxx', async ({ page }) => {
     await page.route('**/api/proxy/toy/getAllKeyword', (route) =>
       route.fulfill({
         status: 200,
@@ -26,18 +26,30 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
         }),
       })
     );
+    await page.route('**/api/proxy/toy/searchToyPost', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: { toys: [], posts: [] },
+          pagination: { hasMore: false },
+        }),
+      })
+    );
 
     await page.goto('/');
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.focus();
 
     await expect(page.getByText('大家都在搜')).toBeVisible();
-    await expect(page.getByRole('button', { name: '黄油小姐' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '堕落修女' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '龙娘' })).toBeVisible();
+    const chip = page.getByRole('button', { name: '黄油小姐' });
+    await expect(chip).toBeVisible();
+    await chip.click();
+
+    await expect(page).toHaveURL(/\/search\?q=%E9%BB%84%E6%B2%B9%E5%B0%8F%E5%A7%90/, { timeout: 10000 });
   });
 
-  test('C. 输入关键词后 debounce 弹出玩具与帖子 suggestions', async ({ page }) => {
+  test('C. 输入关键词后 debounce 弹出 Popover，且显示「搜索」按钮与底部「查看全部」', async ({ page }) => {
     await page.route('**/api/proxy/toy/searchToyPost', (route) =>
       route.fulfill({
         status: 200,
@@ -75,48 +87,23 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
 
     // 等待 250ms debounce 与浮层渲染
     await expect(page.getByText('黄油小姐 二代')).toBeVisible();
-    await expect(page.getByText('44 篇测评')).toBeVisible();
     await expect(page.getByText('黄油小姐2代实际体验')).toBeVisible();
-    await expect(page.getByText('19 回复')).toBeVisible();
+    await expect(page.getByRole('button', { name: '搜索', exact: true })).toBeVisible();
+    await expect(page.getByText(/查看“黄油小姐”的全部搜索结果/)).toBeVisible();
   });
 
-  test('D. 点击玩具 Suggestion 直接跳转 /bang/:id 并关闭 Popover', async ({ page }) => {
+  test('D. 无选中状态下直接回车 -> 进入 /search?q=xxx 正式搜索结果页', async ({ page }) => {
     await page.route('**/api/proxy/toy/searchToyPost', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           data: {
-            toys: [
-              {
-                id: 101,
-                name: '黄油小姐 二代',
-                rating: 9.1,
-                reviewCount: 44,
-                coverUrl: [],
-              },
-            ],
+            toys: [{ id: 101, name: '黄油小姐 二代', rating: 9.1, reviewCount: 44, coverUrl: [] }],
             posts: [],
           },
           pagination: { hasMore: false },
         }),
-      })
-    );
-    // Mock 详情接口，避免跳转后因真实后端网络超时而拖慢路由渲染
-    await page.route('**/api/proxy/toy/getToy', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: { id: 101, name: '黄油小姐 二代', rating: 9.1, reviewCount: 44, coverUrlsArray: [] },
-        }),
-      })
-    );
-    await page.route('**/api/proxy/toy/getToyAllReview', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: [] }),
       })
     );
 
@@ -124,61 +111,44 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('黄油小姐');
 
-    const toyBtn = page.locator('.global-search-toy-item').first();
-    await expect(toyBtn).toBeVisible();
-    await toyBtn.click();
+    await expect(page.locator('.global-search-popover')).toBeVisible();
 
-    await expect(page).toHaveURL(/\/bang\/101/, { timeout: 10000 });
-    await expect(page.locator('.global-search-popover')).toBeHidden();
+    // 直接回车（selectedIndex 为 -1）
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/\/search\?q=%E9%BB%84%E6%B2%B9%E5%B0%8F%E5%A7%90/, { timeout: 10000 });
   });
 
-  test('E. 点击帖子 Suggestion 直接跳转 /messageDetail/:id 并关闭 Popover', async ({ page }) => {
+  test('E. 点击「搜索」按钮与点击底部「查看全部结果」-> 进入 /search?q=xxx', async ({ page }) => {
     await page.route('**/api/proxy/toy/searchToyPost', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           data: {
-            toys: [],
-            posts: [
-              {
-                id: 202,
-                title: '小玩决赛圈了，各位大佬来点建议',
-                plate: 2,
-                commentCount: 15,
-                timeAgo: '刚刚',
-              },
-            ],
+            toys: [{ id: 101, name: '龙娘 玩具', rating: 9.5, reviewCount: 30, coverUrl: [] }],
+            posts: [],
           },
           pagination: { hasMore: false },
-        }),
-      })
-    );
-    await page.route('**/api/proxy/post/getPost', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: {
-            post: { id: 202, title: '小玩决赛圈了', content: '', plate: 2, author: { id: 1, username: '测试', photo: '' }, imageUrls: [] },
-          },
         }),
       })
     );
 
     await page.goto('/');
     const searchInput = page.getByLabel('全局搜索');
-    await searchInput.fill('小玩');
+    await searchInput.fill('龙娘');
 
-    const postBtn = page.locator('.global-search-post-item').first();
-    await expect(postBtn).toBeVisible();
-    await postBtn.click();
+    await expect(page.locator('.global-search-popover')).toBeVisible();
 
-    await expect(page).toHaveURL(/\/messageDetail\/202/, { timeout: 10000 });
-    await expect(page.locator('.global-search-popover')).toBeHidden();
+    // 点击搜索框内的“搜索”按钮
+    const searchBtn = page.locator('.global-search-submit-btn').first();
+    await expect(searchBtn).toBeVisible();
+    await searchBtn.click();
+
+    await expect(page).toHaveURL(/\/search\?q=%E9%BE%99%E5%A8%98/, { timeout: 10000 });
   });
 
-  test('F. 键盘上下箭头高亮与 Enter 选中跳转', async ({ page }) => {
+  test('F. 上下箭头高亮选中条目 + 回车 -> 直达 /bang/:id 或 /messageDetail/:id', async ({ page }) => {
     await page.route('**/api/proxy/toy/searchToyPost', (route) =>
       route.fulfill({
         status: 200,
@@ -226,7 +196,7 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
     await page.keyboard.press('ArrowDown');
     await expect(page.locator('.global-search-toy-item').nth(1)).toHaveClass(/is-selected/);
 
-    // 回车选中玩具2
+    // 回车选中高亮的玩具2
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/bang\/102/, { timeout: 10000 });
   });
@@ -257,8 +227,19 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
     await expect(page).toHaveURL('/');
   });
 
-  test('H. 移动端 Overlay 打开、body scroll lock 与 Esc/取消 关闭', async ({ page }) => {
+  test('H. 移动端 Overlay 搜索、body scroll lock 与回车进入 /search?q=xxx', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.route('**/api/proxy/toy/searchToyPost', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: { toys: [], posts: [] },
+          pagination: { hasMore: false },
+        }),
+      })
+    );
+
     await page.goto('/');
 
     const mobileSearchBtn = page.getByRole('button', { name: '搜索' });
@@ -268,80 +249,68 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
     const overlay = page.getByRole('dialog', { name: '移动端搜索' });
     await expect(overlay).toBeVisible();
 
-    // 检查 body 是否锁定滚动
+    // 检查 body 锁定
     const isBodyLocked = await page.evaluate(() => document.body.style.overflow === 'hidden');
     expect(isBodyLocked).toBe(true);
 
-    // 按 Esc 关闭 Overlay
-    await page.keyboard.press('Escape');
+    const mobileInput = page.getByLabel('搜索输入');
+    await mobileInput.fill('移动端搜索词');
+    await mobileInput.press('Enter');
+
+    // 进入 /search?q=xxx 并自动关闭 Overlay
+    await expect(page).toHaveURL(/\/search\?q=/, { timeout: 10000 });
     await expect(overlay).toBeHidden();
-
-    // 检查 body 滚动是否恢复
-    const isBodyUnlocked = await page.evaluate(() => document.body.style.overflow !== 'hidden');
-    expect(isBodyUnlocked).toBe(true);
-    await expect(page).toHaveURL('/');
   });
 
-  test('I. 搜索竞态控制：慢请求不会覆盖后发的快请求', async ({ page }) => {
-    await page.route('**/api/proxy/toy/searchToyPost', async (route) => {
-      const postData = route.request().postDataJSON?.() || {};
-      const keyword = postData.content;
+  test('I. 直接访问 /search?q=xxx 自动发起搜索并渲染左侧帖子与右侧玩具 Rail', async ({ page }) => {
+    await page.route('**/api/proxy/toy/searchToyPost', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            toys: [
+              {
+                id: 101,
+                name: '黄油小姐 二代',
+                rating: 9.1,
+                reviewCount: 44,
+                coverUrl: ['/images/test.png'],
+                tags: '奶香体质',
+              },
+            ],
+            posts: [
+              {
+                id: 201,
+                title: '黄油小姐深度测评帖',
+                content: '<p>正文内容</p>',
+                plate: 2,
+                commentCount: 19,
+                readingQuantity: 300,
+                likeCount: 12,
+                imageUrls: [],
+                timeAgo: '刚刚',
+                author: { id: 1, username: '评测家', photo: '', level: 5, introduction: '', isGuest: false },
+              },
+            ],
+          },
+          pagination: { hasMore: false },
+        }),
+      })
+    );
 
-      if (keyword === '慢查询A') {
-        // 故意延迟 500ms
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            data: {
-              toys: [{ id: 999, name: '旧数据A-不应展示', rating: 5.0, reviewCount: 1, coverUrl: [] }],
-              posts: [],
-            },
-            pagination: { hasMore: false },
-          }),
-        });
-      } else if (keyword === '快查询B') {
-        // 快速返回
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            data: {
-              toys: [{ id: 888, name: '新数据B-最终结果', rating: 9.9, reviewCount: 99, coverUrl: [] }],
-              posts: [],
-            },
-            pagination: { hasMore: false },
-          }),
-        });
-      } else {
-        await route.fulfill({ status: 200, body: JSON.stringify({ data: { toys: [], posts: [] }, pagination: { hasMore: false } }) });
-      }
-    });
+    await page.goto('/search?q=%E9%BB%84%E6%B2%B9%E5%B0%8F%E5%A7%90');
 
-    await page.goto('/');
-    const searchInput = page.getByLabel('全局搜索');
+    // 断言输入框已回填
+    const input = page.getByLabel('搜索玩具或帖子');
+    await expect(input).toHaveValue('黄油小姐');
 
-    // 先输入“慢查询A”
-    await searchInput.fill('慢查询A');
-    // 立即换成“快查询B”
-    await page.waitForTimeout(300); // 触发慢查询A的防抖
-    await searchInput.fill('快查询B');
-
-    // 等待快查询B返回并显示
-    await expect(page.getByText('新数据B-最终结果')).toBeVisible();
-
-    // 等待更长时间确保慢查询A返回
-    await page.waitForTimeout(600);
-
-    // 校验：旧数据A绝对不能冒充出来覆盖新数据B
-    await expect(page.getByText('新数据B-最终结果')).toBeVisible();
-    await expect(page.getByText('旧数据A-不应展示')).toBeHidden();
+    // 断言主区域帖子与右侧玩具卡片均可见
+    await expect(page.getByText('黄油小姐深度测评帖')).toBeVisible();
+    await expect(page.getByText('黄油小姐 二代')).toBeVisible();
   });
 
-  test('J. 输入新关键词时立即清空旧结果并展示 loading skeleton', async ({ page }) => {
-    let delaySecondRequest = false;
-
+  test('J. 搜索结果页内再次输入新词搜索，URL 与结果同步更新，支持浏览器后退恢复', async ({ page }) => {
     await page.route('**/api/proxy/toy/searchToyPost', async (route) => {
       const postData = route.request().postDataJSON?.() || {};
       const keyword = postData.content;
@@ -352,22 +321,19 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             data: {
-              toys: [{ id: 101, name: '黄油小姐 旧条目', rating: 9.0, reviewCount: 10, coverUrl: [] }],
+              toys: [{ id: 101, name: '黄油小姐 条目', rating: 9.0, reviewCount: 10, coverUrl: [] }],
               posts: [],
             },
             pagination: { hasMore: false },
           }),
         });
       } else if (keyword === '龙娘') {
-        if (delaySecondRequest) {
-          await new Promise((resolve) => setTimeout(resolve, 400));
-        }
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
             data: {
-              toys: [{ id: 102, name: '龙娘 新条目', rating: 9.5, reviewCount: 20, coverUrl: [] }],
+              toys: [{ id: 102, name: '龙娘 独家条目', rating: 9.5, reviewCount: 20, coverUrl: [] }],
               posts: [],
             },
             pagination: { hasMore: false },
@@ -376,25 +342,23 @@ test.describe('GlobalSearch 全局浮层搜索与交互', () => {
       }
     });
 
-    await page.goto('/');
-    const searchInput = page.getByLabel('全局搜索');
+    // 1. 访问黄油小姐
+    await page.goto('/search?q=%E9%BB%84%E6%B2%B9%E5%B0%8F%E5%A7%90');
+    await expect(page.getByText('黄油小姐 条目')).toBeVisible();
 
-    // 1. 先搜索黄油小姐并渲染
-    await searchInput.fill('黄油小姐');
-    await expect(page.getByText('黄油小姐 旧条目')).toBeVisible();
+    // 2. 搜索页顶部重新输入龙娘并按回车
+    const input = page.getByLabel('搜索玩具或帖子');
+    await input.fill('龙娘');
+    await input.press('Enter');
 
-    // 2. 准备让下一次请求延迟返回
-    delaySecondRequest = true;
+    // 3. 断言 URL 更新为龙娘，结果更新为龙娘
+    await expect(page).toHaveURL(/\/search\?q=%E9%BE%99%E5%A8%98/, { timeout: 10000 });
+    await expect(page.getByText('龙娘 独家条目')).toBeVisible();
+    await expect(page.getByText('黄油小姐 条目')).toBeHidden();
 
-    // 3. 输入新关键词“龙娘”
-    await searchInput.fill('龙娘');
-
-    // 4. 断言：旧条目“黄油小姐 旧条目”必须立即消失，且出现 loading skeleton
-    await expect(page.getByText('黄油小姐 旧条目')).toBeHidden();
-    await expect(page.getByTestId('search-loading')).toBeVisible();
-
-    // 5. 待新请求返回后，展示新条目
-    await expect(page.getByText('龙娘 新条目')).toBeVisible();
-    await expect(page.getByTestId('search-loading')).toBeHidden();
+    // 4. 浏览器后退
+    await page.goBack();
+    await expect(page).toHaveURL(/\/search\?q=%E9%BB%84%E6%B2%B9%E5%B0%8F%E5%A7%90/, { timeout: 10000 });
+    await expect(page.getByText('黄油小姐 条目')).toBeVisible();
   });
 });

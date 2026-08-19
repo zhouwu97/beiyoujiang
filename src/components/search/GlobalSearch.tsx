@@ -120,7 +120,26 @@ export default function GlobalSearch({
       });
   }, [keywordsLoaded]);
 
-  // 执行搜索（由 debounce 触发）
+  // 执行正式搜索（导航到 /search?q=xxx）
+  const handleSubmitSearch = useCallback(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    requestVersionRef.current += 1;
+
+    setIsOpen(false);
+    onMobileClose?.();
+
+    inputRef.current?.blur();
+    mobileInputRef.current?.blur();
+
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  }, [query, router, onMobileClose]);
+
+  // 执行浮层 Suggestion 搜索（由 debounce 触发）
   const doSearch = useCallback(async (keyword: string) => {
     const trimmed = keyword.trim();
     if (!trimmed) {
@@ -247,17 +266,20 @@ export default function GlobalSearch({
     router.push(`/messageDetail/${post.id}`);
   };
 
+  // 点击热词：直接进入正式搜索结果页 /search?q=xxx
   const handleKeywordClick = (kw: string) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     requestVersionRef.current += 1;
 
-    setQuery(kw);
-    setIsOpen(true);
-    setToys([]);
-    setPosts([]);
-    doSearch(kw);
+    setIsOpen(false);
+    onMobileClose?.();
+
+    inputRef.current?.blur();
+    mobileInputRef.current?.blur();
+
+    router.push(`/search?q=${encodeURIComponent(kw)}`);
   };
 
   // 整理可选 Suggestion 列表（用于键盘上下箭头切换）
@@ -269,7 +291,7 @@ export default function GlobalSearch({
     ];
   }, [searched, loading, searchError, toys, posts]);
 
-  // 键盘操作（优先处理 Escape，同时支持桌面 Popover 与移动 Overlay）
+  // 键盘操作：Escape 优先；Enter 无选中时进入 /search?q=xxx，选中时直达详情
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -305,17 +327,18 @@ export default function GlobalSearch({
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (suggestionItems.length > 0) {
-        const item = selectedIndex >= 0 && selectedIndex < suggestionItems.length
-          ? suggestionItems[selectedIndex]
-          : suggestionItems[0];
-
+      if (selectedIndex >= 0 && selectedIndex < suggestionItems.length) {
+        const item = suggestionItems[selectedIndex];
         if (item.type === 'toy') {
           handleSelectToy(item.data);
         } else {
           handleSelectPost(item.data);
         }
+        return;
       }
+
+      // 未选择任何 suggestion 时，回车进入正式搜索页
+      handleSubmitSearch();
     }
   };
 
@@ -427,7 +450,7 @@ export default function GlobalSearch({
       );
     }
 
-    // 5. 搜索结果（玩具最多 3 个在上，帖子最多 5 个在下）
+    // 5. 搜索结果（玩具最多 3 个在上，帖子最多 5 个在下，底部「查看全部结果」）
     return (
       <div className="global-search-results">
         {/* 玩具 Section */}
@@ -506,6 +529,20 @@ export default function GlobalSearch({
             </div>
           </div>
         )}
+
+        {/* 存在结果时底部查看全部结果 */}
+        {(toys.length > 0 || posts.length > 0) && (
+          <button
+            type="button"
+            className="global-search-view-all"
+            onClick={handleSubmitSearch}
+          >
+            <span>查看“{query.trim()}”的全部搜索结果</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
       </div>
     );
   };
@@ -527,15 +564,24 @@ export default function GlobalSearch({
             aria-label="全局搜索"
             className="global-search-input"
           />
-          {query ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="global-search-clear-btn"
-              aria-label="清空搜索词"
-            >
-              <ClearIcon />
-            </button>
+          {query.trim() ? (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="global-search-clear-btn"
+                aria-label="清空搜索词"
+              >
+                <ClearIcon />
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitSearch}
+                className="global-search-submit-btn"
+              >
+                搜索
+              </button>
+            </div>
           ) : (
             <kbd className="global-search-kbd">Ctrl K</kbd>
           )}
@@ -583,13 +629,23 @@ export default function GlobalSearch({
                 </button>
               )}
             </div>
-            <button
-              type="button"
-              onClick={onMobileClose}
-              className="mobile-search-cancel-btn"
-            >
-              取消
-            </button>
+            {query.trim() ? (
+              <button
+                type="button"
+                onClick={handleSubmitSearch}
+                className="global-search-submit-btn"
+              >
+                搜索
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onMobileClose}
+                className="mobile-search-cancel-btn"
+              >
+                取消
+              </button>
+            )}
           </div>
 
           <div className="mobile-search-body">

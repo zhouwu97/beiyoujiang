@@ -312,6 +312,27 @@ select:focus-visible,
   color: var(--ink);
 }
 
+.global-search-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease;
+}
+
+.global-search-submit-btn:hover {
+  background: var(--accent-strong);
+}
+
 /* 桌面端 Suggestion Popover */
 .global-search-popover {
   position: absolute;
@@ -325,9 +346,32 @@ select:focus-visible,
   box-shadow: var(--shadow-float);
   max-height: 560px;
   overflow-y: auto;
-  padding: 10px 8px;
+  padding: 10px 8px 4px;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+}
+
+.global-search-view-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  background: transparent;
+  padding: 8px 12px;
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background-color 140ms ease;
+}
+
+.global-search-view-all:hover {
+  background: var(--surface-subtle);
 }
 
 .global-search-hot {
@@ -3258,6 +3302,149 @@ button:disabled {
     background: transparent;
     box-shadow: none;
   }
+}
+
+/* ===== 正式搜索结果二级页 (/search) ===== */
+.search-page-shell {
+  width: min(1280px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+@media (min-width: 1536px) {
+  .search-page-shell {
+    width: min(1360px, calc(100% - 48px));
+  }
+}
+
+.search-header-shell {
+  width: min(1280px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+@media (min-width: 1536px) {
+  .search-header-shell {
+    width: min(1360px, calc(100% - 48px));
+  }
+}
+
+.search-results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .search-results-grid--with-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 26px;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1280px) {
+  .search-results-grid--with-rail {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 30px;
+  }
+}
+
+.search-rail-sticky {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 搜索页右侧玩具卡片 */
+.search-rail-toy-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px 12px;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.search-rail-toy-card:hover {
+  border-color: #d8cdd0;
+  box-shadow: var(--shadow-soft);
+}
+
+.search-rail-toy-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  padding: 3px;
+}
+
+.search-rail-toy-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.search-rail-toy-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.search-rail-toy-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.search-rail-toy-score {
+  margin-top: 3px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.search-rail-toy-score b {
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.search-rail-toy-tags {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 纯玩具网格 */
+.search-toys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* 搜索帖子图片：比首页明显放大，按原始比例定宽，最大高度 620 */
+.post-media--search .post-media-single {
+  max-width: min(640px, 88%);
+  max-height: 620px;
 }
 
 /* ===== 排行榜样式已迁移至 src/components/ranking/ranking.module.css ===== */
