@@ -241,7 +241,7 @@ export default function MessageDetailPage() {
         <Header variant="detail" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="loading-mark mx-auto">杯</div>
+            <img src="/images/load.gif" alt="加载中" className="mx-auto h-20 w-20 object-contain" />
             <p className="mt-3 text-[13px] text-[var(--muted)]">杯酱正在装填弹药…</p>
           </div>
         </div>
