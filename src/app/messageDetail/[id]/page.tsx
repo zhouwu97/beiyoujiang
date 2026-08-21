@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import type { Comment, PostDetailData } from '@/lib/types';
 import { PLATES } from '@/lib/types';
 import {
+  ApiError,
   getPost,
   getPostComments,
   readingQuantity,
@@ -17,11 +18,14 @@ import {
   deletePost,
   deleteComment,
 } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api';
 import { resolveAvatar, resolvePostImage, sanitizeHtml } from '@/lib/utils';
-import { getUserId } from '@/stores/auth';
+import { useAuthStore, useCurrentUserId } from '@/stores/auth';
 import { getCachedPosts } from '@/stores/forum';
+import { canDeleteComment, canDeletePost } from '@/lib/permissions';
 import { useRewardToast } from '@/components/common/RewardToast';
 import { useCustomAlert } from '@/components/common/CustomAlert';
+import SafeImage from '@/components/common/SafeImage';
 import LoginTipModal from '@/components/common/LoginTipModal';
 import Header from '@/components/layout/Header';
 
@@ -58,7 +62,8 @@ export default function MessageDetailPage() {
   const [detail, setDetail] = useState<PostDetailData | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsError, setCommentsError] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<'loading' | 'success' | 'notFound' | 'unauthorized' | 'forbidden' | 'error'>('loading');
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [collected, setCollected] = useState(false);
@@ -67,22 +72,36 @@ export default function MessageDetailPage() {
   const [showLoginTip, setShowLoginTip] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrolledToHashRef = useRef<string | null>(null);
   /** 评论点赞 mutation lock：同一评论在请求进行中时忽略重复点击 */
   const pendingCommentLikeRef = useRef<Set<number>>(new Set());
-  const me = getUserId();
+  const me = useCurrentUserId();
+  const currentIdentity = useAuthStore((state) => state.currentUser ?? state.currentTourist);
+  const pendingMutationRef = useRef(new Set<string>());
+  const loading = loadState === 'loading';
 
   const post = detail?.post;
 
   // 加载详情 + 评论 + 阅读量
   useEffect(() => {
     let cancelled = false;
+    // 该 effect 同步清理上一次路由的数据，再异步接收本次请求结果。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoadState('loading');
+    setDetail(null);
+    setDetailError(null);
     (async () => {
       try {
         const d = await getPost(postId);
         if (cancelled) return;
+        if (!d?.post) {
+          setLoadState('notFound');
+          return;
+        }
         setDetail(d);
+        setLoadState('success');
         setLiked(d.isLiked);
         setLikeCount(d.post.likeCount ?? 0);
         setCollected(d.isCollection);
@@ -96,16 +115,19 @@ export default function MessageDetailPage() {
         } catch {
           if (!cancelled) setCommentsError(true);
         }
-      } catch {
-        if (!cancelled) showAlert('帖子加载失败');
+      } catch (error) {
+        if (!cancelled) {
+          const status = error instanceof ApiError ? error.status : 0;
+          setLoadState(status === 404 ? 'notFound' : status === 401 ? 'unauthorized' : status === 403 ? 'forbidden' : 'error');
+          setDetailError(getApiErrorMessage(error));
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        // loadState 已经在成功/失败分支中确定，避免请求异常被渲染成空详情。
       }
       readingQuantity(postId).catch(() => {});
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
+  }, [postId, showAlert]);
 
   // 从消息列表深链进来（#comment-{id} 或 #comments）：评论渲染完成后定位 + 高亮。
   // 找不到目标评论时兜底到评论区；不做第一轮猜测式 getMoreComments 拉取。
@@ -131,6 +153,8 @@ export default function MessageDetailPage() {
 
   const handleLike = useCallback(async () => {
     if (!me) { setShowLoginTip(true); return; }
+    if (pendingMutationRef.current.has(`post-like-${postId}`)) return;
+    pendingMutationRef.current.add(`post-like-${postId}`);
     const next = !liked;
     setLiked(next);
     setLikeCount((c) => (next ? c + 1 : c - 1));
@@ -141,11 +165,15 @@ export default function MessageDetailPage() {
       setLiked(!next);
       setLikeCount((c) => (next ? c - 1 : c + 1));
       showAlert('操作失败，请重试');
+    } finally {
+      pendingMutationRef.current.delete(`post-like-${postId}`);
     }
   }, [liked, postId, me, showReward, showAlert]);
 
   const handleCollect = useCallback(async () => {
     if (!me) { setShowLoginTip(true); return; }
+    if (pendingMutationRef.current.has(`post-collect-${postId}`)) return;
+    pendingMutationRef.current.add(`post-collect-${postId}`);
     const next = !collected;
     setCollected(next);
     try {
@@ -155,13 +183,18 @@ export default function MessageDetailPage() {
     } catch {
       setCollected(!next);
       showAlert('操作失败，请重试');
+    } finally {
+      pendingMutationRef.current.delete(`post-collect-${postId}`);
     }
   }, [collected, postId, me, showAlert]);
 
   const handleDeletePost = async () => {
     if (!window.confirm('确定删除这篇帖子吗？')) return;
+    if (pendingMutationRef.current.has(`post-delete-${postId}`)) return;
+    pendingMutationRef.current.add(`post-delete-${postId}`);
     try { await deletePost(postId); showAlert('删除成功'); router.push('/'); }
     catch { showAlert('删除失败'); }
+    finally { pendingMutationRef.current.delete(`post-delete-${postId}`); }
   };
 
   // 分享：优先系统分享面板，不支持或失败则复制链接
@@ -189,7 +222,8 @@ export default function MessageDetailPage() {
     const content = commentText.trim();
     if (!content) { showAlert('内容不能为空哦'); return; }
     if (!me) { setShowLoginTip(true); return; }
-    if (sending) return;
+    if (sending || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     try {
       const fd = new FormData();
@@ -210,12 +244,16 @@ export default function MessageDetailPage() {
     } catch {
       showAlert('评论失败，请重试');
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
     if (!window.confirm('确定删除这条评论吗？')) return;
+    const lockKey = `comment-delete-${commentId}`;
+    if (pendingMutationRef.current.has(lockKey)) return;
+    pendingMutationRef.current.add(lockKey);
     try {
       await deleteComment(commentId);
       try {
@@ -227,6 +265,8 @@ export default function MessageDetailPage() {
       showAlert('删除成功');
     } catch {
       showAlert('删除失败');
+    } finally {
+      pendingMutationRef.current.delete(lockKey);
     }
   };
 
@@ -249,16 +289,36 @@ export default function MessageDetailPage() {
     );
   }
 
-  if (!post) {
+  if (!post || loadState !== 'success') {
+    const message =
+      loadState === 'notFound'
+        ? '帖子不存在或已删除'
+        : loadState === 'unauthorized'
+          ? '登录已过期，请重新登录'
+          : loadState === 'forbidden'
+            ? '当前账号无权查看这篇帖子'
+            : detailError ?? '帖子加载失败，请检查网络后重试';
     return (
       <div className="page-shell min-h-screen">
         <Header variant="detail" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <p className="text-[14px] text-[var(--muted)]">帖子不存在或已删除</p>
-            <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
-              返回首页
-            </button>
+            <p className="text-[14px] text-[var(--muted)]">{message}</p>
+            {loadState === 'error' && (
+              <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => window.location.reload()}>
+                重新加载
+              </button>
+            )}
+            {loadState === 'unauthorized' && (
+              <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/login')}>
+                去登录
+              </button>
+            )}
+            {loadState !== 'error' && loadState !== 'unauthorized' && (
+              <button className="interactive-press btn-gradient mt-4 px-6 py-2.5 text-[13px]" onClick={() => router.push('/')}>
+                返回首页
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -302,7 +362,7 @@ export default function MessageDetailPage() {
             <article className="px-5 pt-5 sm:px-7 sm:pt-6 lg:p-8">
               {/* 作者行 */}
               <div className="flex items-center gap-2.5">
-                <img
+                <SafeImage
                   src={resolveAvatar(author?.photo)}
                   alt=""
                   className="h-[38px] w-[38px] rounded-[11px] border border-[var(--line)] object-cover ring-2 ring-white"
@@ -342,7 +402,7 @@ export default function MessageDetailPage() {
                     <div className="max-w-full overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--surface-subtle)]">
                       {images.map((img, i) => (
                         <div key={i} className="relative">
-                          <img
+                          <SafeImage
                             src={postImageUrl(img)}
                             alt=""
                             loading="lazy"
@@ -387,7 +447,7 @@ export default function MessageDetailPage() {
                 >
                   分享
                 </button>
-                {me === author?.id && (
+                {canDeletePost(post, currentIdentity) && (
                   <button
                     onClick={handleDeletePost}
                     className="pill-btn interactive-press ml-2 flex h-8 items-center rounded-[9px] bg-red-50 px-3 text-[12px] font-semibold text-red-400"
@@ -441,7 +501,7 @@ export default function MessageDetailPage() {
                   >
                     {/* 评论头 */}
                     <div className="flex items-center gap-2">
-                      <img
+                      <SafeImage
                         src={resolveAvatar(c.author?.photo)}
                         alt=""
                         className="h-[30px] w-[30px] rounded-[9px] border border-[var(--line)] object-cover"
@@ -462,7 +522,7 @@ export default function MessageDetailPage() {
                         <span className="block text-[11px] text-[var(--muted-light)]">{c.timeString ?? ''}</span>
                       </div>
                       <div className="flex items-center gap-2 text-[13px] text-[var(--muted)]">
-                        {me === c.author?.id && (
+                        {canDeleteComment(c, currentIdentity) && (
                           <button onClick={() => handleDeleteComment(c.id)} className="min-w-[40px] min-h-[40px] flex items-center justify-center transition-colors hover:text-red-400">
                             删除
                           </button>
@@ -514,7 +574,7 @@ export default function MessageDetailPage() {
                     {c.imageUrlsArray?.length > 0 && (
                       <div className="ml-[38px] mt-2 flex flex-wrap gap-2">
                         {c.imageUrlsArray.map((img, i) => (
-                          <img
+                          <SafeImage
                             key={i}
                             src={postImageUrl(img)}
                             alt=""
@@ -587,7 +647,7 @@ export default function MessageDetailPage() {
             <section className="rail-panel sidecard max-xl:col-span-2 p-5">
               <div className="eyebrow mb-3">POST AUTHOR</div>
               <div className="flex items-center gap-3">
-                <img
+                <SafeImage
                   src={resolveAvatar(author?.photo)}
                   alt=""
                   className="h-12 w-12 rounded-[13px] border border-[var(--line)] object-cover ring-2 ring-white"
@@ -672,7 +732,7 @@ export default function MessageDetailPage() {
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-sm"
           onClick={() => setPreviewImage(null)}
         >
-          <img src={previewImage} alt="" className="max-h-[90vh] max-w-[90vw] rounded-[12px] object-contain shadow-2xl" />
+          <SafeImage src={previewImage} alt="" className="max-h-[90vh] max-w-[90vw] rounded-[12px] object-contain shadow-2xl" />
           <button className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[22px] text-white backdrop-blur transition-colors hover:bg-white/20" aria-label="关闭">
             ×
           </button>

@@ -8,17 +8,22 @@ import { create } from 'zustand';
 interface MessageState {
   /** 是否有未读消息（Header 通知红点） */
   hasUnread: boolean;
-  /** 会话内是否已向服务端查过初始未读状态（避免每次导航重复请求） */
+  /** 是否已经有一次成功的检查结果 */
   checked: boolean;
+  /** 最近一次成功检查时间，避免 SPA 会话永久使用旧红点。 */
+  lastCheckedAt: number | null;
   setHasUnread: (value: boolean) => void;
-  setChecked: () => void;
+  setChecked: (at?: number) => void;
+  resetChecked: () => void;
 }
 
 const useMessageStore = create<MessageState>()((set) => ({
   hasUnread: false,
   checked: false,
+  lastCheckedAt: null,
   setHasUnread: (value) => set({ hasUnread: value }),
-  setChecked: () => set({ checked: true }),
+  setChecked: (at = Date.now()) => set({ checked: true, lastCheckedAt: at }),
+  resetChecked: () => set({ checked: false, lastCheckedAt: null }),
 }));
 
 export { useMessageStore };

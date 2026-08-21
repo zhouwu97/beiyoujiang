@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import type { Post } from '@/lib/types';
 import { likePost, unlikePost } from '@/lib/api';
@@ -15,11 +15,13 @@ export function usePostLike(post: Post) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
   const [liking, setLiking] = useState(false);
+  const pendingRef = useRef(false);
 
   const handleLike = async (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    if (liking) return;
+    if (liking || pendingRef.current) return;
 
+    pendingRef.current = true;
     setLiking(true);
     setLiked(!liked);
     setLikeCount((count) => (liked ? count - 1 : count + 1));
@@ -35,6 +37,7 @@ export function usePostLike(post: Post) {
       setLiked(liked);
       setLikeCount((count) => (liked ? count + 1 : count - 1));
     } finally {
+      pendingRef.current = false;
       setLiking(false);
     }
   };

@@ -6,11 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { PLATES } from '@/lib/types';
 import type { Plate } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, useCurrentUserId } from '@/stores/auth';
 import { useMessageStore } from '@/stores/message';
 import { reset, setPlate, useForumStore } from '@/stores/forum';
 import { getAllMessages } from '@/lib/api';
 import GlobalSearch from '@/components/search/GlobalSearch';
+import { useAppRevalidate } from '@/hooks/useAppRevalidate';
+import SafeImage from '@/components/common/SafeImage';
 
 function SearchIcon() {
   return (
@@ -57,29 +59,35 @@ export default function Header({ variant = 'community' }: HeaderProps) {
   const currentPlate = useForumStore((state) => state.plate);
   const currentUser = useAuthStore((state) => state.currentUser);
   const hasUnread = useMessageStore((state) => state.hasUnread);
-  const checked = useMessageStore((state) => state.checked);
+  const lastCheckedAt = useMessageStore((state) => state.lastCheckedAt);
   const setHasUnread = useMessageStore((state) => state.setHasUnread);
   const setChecked = useMessageStore((state) => state.setChecked);
+  const resetChecked = useMessageStore((state) => state.resetChecked);
+  const me = useCurrentUserId();
   const isDetail = variant === 'detail';
   const isCompact = variant === 'compact' || isDetail;
 
-  // 通知红点：会话内首次挂载查一次未读状态（成功后才置 checked，未登录/失败下次导航重试）。
-  useEffect(() => {
-    if (checked) return;
-    let cancelled = false;
+  // 通知红点：成功检查后缓存 5 分钟；失败不标记 checked，下一次导航/恢复继续尝试。
+  const checkMessages = useCallback(() => {
+    if (!me) {
+      resetChecked();
+      return;
+    }
+    if (lastCheckedAt && Date.now() - lastCheckedAt < 5 * 60_000) return;
     getAllMessages(0)
       .then((msgs) => {
-        if (cancelled) return;
         setHasUnread(msgs.some((m) => !m.isRead));
-        setChecked();
+        setChecked(Date.now());
       })
       .catch(() => {
         // 未登录/网络失败：保持未检查状态，等下次挂载再试
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [checked, setHasUnread, setChecked]);
+  }, [lastCheckedAt, me, resetChecked, setChecked, setHasUnread]);
+
+  useEffect(() => {
+    checkMessages();
+  }, [checkMessages]);
+  useAppRevalidate(checkMessages);
 
   const handlePlateClick = useCallback(
     (plate: Plate) => {
@@ -94,21 +102,26 @@ export default function Header({ variant = 'community' }: HeaderProps) {
         params.set('plate', String(plate));
         router.push(`/?${params.toString()}`, { scroll: false });
       } else {
-        router.push(`/?plate=${plate}`);
+        const params = new URLSearchParams();
+        params.set('plate', String(plate));
+        const currentSort = new URLSearchParams(window.location.search).get('sort');
+        if (currentSort) params.set('sort', currentSort);
+        router.push(`/?${params.toString()}`);
       }
     },
     [currentPlate, pathname, router]
   );
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const plateParam = params.get('plate');
-    if (plateParam) {
-      const plate = Number(plateParam) as Plate;
-      const valid = PLATES.some((item) => item.id === plate);
-      if (valid) setPlate(plate);
-    }
-  }, []);
+    const syncPlateFromUrl = () => {
+      const plateParam = Number(new URLSearchParams(window.location.search).get('plate')) as Plate;
+      const valid = PLATES.some((item) => item.id === plateParam);
+      if (pathname === '/') setPlate(valid ? plateParam : PLATES[1].id);
+    };
+    syncPlateFromUrl();
+    window.addEventListener('popstate', syncPlateFromUrl);
+    return () => window.removeEventListener('popstate', syncPlateFromUrl);
+  }, [pathname]);
 
   return (
     <header className="site-header">
@@ -176,7 +189,7 @@ export default function Header({ variant = 'community' }: HeaderProps) {
             className="desktop-header-avatar"
             aria-label={currentUser ? '打开个人中心' : '登录'}
           >
-            <img src={resolveAvatar(currentUser?.photo)} alt="" />
+            <SafeImage src={resolveAvatar(currentUser?.photo)} alt="" />
           </button>
         </div>
       </div>

@@ -1,126 +1,187 @@
 /**
  * beiyoujiang.com 论坛前端 - 认证状态管理
- * 使用 zustand + localStorage 持久化
- * localStorage key 与官方一致：正式用户=currentUser，游客=currentTourist
+ *
+ * 认证数据仍然写入官方约定的 currentUser/currentTourist，
+ * 但通过 Zustand persist 的版本迁移统一管理，避免历史坏 JSON 让首屏白屏。
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import type { User, Tourist } from '@/lib/types';
 
+const AUTH_VERSION = 2;
+
 interface AuthState {
-  /** 正式登录用户（null 表示未登录） */
   currentUser: User | null;
-  /** 游客对象（null 表示无游客会话） */
   currentTourist: Tourist | null;
 }
 
-const useAuthStore = create<AuthState>()(
-  persist<AuthState>(
-    () => ({
-      currentUser: null,
-      currentTourist: null,
-    }),
-    {
-      name: 'auth-storage',
-      storage: {
-        getItem: (name: string) => {
-          if (name === 'auth-storage') {
-            const user = localStorage.getItem('currentUser');
-            const tourist = localStorage.getItem('currentTourist');
-            if (user) {
-              return { state: { currentUser: JSON.parse(user), currentTourist: null }, version: 0 };
-            }
-            if (tourist) {
-              return { state: { currentUser: null, currentTourist: JSON.parse(tourist) }, version: 0 };
-            }
-            return null;
-          }
-          const value = localStorage.getItem(name);
-          return value ? JSON.parse(value) : null;
-        },
-        setItem: (name: string, value: { state: AuthState; version?: number }) => {
-          if (name === 'auth-storage') {
-            if (value.state.currentUser) {
-              localStorage.setItem('currentUser', JSON.stringify(value.state.currentUser));
-              localStorage.removeItem('currentTourist');
-            } else if (value.state.currentTourist) {
-              localStorage.setItem('currentTourist', JSON.stringify(value.state.currentTourist));
-              localStorage.removeItem('currentUser');
-            } else {
-              localStorage.removeItem('currentUser');
-              localStorage.removeItem('currentTourist');
-            }
-          } else {
-            localStorage.setItem(name, JSON.stringify(value));
-          }
-        },
-        removeItem: (name: string) => {
-          if (name === 'auth-storage') {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('currentTourist');
-          } else {
-            localStorage.removeItem(name);
-          }
-        },
-      },
+const EMPTY_AUTH: AuthState = { currentUser: null, currentTourist: null };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseStoredValue(key: string): Record<string, unknown> | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!isRecord(value)) throw new Error('认证数据不是对象');
+    return value;
+  } catch {
+    // 历史存储可能被手工编辑或被截断，清理后恢复匿名/游客模式。
+    localStorage.removeItem(key);
+    return null;
+  }
+}
+
+function normalizeIdentity(value: Record<string, unknown>, isGuest: boolean): User | null {
+  const id = Number(value.userId ?? value.touristId ?? value.id);
+  const token = typeof value.token === 'string' ? value.token : '';
+  if (!Number.isFinite(id) || id <= 0 || !token) return null;
+
+  return {
+    ...value,
+    id,
+    ...(isGuest ? { touristId: id, isGuest: true } : { userId: id, isGuest: false }),
+  } as User;
+}
+
+const authStorage: PersistStorage<AuthState> = {
+  getItem: (name): StorageValue<AuthState> | null => {
+    if (typeof window === 'undefined') return null;
+
+    if (name === 'auth-storage') {
+      const user = parseStoredValue('currentUser');
+      const tourist = parseStoredValue('currentTourist');
+      const currentUser = user ? normalizeIdentity(user, false) : null;
+      const currentTourist = tourist ? (normalizeIdentity(tourist, true) as Tourist | null) : null;
+
+      // 正式用户优先；两者同时存在时清理游客，防止 token 取错。
+      if (currentUser) {
+        localStorage.removeItem('currentTourist');
+        return { state: { currentUser, currentTourist: null }, version: AUTH_VERSION };
+      }
+      if (currentTourist) {
+        localStorage.removeItem('currentUser');
+        return { state: { currentUser: null, currentTourist }, version: AUTH_VERSION };
+      }
+      return null;
     }
-  )
+
+    const value = parseStoredValue(name);
+    return value ? { state: value as unknown as AuthState, version: AUTH_VERSION } : null;
+  },
+  setItem: (name, value) => {
+    if (typeof window === 'undefined') return;
+    if (name === 'auth-storage') {
+      if (value.state.currentUser) {
+        localStorage.setItem('currentUser', JSON.stringify(value.state.currentUser));
+        localStorage.removeItem('currentTourist');
+      } else if (value.state.currentTourist) {
+        localStorage.setItem('currentTourist', JSON.stringify(value.state.currentTourist));
+        localStorage.removeItem('currentUser');
+      } else {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentTourist');
+      }
+      return;
+    }
+    localStorage.setItem(name, JSON.stringify(value));
+  },
+  removeItem: (name) => {
+    if (typeof window === 'undefined') return;
+    if (name === 'auth-storage') {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentTourist');
+    } else {
+      localStorage.removeItem(name);
+    }
+  },
+};
+
+const useAuthStore = create<AuthState>()(
+  persist<AuthState>(() => EMPTY_AUTH, {
+    name: 'auth-storage',
+    version: AUTH_VERSION,
+    storage: authStorage,
+    migrate: (persistedState) => {
+      if (!isRecord(persistedState)) return EMPTY_AUTH;
+      const currentUser = isRecord(persistedState.currentUser)
+        ? normalizeIdentity(persistedState.currentUser, false)
+        : null;
+      const currentTourist = isRecord(persistedState.currentTourist)
+        ? (normalizeIdentity(persistedState.currentTourist, true) as Tourist | null)
+        : null;
+      return currentUser
+        ? { currentUser, currentTourist: null }
+        : { currentUser: null, currentTourist };
+    },
+  })
 );
 
-/** 登录 - 设置正式用户 */
+function notifyAuthUpdated(): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('authUpdated'));
+}
+
 function setAuthenticatedUser(user: User): void {
   useAuthStore.setState({
-    currentUser: { ...user, userId: user.userId ?? user.id },
+    currentUser: { ...user, userId: user.userId ?? user.id, isGuest: false },
     currentTourist: null,
   });
   notifyAuthUpdated();
 }
 
-/** 登出 - 清除所有认证状态 */
 function logout(): void {
-  useAuthStore.setState({ currentUser: null, currentTourist: null });
+  useAuthStore.setState(EMPTY_AUTH);
   notifyAuthUpdated();
 }
 
-/** 设置游客 */
+/** 401 全局处理：清理失效会话，阻止旧 token 继续请求。 */
+function expireAuth(): void {
+  useAuthStore.setState(EMPTY_AUTH);
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('authExpired'));
+  notifyAuthUpdated();
+}
+
 function setTourist(tourist: Tourist): void {
   useAuthStore.setState({
-    currentTourist: { ...tourist, touristId: tourist.touristId ?? tourist.id },
+    currentTourist: { ...tourist, touristId: tourist.touristId ?? tourist.id, isGuest: true },
     currentUser: null,
   });
   notifyAuthUpdated();
 }
 
-/** 通知页面级组件同步头像、用户菜单等认证相关 UI。 */
-function notifyAuthUpdated(): void {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('authUpdated'));
-  }
-}
-
-/**
- * 获取当前有效 token
- * 优先级：正式用户 token > 游客 token > null
- */
 function getToken(): string | null {
   const state = useAuthStore.getState();
   return state.currentUser?.token ?? state.currentTourist?.token ?? null;
 }
 
-/**
- * 获取当前用户 ID（API 参数 userId 用）
- * 官方 localStorage 字段名：正式用户 userId、游客 touristId；
- * 本地存储的接口返回对象统一用 id，这里兼容两种
- */
 function getUserId(): number | null {
   const state = useAuthStore.getState();
   const raw = state.currentUser ?? state.currentTourist;
   if (!raw) return null;
-  const id = (raw as unknown as { userId?: number }).userId
-    ?? (raw as unknown as { touristId?: number }).touristId
-    ?? raw.id;
-  return id ?? null;
+  return raw.userId ?? raw.touristId ?? raw.id ?? null;
 }
 
-export { useAuthStore, setAuthenticatedUser, logout, setTourist, getToken, getUserId };
+/** 响应式地读取当前会话 ID，页面不要再用一次性 getUserId() 驱动 UI。 */
+function useCurrentUserId(): number | null {
+  return useAuthStore((state) => {
+    const raw = state.currentUser ?? state.currentTourist;
+    return raw?.userId ?? raw?.touristId ?? raw?.id ?? null;
+  });
+}
+
+export {
+  useAuthStore,
+  setAuthenticatedUser,
+  logout,
+  expireAuth,
+  setTourist,
+  getToken,
+  getUserId,
+  useCurrentUserId,
+};
 export type { AuthState };

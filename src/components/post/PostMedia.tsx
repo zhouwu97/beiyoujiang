@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 import type { MouseEvent, SyntheticEvent } from 'react';
 import { resolvePostImage } from '@/lib/utils';
+import SafeImage from '@/components/common/SafeImage';
 
 /**
  * 帖子图片统一渲染组件（PostCard / 未来详情预览共用）。
@@ -88,7 +89,7 @@ function SingleImage({
   };
 
   return (
-    <img
+    <SafeImage
       src={resolvePostImage(url)}
       alt=""
       loading="lazy"
@@ -124,7 +125,7 @@ function MediaGrid({
           key={`${url}-${index}`}
           className={`post-media-cell${index === lastIndex && moreCount > 0 ? ' post-media-cell--more' : ''}`}
         >
-          <img
+          <SafeImage
             src={resolvePostImage(url)}
             alt=""
             loading="lazy"

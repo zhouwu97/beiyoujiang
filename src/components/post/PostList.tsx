@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useForumStore, fetchNextPage, getCachedPosts } from '@/stores/forum';
+import { cacheKey, ensureFeedLoaded, loadMoreFeed, useForumStore } from '@/stores/forum';
 import PostCard from '@/components/post/PostCard';
 
 /**
@@ -41,14 +41,15 @@ function PostSkeleton({ withMedia = false }: { withMedia?: boolean }) {
 export default function PostList() {
   const plate = useForumStore((state) => state.plate);
   const sort = useForumStore((state) => state.sort);
-  const error = useForumStore((state) => state.error);
-  const loading = useForumStore((state) => state.loading);
-  const exhausted = useForumStore((state) => state.exhausted);
+  const query = useForumStore((state) => state.queries[cacheKey(state.plate, state.sort)]);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const posts = getCachedPosts();
+  const posts = query?.posts ?? [];
+  const error = query?.error ?? null;
+  const loading = query?.loading ?? false;
+  const exhausted = query?.exhausted ?? false;
 
   useEffect(() => {
-    fetchNextPage();
+    void ensureFeedLoaded();
   }, [plate, sort]);
 
   useEffect(() => {
@@ -57,14 +58,15 @@ export default function PostList() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading && !exhausted) fetchNextPage();
+        // 失败后必须由用户点“重试”，不能因为 sentinel 仍在视口内无限重发。
+        if (entries[0].isIntersecting && !loading && !exhausted && !error) void loadMoreFeed();
       },
       { rootMargin: '300px 0px' }
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loading, exhausted]);
+  }, [loading, exhausted, error]);
 
   return (
     <div>
@@ -78,9 +80,9 @@ export default function PostList() {
 
       {posts.length === 0 && !loading && error && (
         <div className="flex flex-col items-center py-16 text-center">
-          <p className="mb-4 text-[13px] text-[var(--muted)]">加载失败，请检查网络后重试</p>
+          <p className="mb-4 text-[13px] text-[var(--muted)]">{error}</p>
           <button
-            onClick={() => fetchNextPage()}
+            onClick={() => void loadMoreFeed()}
             className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-strong)]"
           >
             重新加载
@@ -109,7 +111,7 @@ export default function PostList() {
         ) : error ? (
           <div className="end-marker">
             <span className="text-[13px] text-[var(--muted)]">加载失败，</span>
-            <button onClick={() => fetchNextPage()} className="text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]">
+            <button onClick={() => void loadMoreFeed()} className="text-[13px] text-[var(--accent)] transition-colors hover:text-[var(--accent-strong)]">
               重试
             </button>
           </div>

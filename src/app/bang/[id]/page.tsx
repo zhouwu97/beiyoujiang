@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import type { ToyDetail, ToyReview, Toy } from '@/lib/types';
 import { getToy, getToyAllReview, getAllToy, wantToy, buyToy, likeToyReview } from '@/lib/api';
 import { normalizeImageList } from '@/lib/utils';
 import { categoryLabel, stimulationLabel } from '@/lib/toyLabels';
-import { getUserId } from '@/stores/auth';
+import { useCurrentUserId } from '@/stores/auth';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
 import Header from '@/components/layout/Header';
@@ -51,9 +51,8 @@ function collectGalleryImages(toy: ToyDetail | null): string[] {
 export default function ToyDetailPage() {
   const params = useParams<{ id: string }>();
   const toyId = Number(params.id);
-  const router = useRouter();
   const { show: showAlert } = useCustomAlert();
-  const me = getUserId();
+  const me = useCurrentUserId();
 
   const [toy, setToy] = useState<ToyDetail | null>(null);
   const [reviews, setReviews] = useState<ToyReview[]>([]);
@@ -65,6 +64,7 @@ export default function ToyDetailPage() {
   const [showLoginTip, setShowLoginTip] = useState(false);
   /** 测评大图查看器 */
   const [preview, setPreview] = useState<string | null>(null);
+  const pendingMutationRef = useRef(new Set<string>());
 
   useEffect(() => {
     let cancelled = false;
@@ -121,6 +121,8 @@ export default function ToyDetailPage() {
       return;
     }
     if (!toy) return;
+    if (pendingMutationRef.current.has(`toy-want-${toyId}`)) return;
+    pendingMutationRef.current.add(`toy-want-${toyId}`);
     const next = !toy.isWant;
     setToy({ ...toy, isWant: next, wantCount: next ? toy.wantCount + 1 : toy.wantCount - 1 });
     try {
@@ -128,6 +130,8 @@ export default function ToyDetailPage() {
     } catch {
       setToy({ ...toy, isWant: !next, wantCount: !next ? toy.wantCount + 1 : toy.wantCount - 1 });
       showAlert('操作失败');
+    } finally {
+      pendingMutationRef.current.delete(`toy-want-${toyId}`);
     }
   };
 
@@ -137,6 +141,8 @@ export default function ToyDetailPage() {
       return;
     }
     if (!toy) return;
+    if (pendingMutationRef.current.has(`toy-buy-${toyId}`)) return;
+    pendingMutationRef.current.add(`toy-buy-${toyId}`);
     const next = !toy.isBuy;
     setToy({ ...toy, isBuy: next });
     try {
@@ -144,6 +150,8 @@ export default function ToyDetailPage() {
     } catch {
       setToy({ ...toy, isBuy: !next });
       showAlert('操作失败');
+    } finally {
+      pendingMutationRef.current.delete(`toy-buy-${toyId}`);
     }
   };
 

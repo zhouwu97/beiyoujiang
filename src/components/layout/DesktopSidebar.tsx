@@ -5,9 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { PLATES } from '@/lib/types';
 import type { Plate, UserData } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
-import { useAuthStore, getUserId } from '@/stores/auth';
+import { useAuthStore, useCurrentUserId } from '@/stores/auth';
 import { getUserData } from '@/lib/api';
 import { reset, setPlate, useForumStore } from '@/stores/forum';
+import SafeImage from '@/components/common/SafeImage';
 
 type SidebarIconName = 'grid' | 'board' | 'message' | 'rank' | 'edit' | 'user';
 
@@ -60,16 +61,8 @@ export default function DesktopSidebar() {
   const [profile, setProfile] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const isCommunityHomeActive = pathname === '/' && !activePlateParam;
-
-  // 挂载后再切换客户端状态，避免 localStorage 读取导致的 hydration mismatch
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  const userId = mounted ? getUserId() : null;
+  const userId = useCurrentUserId();
   const isLoggedIn = Boolean(userId);
 
   useEffect(() => {
@@ -154,7 +147,7 @@ export default function DesktopSidebar() {
             <>
               <div className="profile-top">
                 <span className="profile-avatar" aria-hidden="true">
-                  <img src={resolveAvatar(photo)} alt="" />
+                  <SafeImage src={resolveAvatar(photo)} alt="" />
                 </span>
                 <div className="min-w-0">
                   <div className="profile-name truncate">晚上好，{name}</div>
@@ -172,7 +165,7 @@ export default function DesktopSidebar() {
         ) : (
           <div className="profile-top">
             <span className="profile-avatar" aria-hidden="true">
-              <img src={resolveAvatar(undefined)} alt="" />
+              <SafeImage src={resolveAvatar(undefined)} alt="" />
             </span>
             <div className="min-w-0">
               <div className="profile-name truncate">登录后查看个人资料</div>

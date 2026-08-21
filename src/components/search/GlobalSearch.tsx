@@ -79,12 +79,14 @@ export default function GlobalSearch({
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [shortcutReady, setShortcutReady] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const requestVersionRef = useRef(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const onMobileOpenRef = useRef(onMobileOpen);
 
   // 组件卸载清理 debounce timer 与版本
   useEffect(() => {
@@ -119,6 +121,12 @@ export default function GlobalSearch({
         setKeywordsLoaded(true);
       });
   }, [keywordsLoaded]);
+
+  const loadKeywordsRef = useRef(loadKeywords);
+  useEffect(() => {
+    onMobileOpenRef.current = onMobileOpen;
+    loadKeywordsRef.current = loadKeywords;
+  }, [onMobileOpen, loadKeywords]);
 
   // 执行正式搜索（导航到 /search?q=xxx）
   const handleSubmitSearch = useCallback(() => {
@@ -349,18 +357,21 @@ export default function GlobalSearch({
         e.preventDefault();
         // 移动端宽度（<1024）唤起 mobile overlay，否则聚焦 desktop input
         if (window.innerWidth < 1024) {
-          onMobileOpen?.();
+          onMobileOpenRef.current?.();
         } else {
           inputRef.current?.focus();
           setIsOpen(true);
-          loadKeywords();
+          loadKeywordsRef.current();
         }
       }
     };
 
     window.addEventListener('keydown', handleShortcut);
+    // 给自动化测试和需要判断可交互状态的宿主一个稳定信号。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShortcutReady(true);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [onMobileOpen, loadKeywords]);
+  }, []);
 
   // 点击外部关闭 Popover
   useEffect(() => {
@@ -550,7 +561,7 @@ export default function GlobalSearch({
   return (
     <>
       {/* 桌面端：Header 内嵌搜索框 + 下拉浮层 */}
-      <div ref={containerRef} className="global-search desktop-header-search-wrap">
+      <div ref={containerRef} className="global-search desktop-header-search-wrap" data-global-search-ready={shortcutReady ? 'true' : 'false'}>
         <div className={`global-search-input-box ${isOpen ? 'is-focused' : ''}`}>
           <SearchIcon className="global-search-icon" />
           <input

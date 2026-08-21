@@ -7,6 +7,7 @@ import { PLATES } from '@/lib/types';
 import { resolveAvatar, resolvePostImage } from '@/lib/utils';
 import { StatIcon, stripHtml } from '@/components/post/PostCard';
 import { usePostLike } from '@/components/post/usePostLike';
+import SafeImage from '@/components/common/SafeImage';
 
 interface FeaturePostCardProps {
   post: Post;
@@ -41,7 +42,7 @@ function FeaturePostCard({ post }: FeaturePostCardProps) {
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
-          <img
+          <SafeImage
             src={resolveAvatar(post.author?.photo)}
             alt=""
             className="h-[40px] w-[40px] rounded-[12px] bg-[var(--surface-subtle)] object-cover"
@@ -86,7 +87,7 @@ function FeaturePostCard({ post }: FeaturePostCardProps) {
 
       {cover && (
         <div className="featured-thumb">
-          <img src={resolvePostImage(cover)} alt="" loading="lazy" />
+          <SafeImage src={resolvePostImage(cover)} alt="" loading="lazy" />
         </div>
       )}
     </article>

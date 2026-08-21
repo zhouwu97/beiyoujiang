@@ -11,6 +11,7 @@ type RouteParams = { params: Promise<{ path: string[] }> };
 
 /** 只透传必要请求头，避免 host/connection 等 hop-by-hop 头干扰目标服务器 */
 const FORWARD_HEADERS = ['content-type', 'authorization', 'accept', 'user-agent'];
+const UPSTREAM_TIMEOUT_MS = 12_000;
 
 async function forward(
   request: NextRequest,
@@ -30,20 +31,43 @@ async function forward(
   // 二进制安全：arrayBuffer 支持 JSON 和 multipart 两种 body
   const body = await request.arrayBuffer();
 
-  const response = await fetch(targetUrl, {
-    method,
-    headers,
-    body: body.byteLength > 0 ? Buffer.from(body) : undefined,
-    // 官方服务器是 Express，需要保持连接
-    cache: 'no-store',
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
-  const contentType = response.headers.get('Content-Type') || 'application/json';
+  try {
+    let response: Response;
+    try {
+      response = await fetch(targetUrl, {
+        method,
+        headers,
+        body: body.byteLength > 0 ? Buffer.from(body) : undefined,
+        signal: controller.signal,
+        // 官方服务器是 Express，需要保持连接
+        cache: 'no-store',
+      });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        return NextResponse.json(
+          { message: '上游服务响应超时', code: 'UPSTREAM_TIMEOUT' },
+          { status: 504 }
+        );
+      }
+      console.error('[api/proxy] upstream network error', error);
+      return NextResponse.json(
+        { message: '上游服务连接失败', code: 'UPSTREAM_NETWORK_ERROR' },
+        { status: 502 }
+      );
+    }
 
-  return new NextResponse(response.body, {
-    status: response.status,
-    headers: { 'Content-Type': contentType },
-  });
+    const contentType = response.headers.get('Content-Type') || 'application/json';
+    return new NextResponse(response.body, {
+      // 保留官方 401/403/404 及其它真实状态码，页面才能正确区分。
+      status: response.status,
+      headers: { 'Content-Type': contentType },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function GET(request: NextRequest, params: RouteParams): Promise<NextResponse> {

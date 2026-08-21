@@ -24,9 +24,16 @@ import type {
   AuthorFull,
 } from './types';
 import { normalizeImageList } from './utils';
-import { getToken, getUserId } from '@/stores/auth';
+import { expireAuth, getToken, getUserId, setTourist, useAuthStore } from '@/stores/auth';
 
 const PROXY_BASE = '/api/proxy';
+const PUBLIC_AUTH_PATHS = new Set([
+  'auth/addTourist',
+  'auth/login',
+  'auth/register',
+  'auth/sendCode',
+  'auth/resetPassword',
+]);
 
 /** 详情接口的历史返回结构：图片字段在 post 内且可能是 JSON 字符串。 */
 type RawPostDetailPost = Omit<Post, 'imageUrls'> & {
@@ -53,8 +60,72 @@ function normalizePostImages<T extends { imageUrls?: unknown }>(
   };
 }
 
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly detail?: string;
+
+  constructor(status: number, message: string, code?: string, detail?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
+export interface RequestOptions {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  /** 游客 token 失效后的自动换证只允许发生一次。 */
+  guestRetried?: boolean;
+}
+
+function timeoutForPath(path: string): number {
+  if (path.startsWith('post/addPost') || path.startsWith('comment/addComment')) return 45_000;
+  if (path.includes('search') || path.includes('getAllPost') || path.includes('getAllMessages')) return 10_000;
+  return 12_000;
+}
+
+/** 将底层错误转换成页面可直接展示的稳定中文文案。 */
+export function getApiErrorMessage(error: unknown, fallback = '加载失败，请检查网络后重试'): string {
+  if (error instanceof ApiError) {
+    if (error.code === 'REQUEST_TIMEOUT' || error.code === 'UPSTREAM_TIMEOUT' || error.code === 'ASSET_TIMEOUT') {
+      return '请求超时，请稍后重试';
+    }
+    if (error.status === 401) return '登录已过期，请重新登录';
+    if (error.status === 403) {
+      if (error.code === 'RATE_LIMIT') return '操作过于频繁，请稍后重试';
+      if (error.code === 'BANNED') return '账号已被限制';
+      if (error.code === 'PERMISSION_DENIED') return '当前账号没有权限执行此操作';
+      return '当前账号没有权限执行此操作';
+    }
+    if (error.status === 404) return '内容不存在或已删除';
+    if (error.status === 408) return '请求超时，请稍后重试';
+    if (error.status === 429) return '操作过于频繁，请稍后重试';
+    if (error.status >= 500) return fallback;
+    if (error.status === 0 || error.code === 'NETWORK_ERROR') return '网络连接失败，请检查网络后重试';
+    return error.message || fallback;
+  }
+  if (error instanceof DOMException && error.name === 'AbortError') return '请求已取消';
+  return fallback;
+}
+
+async function parseApiError(response: Response): Promise<{ message: string; code?: string; detail?: string }> {
+  try {
+    const payload = (await response.json()) as Record<string, unknown>;
+    return {
+      message: typeof payload.message === 'string' ? payload.message : '',
+      code: typeof payload.code === 'string' ? payload.code : undefined,
+      detail: typeof payload.detail === 'string' ? payload.detail : undefined,
+    };
+  } catch {
+    return { message: '' };
+  }
+}
+
 /**
- * 通用请求函数
+ * 通用请求函数：所有请求都有超时、可取消，并保留上游 HTTP 状态码。
  * @param path - 代理路径（不含 /api/proxy 前缀），如 "auth/addTourist"
  * @param method - HTTP 方法
  * @param body - JSON 对象或 FormData（FormData 时自动处理 Content-Type）
@@ -62,7 +133,8 @@ function normalizePostImages<T extends { imageUrls?: unknown }>(
 async function request<T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'POST',
-  body?: unknown
+  body?: unknown,
+  options: RequestOptions = {}
 ): Promise<T> {
   const url = `${PROXY_BASE}/${path}`;
   const token = getToken();
@@ -80,24 +152,59 @@ async function request<T>(
     payload = JSON.stringify(body);
   }
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: payload,
-  });
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs ?? timeoutForPath(path);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const onAbort = () => controller.abort(options.signal?.reason);
+  options.signal?.addEventListener('abort', onAbort, { once: true });
 
-  if (!response.ok) {
-    let detail = '';
+  try {
+    let response: Response;
     try {
-      const err = await response.json();
-      detail = err.message ?? '';
-    } catch {
-      /* ignore */
+      response = await fetch(url, {
+        method,
+        headers,
+        body: payload,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new ApiError(408, '请求超时', 'REQUEST_TIMEOUT');
+      }
+      throw new ApiError(0, '网络连接失败', 'NETWORK_ERROR', error instanceof Error ? error.message : undefined);
     }
-    throw new Error(`API Error: ${response.status} ${detail}`.trim());
-  }
 
-  return response.json();
+    if (!response.ok) {
+      const parsed = await parseApiError(response);
+      const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
+      if (response.status === 401 && !isPublicAuthRequest) {
+        const auth = useAuthStore.getState();
+        const isGuest = Boolean(auth.currentTourist && !auth.currentUser);
+        // 游客 token 失效时换取一次新游客身份，再重试原操作；正式用户直接清理失效会话。
+        if (isGuest && !options.guestRetried && !path.startsWith('auth/')) {
+          try {
+            const tourist = await addTourist();
+            setTourist(tourist);
+            return await request<T>(path, method, body, { ...options, guestRetried: true });
+          } catch {
+            // 换证失败后继续走统一的失效态处理。
+          }
+        }
+        expireAuth();
+      }
+      throw new ApiError(
+        response.status,
+        parsed.message || `API 请求失败（${response.status}）`,
+        parsed.code,
+        parsed.detail
+      );
+    }
+
+    return (await response.json()) as T;
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener('abort', onAbort);
+  }
 }
 
 /* ==================== 帖子 ==================== */
@@ -106,8 +213,11 @@ async function request<T>(
  * 获取帖子列表
  * 实测：data 是纯数组 Post[]，无分页元数据；空数组表示没有更多
  */
-async function getAllPost(params: GetAllPostParams): Promise<GetAllPostResponse> {
-  const res = await request<ApiResponse<Post[]>>('post/getAllPost', 'POST', params);
+async function getAllPost(
+  params: GetAllPostParams,
+  options?: RequestOptions
+): Promise<GetAllPostResponse> {
+  const res = await request<ApiResponse<Post[]>>('post/getAllPost', 'POST', params, options);
   return { list: (res.data ?? []).map((post) => normalizePostImages(post)) };
 }
 
@@ -121,7 +231,7 @@ async function getPost(postId: number): Promise<PostDetailData> {
     userId: getUserId(),
   });
   const rawPost = res.data?.post;
-  if (!rawPost) throw new Error('帖子详情数据格式错误');
+  if (!rawPost) throw new ApiError(404, '帖子不存在或已删除', 'NOT_FOUND');
 
   const imageUrlsArray = normalizeImageList(rawPost.imageUrlsArray ?? rawPost.imageUrls);
   const post = {
@@ -292,11 +402,12 @@ async function getAllKeywords(): Promise<Keyword[]> {
 async function searchToyPost(
   content: string,
   page: number,
-  pageSize = 20
+  pageSize = 20,
+  options?: RequestOptions
 ): Promise<SearchResult> {
   const res = await request<
     ApiResponse<SearchResult> & { pagination?: { hasMore: boolean } }
-  >('toy/searchToyPost', 'POST', { content, page, pageSize });
+  >('toy/searchToyPost', 'POST', { content, page, pageSize }, options);
   return {
     toys: res.data?.toys ?? [],
     posts: (res.data?.posts ?? []).map((post) => normalizePostImages(post)),

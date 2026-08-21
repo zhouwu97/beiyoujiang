@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserData, deletePost } from '@/lib/api';
+import { getApiErrorMessage, getUserData, deletePost } from '@/lib/api';
 import type { UserData } from '@/lib/types';
-import { getUserId, useAuthStore } from '@/stores/auth';
+import { useAuthStore, useCurrentUserId } from '@/stores/auth';
 import { resolveAvatar, resolveImage } from '@/lib/utils';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import LoginTipModal from '@/components/common/LoginTipModal';
@@ -13,6 +13,7 @@ import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import DesktopPageShell from '@/components/layout/DesktopPageShell';
+import SafeImage from '@/components/common/SafeImage';
 
 const TABS = [
   { id: 0, label: '我的帖子' },
@@ -31,27 +32,35 @@ export default function MyUserPage() {
   const { show: showAlert } = useCustomAlert();
   const currentUser = useAuthStore((s) => s.currentUser);
   const currentTourist = useAuthStore((s) => s.currentTourist);
-  const me = getUserId();
+  const me = useCurrentUserId();
 
   const [data, setData] = useState<UserData | null>(null);
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(() => Boolean(me));
+  const [dataError, setDataError] = useState<string | null>(null);
   const [showLoginTip, setShowLoginTip] = useState(() => !me);
+  const pendingDeleteRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
-    if (!me) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!me) {
+      // 认证状态由外部 Zustand store 驱动，退出后需要清理页面上的旧数据。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoading(false);
+      setDataError(null);
+      return;
+    }
     setLoading(true);
+    setDataError(null);
     getUserData(me, tab)
       .then((d) => {
         setData(d);
-        if (d.token && currentUser) {
-          useAuthStore.setState({ currentUser: { ...currentUser, token: d.token } });
+        const latestUser = useAuthStore.getState().currentUser;
+        if (d.token && latestUser) {
+          useAuthStore.setState({ currentUser: { ...latestUser, token: d.token } });
         }
       })
-      .catch(() => showAlert('加载失败'))
+      .catch((error) => setDataError(getApiErrorMessage(error)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me, tab]);
 
   const displayName = currentUser?.username ?? currentTourist?.username ?? data?.username ?? '杯友';
@@ -62,6 +71,8 @@ export default function MyUserPage() {
 
   const handleDelete = async (postId: number) => {
     if (!window.confirm('确定删除这篇帖子吗？')) return;
+    if (pendingDeleteRef.current.has(postId)) return;
+    pendingDeleteRef.current.add(postId);
     try {
       await deletePost(postId);
       const d = await getUserData(me!, tab);
@@ -69,6 +80,8 @@ export default function MyUserPage() {
       showAlert('删除成功');
     } catch {
       showAlert('删除失败');
+    } finally {
+      pendingDeleteRef.current.delete(postId);
     }
   };
 
@@ -87,7 +100,7 @@ export default function MyUserPage() {
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 {/* 左侧：头像 + 用户名 + 等级 + 经验 */}
                 <div className="flex min-w-0 flex-1 items-start gap-4">
-                  <img
+                  <SafeImage
                     src={resolveAvatar(displayPhoto)}
                     alt=""
                     className="h-16 w-16 flex-none rounded-full border-2 border-white object-cover shadow-sm sm:h-20 sm:w-20"
@@ -179,7 +192,28 @@ export default function MyUserPage() {
             <div className="mt-4 overflow-hidden rounded-[18px] border border-[var(--line)] bg-white shadow-[var(--shadow-soft)]">
               {loading && <p className="py-12 text-center text-[13px] text-[var(--muted)]">加载中...</p>}
 
-              {!loading && posts.length === 0 && (
+              {!loading && dataError && (
+                <div className="flex flex-col items-center py-16 text-center">
+                  <p className="mb-4 text-[14px] text-[var(--muted)]">{dataError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!me) return;
+                      setLoading(true);
+                      setDataError(null);
+                      getUserData(me, tab)
+                        .then(setData)
+                        .catch((error) => setDataError(getApiErrorMessage(error)))
+                        .finally(() => setLoading(false));
+                    }}
+                    className="interactive-press rounded-full bg-[var(--accent)] px-5 py-2 text-[13px] font-medium text-white"
+                  >
+                    重新加载
+                  </button>
+                </div>
+              )}
+
+              {!loading && !dataError && posts.length === 0 && (
                 <div className="py-16 text-center">
                   <p className="mb-2 text-[14px] text-[var(--muted)]">
                     {tab === 0 ? '还没有发过帖子' : tab === 1 ? '还没有收藏' : '还没有足迹'}
@@ -195,7 +229,7 @@ export default function MyUserPage() {
                 </div>
               )}
 
-              {!loading &&
+              {!loading && !dataError &&
                 posts.map((p) => (
                   <div key={p.id} className="relative group border-b border-[var(--line)] last:border-0">
                     <PostCard post={p} />

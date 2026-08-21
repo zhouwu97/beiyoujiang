@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login as loginRequest } from '@/lib/api';
+import { ApiError, getApiErrorMessage, login as loginRequest } from '@/lib/api';
 import { setAuthenticatedUser } from '@/stores/auth';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import AuthFrame from '@/components/auth/AuthFrame';
@@ -30,8 +30,13 @@ export default function LoginPage() {
       showAlert('登录成功，欢迎回来~');
       setTimeout(() => router.push('/'), 600);
     } catch (err) {
-      const msg = err instanceof Error ? err.message.replace('API Error: ', '') : '登录失败';
-      showAlert(msg.includes('401') || msg.includes('403') ? '邮箱或密码错误' : msg);
+      if (err instanceof ApiError && err.status === 403 && err.code === 'BANNED') {
+        showAlert('账号已被封禁');
+      } else if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        showAlert(err.message || '邮箱或密码错误');
+      } else {
+        showAlert(getApiErrorMessage(err, err instanceof Error ? err.message : '登录失败'));
+      }
     } finally {
       setLoading(false);
     }

@@ -1,155 +1,199 @@
 /**
- * beiyoujiang.com 论坛前端 - 帖子列表状态管理
- * 缓存 key = `${plate}-${most}`，缓存帖子数组、总页数、加载状态
+ * beiyoujiang.com 论坛前端 - 帖子流状态管理
+ *
+ * 每个 `${plate}-${sort}` 都是独立的查询状态。这样切换板块、排序或刷新时，
+ * 分页、加载态、错误态和过期标记不会再互相串写。
  */
 import { create } from 'zustand';
 import type { Post, GetAllPostParams } from '@/lib/types';
 import { Plate, SortOrder } from '@/lib/types';
-import { getAllPost } from '@/lib/api';
+import { getAllPost, getApiErrorMessage } from '@/lib/api';
 
-interface ForumState {
-  /** 当前选择的板块 */
-  plate: Plate;
-  /** 当前选择的排序 */
-  sort: SortOrder;
-  /** 当前页码 */
+interface FeedQueryState {
+  posts: Post[];
   page: number;
-  /** 帖子列表缓存（按 plate-sort 分组） */
-  postsCache: Record<string, Post[]>;
-  /** 总页数缓存 */
-  totalPagesCache: Record<string, number>;
-  /** 加载中标志 */
   loading: boolean;
-  /** 加载错误（仅 API 失败时设置，不为 null 时 postsCache[key] 为空不代表真无数据） */
-  error: string | null;
-  /** 已全部加载完标志 */
   exhausted: boolean;
+  error: string | null;
+  requestVersion: number;
 }
 
-/** 缓存 key 生成 */
+interface ForumState {
+  plate: Plate;
+  sort: SortOrder;
+  queries: Record<string, FeedQueryState>;
+}
+
+const EMPTY_QUERY: FeedQueryState = {
+  posts: [],
+  page: 0,
+  loading: false,
+  exhausted: false,
+  error: null,
+  requestVersion: 0,
+};
+
+const inFlight = new Map<string, AbortController>();
+
 function cacheKey(plate: Plate, sort: SortOrder): string {
   return `${plate}-${sort}`;
 }
 
-/**
- * 合并分页结果并按帖子 ID 去重。
- * 官方接口偶尔会在相邻页返回重叠数据，直接拼接会触发 React 重复 key 警告。
- */
 function mergeUniquePosts(existing: Post[], incoming: Post[]): Post[] {
   const postsById = new Map<number, Post>();
   for (const post of existing) postsById.set(post.id, post);
   for (const post of incoming) {
+    // 上游偶尔重复返回相邻页数据，新数据不覆盖已渲染的稳定顺序。
     if (!postsById.has(post.id)) postsById.set(post.id, post);
   }
   return Array.from(postsById.values());
 }
 
-/** 设置板块 */
+function getQuery(state: ForumState, key: string): FeedQueryState {
+  return state.queries[key] ?? EMPTY_QUERY;
+}
+
+function setQuery(key: string, updater: (query: FeedQueryState) => FeedQueryState): void {
+  useForumStore.setState((state) => ({
+    queries: {
+      ...state.queries,
+      [key]: updater(getQuery(state, key)),
+    },
+  }));
+}
+
 function setPlate(plate: Plate): void {
   useForumStore.setState({ plate });
 }
 
-/** 设置排序 */
 function setSort(sort: SortOrder): void {
   useForumStore.setState({ sort });
 }
 
-/** 翻页加载更多 */
-async function fetchNextPage(): Promise<void> {
-  const state = useForumStore.getState();
-  const { plate, sort, page, loading, exhausted } = state;
+async function fetchPage(plate: Plate, sort: SortOrder, page: number, force = false): Promise<void> {
+  const key = cacheKey(plate, sort);
+  const existing = getQuery(useForumStore.getState(), key);
+  if (!force && (existing.loading || existing.exhausted)) return;
 
-  if (loading || exhausted) return;
+  if (force) inFlight.get(key)?.abort();
+  const controller = new AbortController();
+  inFlight.set(key, controller);
+  const version = existing.requestVersion + 1;
 
-  useForumStore.setState({ loading: true, error: null });
+  setQuery(key, (query) => ({
+    ...query,
+    loading: true,
+    error: null,
+    requestVersion: version,
+  }));
+
+  const params: GetAllPostParams = {
+    plate,
+    most: sort,
+    userId: null,
+    page,
+    pageSize: 20,
+  };
 
   try {
-    const params: GetAllPostParams = {
-      plate,
-      most: sort,
-      userId: null,
-      page: page + 1,
-      pageSize: 20,
-    };
+    const result = await getAllPost(params, { signal: controller.signal, timeoutMs: 10_000 });
+    const current = getQuery(useForumStore.getState(), key);
+    // 旧请求即使最后返回，也不能覆盖同一查询的新版本。
+    if (current.requestVersion !== version) return;
 
-    const result = await getAllPost(params);
-    const key = cacheKey(plate, sort);
-    // 官方 API 无分页元数据：返回空数组即表示没有更多帖子
     const hasMore = result.list.length > 0;
-
-    useForumStore.setState((s) => ({
-      page: s.page + 1,
-      postsCache: {
-        ...s.postsCache,
-        [key]: mergeUniquePosts(s.postsCache[key] ?? [], result.list),
-      },
-      totalPagesCache: {
-        ...s.totalPagesCache,
-        [key]: hasMore ? page + 2 : page + 1,
-      },
-      exhausted: !hasMore,
+    setQuery(key, (query) => ({
+      ...query,
+      posts: mergeUniquePosts(page === 1 ? [] : query.posts, result.list),
+      page: Math.max(query.page, page),
       loading: false,
+      exhausted: !hasMore,
+      error: null,
     }));
-  } catch {
-    useForumStore.setState({ loading: false, error: '加载失败' });
+  } catch (error) {
+    const current = getQuery(useForumStore.getState(), key);
+    if (current.requestVersion !== version) return;
+    setQuery(key, (query) => ({
+      ...query,
+      loading: false,
+      error: getApiErrorMessage(error),
+    }));
+  } finally {
+    if (inFlight.get(key) === controller) inFlight.delete(key);
   }
 }
 
-/**
- * 重置缓存（切换板块/排序时调用）
- * 会清空当前缓存、页码、加载状态
- */
+/** 首次进入查询时加载第一页；已加载过的查询直接复用缓存。 */
+async function ensureFeedLoaded(): Promise<void> {
+  const { plate, sort, queries } = useForumStore.getState();
+  const query = getQuery({ plate, sort, queries }, cacheKey(plate, sort));
+  if (query.page === 0 && !query.loading && !query.exhausted) {
+    await fetchPage(plate, sort, 1);
+  }
+}
+
+/** 统一的分页入口，页面不再直接拼页码或读全局 loading。 */
+async function loadMoreFeed(): Promise<void> {
+  const { plate, sort, queries } = useForumStore.getState();
+  const query = getQuery({ plate, sort, queries }, cacheKey(plate, sort));
+  if (query.loading || query.exhausted) return;
+  await fetchPage(plate, sort, Math.max(1, query.page + 1));
+}
+
+/** 刷新当前查询：清空当前结果并立即请求第一页。 */
+async function refreshCurrentFeed(): Promise<void> {
+  const { plate, sort } = useForumStore.getState();
+  const key = cacheKey(plate, sort);
+  inFlight.get(key)?.abort();
+  setQuery(key, (query) => ({
+    ...EMPTY_QUERY,
+    requestVersion: query.requestVersion + 1,
+  }));
+  await fetchPage(plate, sort, 1);
+}
+
+/** 兼容旧调用：只重置当前查询，不负责偷偷发请求。 */
 function reset(): void {
-  useForumStore.setState((s) => {
-    const key = cacheKey(s.plate, s.sort);
-    const newPostsCache = { ...s.postsCache };
-    const newTotalPagesCache = { ...s.totalPagesCache };
-    delete newPostsCache[key];
-    delete newTotalPagesCache[key];
-    return {
-      postsCache: newPostsCache,
-      totalPagesCache: newTotalPagesCache,
-      page: 0,
-      loading: false,
-      exhausted: false,
-      error: null,
-    };
-  });
+  const { plate, sort } = useForumStore.getState();
+  const key = cacheKey(plate, sort);
+  inFlight.get(key)?.abort();
+  setQuery(key, (query) => ({
+    ...EMPTY_QUERY,
+    requestVersion: query.requestVersion + 1,
+  }));
 }
 
-/** 获取当前缓存的帖子 */
+/** 兼容旧调用名，行为等价于加载更多。 */
+const fetchNextPage = loadMoreFeed;
+
 function getCachedPosts(): Post[] {
-  const state = useForumStore.getState();
-  const key = cacheKey(state.plate, state.sort);
-  return state.postsCache[key] ?? [];
+  const { plate, sort, queries } = useForumStore.getState();
+  return getQuery({ plate, sort, queries }, cacheKey(plate, sort)).posts;
 }
 
-/** 获取当前缓存的总页数 */
 function getCachedTotalPages(): number {
-  const state = useForumStore.getState();
-  const key = cacheKey(state.plate, state.sort);
-  return state.totalPagesCache[key] ?? 1;
+  const { plate, sort, queries } = useForumStore.getState();
+  return getQuery({ plate, sort, queries }, cacheKey(plate, sort)).page;
 }
 
 const useForumStore = create<ForumState>()(() => ({
   plate: Plate.CupForum,
   sort: SortOrder.ByTime,
-  page: 0,
-  postsCache: {},
-  totalPagesCache: {},
-  loading: false,
-  exhausted: false,
-  error: null,
+  queries: {},
 }));
 
 export {
   useForumStore,
   setPlate,
   setSort,
+  ensureFeedLoaded,
+  refreshCurrentFeed,
+  loadMoreFeed,
   fetchNextPage,
   reset,
   getCachedPosts,
   getCachedTotalPages,
   cacheKey,
+  EMPTY_QUERY,
 };
-export type { ForumState };
+export type { ForumState, FeedQueryState };

@@ -4,9 +4,14 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('after_verify', '1'));
 });
 
+async function gotoHome(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await expect(page.locator('[data-global-search-ready]')).toHaveAttribute('data-global-search-ready', 'true');
+}
+
 test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）', () => {
   test('A. Ctrl+K 快捷键可聚焦全局搜索输入框', async ({ page }) => {
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await page.keyboard.press('Control+k');
     await expect(searchInput).toBeFocused();
@@ -37,7 +42,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.focus();
 
@@ -81,12 +86,12 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('黄油小姐');
 
     // 等待 250ms debounce 与浮层渲染
-    await expect(page.getByText('黄油小姐 二代')).toBeVisible();
+    await expect(page.locator('.global-search-popover').getByText('黄油小姐 二代')).toBeVisible();
     await expect(page.getByText('黄油小姐2代实际体验')).toBeVisible();
     await expect(page.getByRole('button', { name: '搜索', exact: true })).toBeVisible();
     await expect(page.getByText(/查看“黄油小姐”的全部搜索结果/)).toBeVisible();
@@ -107,7 +112,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('黄油小姐');
 
@@ -134,7 +139,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('龙娘');
 
@@ -182,7 +187,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('玩具');
 
@@ -216,7 +221,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
     const searchInput = page.getByLabel('全局搜索');
     await searchInput.fill('黄油');
 
@@ -240,7 +245,7 @@ test.describe('GlobalSearch 两级搜索架构（Suggestion + 正式结果页）
       })
     );
 
-    await page.goto('/');
+    await gotoHome(page);
 
     const mobileSearchBtn = page.getByRole('button', { name: '搜索' });
     await expect(mobileSearchBtn).toBeVisible();

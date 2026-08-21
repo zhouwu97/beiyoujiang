@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import HomeRankingPreview from '@/components/home/HomeRankingPreview';
-import { useForumStore } from '@/stores/forum';
+import { cacheKey, EMPTY_QUERY, useForumStore } from '@/stores/forum';
 
 
 /**
@@ -14,8 +14,7 @@ export default function DesktopRightRail() {
   const router = useRouter();
   const plate = useForumStore((state) => state.plate);
   const sort = useForumStore((state) => state.sort);
-  const postsCache = useForumStore((state) => state.postsCache);
-  const posts = postsCache[`${plate}-${sort}`] ?? [];
+  const posts = useForumStore((state) => state.queries[cacheKey(plate, sort)]?.posts ?? EMPTY_QUERY.posts);
   const recentPosts = posts.slice(0, 4);
 
   return (

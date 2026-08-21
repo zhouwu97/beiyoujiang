@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForumStore } from '@/stores/forum';
+import { cacheKey, useForumStore } from '@/stores/forum';
 import type { Post } from '@/lib/types';
 
 function FireIcon() {
@@ -31,8 +31,9 @@ function FireIcon() {
  */
 export default function HomeHotTopics() {
   const router = useRouter();
-  const cachedPosts = useForumStore((s) => s.postsCache[`${s.plate}-${s.sort}`]);
-  const loading = useForumStore((s) => s.loading);
+  const query = useForumStore((s) => s.queries[cacheKey(s.plate, s.sort)]);
+  const cachedPosts = query?.posts;
+  const loading = query?.loading ?? false;
 
   const posts = useMemo(() => cachedPosts ?? [], [cachedPosts]);
 

@@ -5,6 +5,7 @@ import { useAuthStore, setTourist } from '@/stores/auth';
 import { addTourist } from '@/lib/api';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import AdultVerifyModal from '@/components/common/AdultVerifyModal';
+import { useCustomAlert } from '@/components/common/CustomAlert';
 
 /**
  * 客户端初始化：
@@ -15,6 +16,7 @@ import AdultVerifyModal from '@/components/common/AdultVerifyModal';
 export default function ClientInit() {
   const [initialized, setInitialized] = useState(false);
   const [needVerify, setNeedVerify] = useState(false);
+  const { show: showAlert } = useCustomAlert();
 
   useEffect(() => {
     // 游客注册放到后台执行：页面先渲染，接口响应到了再更新游客态。
@@ -41,6 +43,22 @@ export default function ClientInit() {
     // 立即标记初始化完成，页面不再等待游客注册或 3.5s 超时。
     setInitialized(true);
   }, []);
+
+  // 401 由请求层统一清掉会话；这里给用户明确反馈，而不是悄悄回到匿名态。
+  useEffect(() => {
+    const onAuthExpired = () => showAlert('登录已过期，请重新登录');
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'currentUser' || event.key === 'currentTourist' || event.key === 'auth-storage') {
+        void useAuthStore.persist.rehydrate();
+      }
+    };
+    window.addEventListener('authExpired', onAuthExpired);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('authExpired', onAuthExpired);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [showAlert]);
 
   const handleConfirm = () => {
     try {

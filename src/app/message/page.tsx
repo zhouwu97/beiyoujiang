@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { getAllMessages, markAllAsRead } from '@/lib/api';
 import type { MessageItem } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
-import { getUserId } from '@/stores/auth';
+import { useCurrentUserId } from '@/stores/auth';
 import { useMessageStore } from '@/stores/message';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import DesktopPageShell from '@/components/layout/DesktopPageShell';
+import { useAppRevalidate } from '@/hooks/useAppRevalidate';
+import SafeImage from '@/components/common/SafeImage';
 
 /**
  * 消息 → 帖子详情的跳转地址（三层 fallback）：
@@ -32,14 +34,18 @@ function getMessageHref(m: MessageItem): string | null {
  */
 export default function MessagePage() {
   const [messages, setMessages] = useState<MessageItem[]>([]);
-  const me = getUserId();
+  const me = useCurrentUserId();
   const [loading, setLoading] = useState(() => Boolean(me));
   const [error, setError] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const setHasUnread = useMessageStore((s) => s.setHasUnread);
 
-  const fetchMessages = () => {
-    if (!me) return;
+  const fetchMessages = useCallback(() => {
+    if (!me) {
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(false);
     getAllMessages(0)
@@ -53,14 +59,14 @@ export default function MessagePage() {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [me, setHasUnread]);
 
   useEffect(() => {
-    if (!me) return;
+    // 首次进入消息页需要主动拉取数据；后续恢复由 useAppRevalidate 负责。
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me]);
+  }, [fetchMessages]);
+  useAppRevalidate(fetchMessages);
 
   const handleMarkAllRead = async () => {
     if (markingAll || messages.length === 0) return;
@@ -187,7 +193,7 @@ export default function MessagePage() {
                       'flex w-full items-center gap-4 border-b border-[var(--line)] px-5 py-4 text-left transition-colors last:border-0 hover:bg-[var(--surface-subtle)]';
                     const inner = (
                       <>
-                        <img
+                        <SafeImage
                           src={resolveAvatar((m as unknown as { photo?: string }).photo)}
                           alt=""
                           className="h-10 w-10 flex-none rounded-full bg-[var(--background)] object-cover ring-2 ring-white"

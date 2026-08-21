@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { PLATES, Plate } from '@/lib/types';
 import { reset, setPlate } from '@/stores/forum';
@@ -17,18 +17,16 @@ export default function PlateFilterDropdown() {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Plate | null>(null);
-
-  // 与左栏一致：通过 URL ?plate 反映选中态，popstate 兜底浏览器前进/后退。
-  useEffect(() => {
-    const syncFromUrl = () => {
-      const param = new URLSearchParams(window.location.search).get('plate');
-      setSelected(param ? (Number(param) as Plate) : null);
-    };
-    syncFromUrl();
-    window.addEventListener('popstate', syncFromUrl);
-    return () => window.removeEventListener('popstate', syncFromUrl);
-  }, []);
+  const searchString = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener('popstate', onStoreChange);
+      return () => window.removeEventListener('popstate', onStoreChange);
+    },
+    () => window.location.search,
+    () => ''
+  );
+  const rawPlate = Number(new URLSearchParams(searchString).get('plate'));
+  const selected: Plate | null = PLATES.some((plate) => plate.id === rawPlate) ? rawPlate as Plate : null;
 
   // 点击外部 / Esc 关闭
   useEffect(() => {
@@ -55,18 +53,20 @@ export default function PlateFilterDropdown() {
   const selectPlate = (plate: Plate | null) => {
     setOpen(false);
     if (plate === selected) return;
-    setSelected(plate);
-
+    const params = new URLSearchParams(window.location.search);
     if (plate === null) {
       // 全部版块 → 社区首页默认流（清空地址栏板块参数）
       setPlate(HOME_PLATE);
       reset();
-      router.push('/', { scroll: false });
+      params.delete('plate');
     } else {
       setPlate(plate);
       reset();
-      router.push(`/?plate=${plate}`, { scroll: false });
+      params.set('plate', String(plate));
     }
+
+    router.push(params.toString() ? `/?${params.toString()}` : '/', { scroll: false });
+    window.dispatchEvent(new Event('popstate'));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

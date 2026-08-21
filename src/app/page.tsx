@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
 import Banner from '@/components/home/Banner';
@@ -9,24 +11,40 @@ import PlateFilterDropdown from '@/components/post/PlateFilterDropdown';
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
 import DesktopRightRail from '@/components/layout/DesktopRightRail';
 import DesktopPageShell from '@/components/layout/DesktopPageShell';
-import { useForumStore, setSort, reset } from '@/stores/forum';
+import { useForumStore, setSort, reset, refreshCurrentFeed } from '@/stores/forum';
 import { SortOrder } from '@/lib/types';
 
 /**
  * 首页：宽屏三栏（左导航 + 帖子流 + 右信息栏），与榜单页共用 DesktopPageShell。
  */
 export default function HomePage() {
+  const router = useRouter();
   const sort = useForumStore((s) => s.sort);
+
+  useEffect(() => {
+    const syncSortFromUrl = () => {
+      const rawSort = Number(new URLSearchParams(window.location.search).get('sort'));
+      const nextSort = rawSort === SortOrder.ByReply ? SortOrder.ByReply : SortOrder.ByTime;
+      if (useForumStore.getState().sort !== nextSort) setSort(nextSort);
+    };
+    syncSortFromUrl();
+    window.addEventListener('popstate', syncSortFromUrl);
+    return () => window.removeEventListener('popstate', syncSortFromUrl);
+  }, []);
 
   const handleSortChange = (s: SortOrder) => {
     if (s === sort) return;
     setSort(s);
     reset();
+    const params = new URLSearchParams(window.location.search);
+    if (s === SortOrder.ByTime) params.delete('sort');
+    else params.set('sort', String(s));
+    router.push(params.toString() ? `/?${params.toString()}` : '/', { scroll: false });
     window.scrollTo({ top: 0 });
   };
 
   const handleRefresh = () => {
-    reset();
+    void refreshCurrentFeed();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

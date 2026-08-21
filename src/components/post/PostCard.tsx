@@ -7,6 +7,7 @@ import { PLATES } from '@/lib/types';
 import { resolveAvatar } from '@/lib/utils';
 import { usePostLike } from '@/components/post/usePostLike';
 import PostMedia from '@/components/post/PostMedia';
+import SafeImage from '@/components/common/SafeImage';
 
 export function stripHtml(html: string): string {
   return html
@@ -75,7 +76,7 @@ function PostCard({ post, variant = 'default' }: PostCardProps) {
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
-          <img
+          <SafeImage
             src={resolveAvatar(post.author?.photo)}
             alt=""
             className="post-avatar h-[34px] w-[34px] rounded-[11px] bg-[var(--surface-subtle)] object-cover max-md:h-8 max-md:w-8"

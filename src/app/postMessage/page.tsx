@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PLATES, Plate } from '@/lib/types';
-import { addPost } from '@/lib/api';
-import { getUserId } from '@/stores/auth';
+import { addPost, ApiError, getApiErrorMessage } from '@/lib/api';
+import { useCurrentUserId } from '@/stores/auth';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import { useRewardToast } from '@/components/common/RewardToast';
 import LoginTipModal from '@/components/common/LoginTipModal';
@@ -19,6 +19,11 @@ const EMOJIS = [
   'face073.jpg', 'face074.gif', 'face075.jpg', 'face076.jpg', 'face077.gif',
   'face084.jpg', 'face085.jpg', 'face089.jpg', 'face091.gif', 'face095.gif',
 ];
+
+const MAX_IMAGE_COUNT = 9;
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_SIZE = 40 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 /**
  * 发帖页：
@@ -43,8 +48,9 @@ export default function PostMessagePage() {
   const selectionRef = useRef<Range | null>(null);
   const previewUrlsRef = useRef<string[]>([]);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const publishingRef = useRef(false);
 
-  const me = getUserId();
+  const me = useCurrentUserId();
 
   const handleCancel = () => {
     if (dirty && !window.confirm('内容尚未发布，确定离开？')) return;
@@ -137,7 +143,30 @@ export default function PostMessagePage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
-    const room = 9 - images.length;
+    const room = MAX_IMAGE_COUNT - images.length;
+    if (files.length > room) {
+      showAlert(`最多上传 ${MAX_IMAGE_COUNT} 张图片`);
+      e.target.value = '';
+      return;
+    }
+    const invalidType = files.find((file) => !ALLOWED_IMAGE_TYPES.has(file.type));
+    if (invalidType) {
+      showAlert('仅支持 JPG、PNG、WEBP、GIF 图片');
+      e.target.value = '';
+      return;
+    }
+    const tooLarge = files.find((file) => file.size > MAX_IMAGE_SIZE);
+    if (tooLarge) {
+      showAlert('单张图片不能超过 10MB');
+      e.target.value = '';
+      return;
+    }
+    const totalSize = images.reduce((sum, image) => sum + image.file.size, 0) + files.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > MAX_TOTAL_IMAGE_SIZE) {
+      showAlert('图片总大小不能超过 40MB');
+      e.target.value = '';
+      return;
+    }
     const picked = files.slice(0, room);
     const previews = picked.map((file) => {
       const previewUrl = URL.createObjectURL(file);
@@ -173,7 +202,8 @@ export default function PostMessagePage() {
       showAlert('内容不能为空哦，写点东西吧喵~');
       return;
     }
-    if (publishing) return;
+    if (publishingRef.current || publishing) return;
+    publishingRef.current = true;
     setPublishing(true);
 
     try {
@@ -193,9 +223,15 @@ export default function PostMessagePage() {
       }
       setTimeout(() => router.push('/'), 800);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '发布失败';
-      showAlert(msg.includes('403') ? '发布频率过高，请稍后再试' : '发布失败，请重试');
+      if (err instanceof ApiError && err.status === 403 && err.code === 'BANNED') {
+        showAlert('账号已被限制');
+      } else if (err instanceof ApiError && err.status === 403 && err.code === 'PERMISSION_DENIED') {
+        showAlert('当前账号没有发布权限');
+      } else {
+        showAlert(getApiErrorMessage(err, '发布失败，请重试'));
+      }
     } finally {
+      publishingRef.current = false;
       setPublishing(false);
     }
   };
@@ -339,14 +375,14 @@ export default function PostMessagePage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-[13.5px] font-bold text-[var(--ink)]">上传图片</h2>
                 <span className="text-[11px] font-semibold text-[var(--muted-light)]">
-                  {images.length}/9 张
+                  {images.length}/{MAX_IMAGE_COUNT} 张
                 </span>
               </div>
 
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 multiple
                 hidden
                 onChange={handleFileChange}
@@ -370,7 +406,7 @@ export default function PostMessagePage() {
                     </button>
                   </div>
                 ))}
-                {images.length < 9 && (
+                {images.length < MAX_IMAGE_COUNT && (
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}

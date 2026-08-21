@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { register as registerRequest } from '@/lib/api';
+import { getApiErrorMessage, register as registerRequest } from '@/lib/api';
 import { setAuthenticatedUser } from '@/stores/auth';
 import { useCustomAlert } from '@/components/common/CustomAlert';
 import AuthFrame from '@/components/auth/AuthFrame';
@@ -40,8 +40,7 @@ export default function RegisterPage() {
       showAlert('注册成功，欢迎加入杯友酱~');
       setTimeout(() => router.push('/'), 600);
     } catch (err) {
-      const msg = err instanceof Error ? err.message.replace('API Error: ', '') : '注册失败';
-      showAlert(msg);
+      showAlert(getApiErrorMessage(err, err instanceof Error ? err.message : '注册失败'));
     } finally {
       setLoading(false);
     }

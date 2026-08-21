@@ -59,6 +59,7 @@ function SearchContent() {
 
   const pageRef = useRef(1);
   const requestVersionRef = useRef(0);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   // 当 URL 中的 ?q= 变化时，在渲染阶段同步 query 状态
   if (prevUrlQuery !== urlQuery) {
@@ -77,6 +78,7 @@ function SearchContent() {
   const doSearch = useCallback(async (keyword: string, page = 1) => {
     const trimmed = keyword.trim();
     if (!trimmed) {
+      searchAbortRef.current?.abort();
       setSearched(false);
       setToys([]);
       setPosts([]);
@@ -87,6 +89,12 @@ function SearchContent() {
 
     requestVersionRef.current += 1;
     const version = requestVersionRef.current;
+    if (page === 1) {
+      searchAbortRef.current?.abort();
+      searchAbortRef.current = new AbortController();
+      setActiveTab('all');
+    }
+    const signal = searchAbortRef.current?.signal;
 
     if (page === 1) {
       setSearched(true);
@@ -101,7 +109,7 @@ function SearchContent() {
     }
 
     try {
-      const res = await searchToyPost(trimmed, page);
+      const res = await searchToyPost(trimmed, page, 20, { signal });
       if (version !== requestVersionRef.current) return;
 
       if (page === 1) {
@@ -140,6 +148,7 @@ function SearchContent() {
       setLoading(false);
       setSearchError(false);
     }
+    return () => searchAbortRef.current?.abort();
   }, [urlQuery, doSearch]);
 
   // 提交新搜索（同步更新 URL）

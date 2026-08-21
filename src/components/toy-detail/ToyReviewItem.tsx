@@ -3,6 +3,7 @@
 import type { ToyReview } from '@/lib/types';
 import { resolveAvatar, resolveToyImage, sanitizeHtml } from '@/lib/utils';
 import ToyImage from '@/components/toy/ToyImage';
+import SafeImage from '@/components/common/SafeImage';
 import styles from './toy-detail.module.css';
 
 function HeartRating({ score }: { score: number }) {
@@ -49,7 +50,7 @@ export default function ToyReviewItem({ review, onLike, onPreview }: ToyReviewIt
   return (
     <article className={styles.review}>
       <div className={styles.reviewHead}>
-        <img src={resolveAvatar(review.author?.photo)} alt="" className={styles.avatar} loading="lazy" />
+        <SafeImage src={resolveAvatar(review.author?.photo)} alt="" className={styles.avatar} loading="lazy" />
         <div className={styles.reviewUser}>
           <strong>{review.author?.username ?? '杯友'}</strong>
           <HeartRating score={review.score} />
